@@ -1,0 +1,33 @@
+/* box to receive text */
+#target { width: 430px; height:480px; border: 1px solid; float: left; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
+/* the source textarea */
+#source { box-sizing: border-box; -moz-box-sizing: border-box; -ms-box-sizing: border-box; -webkit-box-sizing: border-box; font-size: 12px; width: 430px; height:502px; float:left; display: inline-block; padding: 10px 10px 0px 10px;overflow: auto}
+#images { width: 430px; height: 502px; float: left; display: inline-block; overflow: auto}
+.image { border: 0; margin: 0; padding: 0; width: 100% }
+/* formats supported by the MML dialect */
+body {margin: 0px 0px 0px 0px; font: 14px arial, sans-serif;}
+p {margin-top:0}
+pre {margin-left: 20px; font: 14px arial, sans-serif}
+h1,h2 {text-align:center }
+.section { margin-bottom: 50px }
+.centered { text-align: center }
+.italics { font-style: italic}
+.small-caps { font-variant: small-caps}
+.soft-hyphen { display:none }
+.hard-hyphen { display:inline }
+/* dividers */
+/* centered plus divider */
+.plus-lefttop { border-right: 1px solid; border-bottom:1px solid; width: 70px; height: 5px }
+.plus-righttop { border-bottom:1px solid; width: 70px; height:5px}
+.plus-leftbot { border-right: 1px solid; width:70px; height:5px}
+.plus-rightbot { width:70px; height:5px}
+.plus { border-collapse: collapse; border-spacing: 0; margin-left:auto; margin-right:auto; margin-bottom:10px }
+
+/* centered dash divider */
+.dash-lefttop { border-bottom:1px solid; width: 70px; height: 5px }
+.dash-righttop { border-bottom:1px solid; width: 70px; height:5px}
+.dash-leftbot { width:70px; height:5px}
+.dash-rightbot { width:70px; height:5px}
+.dash { border-collapse: collapse; border-spacing: 0; margin-left:auto; margin-right:auto; }
+.letter-spacing { letter-spacing: 0.1em; word-spacing: 3px}
+
