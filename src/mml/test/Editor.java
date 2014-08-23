@@ -84,6 +84,14 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "js/mml.js" );
         String editor = readFile( "js/editor.js" );
         doc.getHead().addScript( editor );
+        Element toolbar = new Element("div");
+        toolbar.addAttribute("id","toolbar");
+        Element save = new Element("input");
+        save.addAttribute("type","button");
+        save.addAttribute("value","save");
+        save.addAttribute("id","save");
+        toolbar.addElement(save);
+        doc.addElement(toolbar );
         Element wrapper = new Element("div");
         wrapper.addAttribute("id","wrapper");
         Element images = new Element("div");
