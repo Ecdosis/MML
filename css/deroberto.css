@@ -1,6 +1,6 @@
 /* overall container div */
 #wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
-#toolbar-wrapper { width: 10%;    margin: 0 auto; }
+#toolbar-wrapper { width: 15%;    margin: 0 auto; }
 /* temporary toolbar */
 #toolbar { background: darkgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
 #save,#info { margin-left: 10px; margin-right:10px }
@@ -8,6 +8,7 @@
 #target { width: 430px; height:480px; border: 1px solid; float: left; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */
 #source { box-sizing: border-box; -moz-box-sizing: border-box; -ms-box-sizing: border-box; -webkit-box-sizing: border-box; font-size: 12px; width: 430px; height:502px; float:left; display: inline-block; padding: 10px 10px 0px 10px;overflow: auto}
+#help { font-size: 14px; width: 430px; height:480px; border: 1px solid white; float: left; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px;}
 #images { width: 430px; height: 502px; float: left; display: inline-block; overflow: auto}
 .image { border: 0; margin: 0; padding: 0; width: 100% }
 /* formats supported by the MML dialect */

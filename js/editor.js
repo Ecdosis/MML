@@ -66,6 +66,6 @@ $( document ).ready(function() {
    };
    var editor = new MMLEditor(opts, dialect);
    $("#info").click( function() {
-        alert( editor.displayInfo() );
+        editor.displayInfo();
    });
 }); 

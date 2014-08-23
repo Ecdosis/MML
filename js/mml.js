@@ -37,6 +37,8 @@ function MMLEditor(opts, dialect) {
     this.formatted = false;
     /** flag to indicate when images have been loaded */
     this.imagesLoaded = false;
+    /** flag for info displayed */
+    this.infoDisplayed = false;
     /** page break RefLoc page starts in textarea (lines) */
     this.page_lines = new Array();
     /** page break RefLocs for html target */
@@ -934,6 +936,25 @@ function MMLEditor(opts, dialect) {
         return adjust;
     };
     /**
+     * Get the sum of the vertical border, padding and optionally margin
+     * @param jqObj the jQuery object to measure
+     * @param marg if true add the vertical margin values
+     * @return the sum of the vertical adjustments
+     */
+    this.viAdjust = function( jqObj, marg )
+    {
+        var padTop = parseInt(jqObj.css("padding-top"),10);
+        var padBot = parseInt(jqObj.css("padding-bottom"),10);  
+        var bordTop = parseInt(jqObj.css("border-top-width"),10);
+        var bordBot = parseInt(jqObj.css("border-bottom-width"),10);
+        var margTop = parseInt(jqObj.css("margin-top"),10);
+        var margBot = parseInt(jqObj.css("margin-bottom"),10);
+        var adjust = padTop+padBot+bordTop+bordBot;
+        if ( marg )
+            adjust += margTop+margBot;
+        return adjust;
+    };
+    /**
      * Resize manually to parent element width, height to bottom of screen. 
      */
     this.resize = function() {
@@ -948,19 +969,9 @@ function MMLEditor(opts, dialect) {
         tgtObj.width(Math.floor(wWidth/3)-this.hiAdjust(tgtObj));
         srcObj.width(Math.floor(wWidth/3)-this.hiAdjust(srcObj));
         // compute height
-        var sPadBot = parseInt(srcObj.css("padding-bottom"),10);
-        var sPadTop = parseInt(srcObj.css("padding-top"),10);  
-        var tPadBot = parseInt(tgtObj.css("padding-bottom"),10);
-        var tPadTop = parseInt(tgtObj.css("padding-top"),10);  
-        var sBordBot = parseInt(srcObj.css("border-bottom-width"),10);
-        var sBordTop = parseInt(srcObj.css("border-top-width"),10);  
-        var tBordBot = parseInt(tgtObj.css("border-bottom-width"),10);
-        var tBordTop = parseInt(tgtObj.css("border-top-width"),10);  
         imgObj.height(wHeight);
-        var tAdjust = tPadBot+tPadTop+tBordBot+tBordTop;
-        var sAdjust = sPadBot+sPadTop+sBordBot+sBordTop+2;
-        tgtObj.height(wHeight-tAdjust);
-        srcObj.height(wHeight-sAdjust);
+        tgtObj.height(wHeight-this.viAdjust(tgtObj));
+        srcObj.height(wHeight-this.viAdjust(srcObj,true));
     };
     this.describeSimpleProp = function(name,prop,by) {
         var info = "<p><b>"+name+"</b> will be marked by "+by;
@@ -975,99 +986,116 @@ function MMLEditor(opts, dialect) {
      * @return a plain text description of the dialect
      */
     this.displayInfo = function() {
-        var i;
-        var info = "";
-        info += "<h2>Novel markup for De Roberto</h2>";
-        info += this.describeSimpleProp("Sections",this.dialect.sections,"two blank lines");
-        info += this.describeSimpleProp("Paragraphs",this.dialect.paragraphs,"one blank line");
-        info += this.describeSimpleProp("Preformatted sections",this.dialect.codeblocks,
-            "four initial spaces");
-        info += this.describeSimpleProp("Quotations",this.dialect.quotations,
-            "initial '> ', which may be nested");
-        if ( this.dialect.softhyphens )
-            info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line will be joined up, "
-             +"and the hyphen labelled 'soft-hyphen', which will be invisible but "
-             +"still present. On save, soft-hyphens will be converted into visible "
-             +"hard-hyphens if both halves are words in the current language, and "
-             +"the hyphenated word is not listed as an exception.</p>";
+        if ( !this.infoDisplayed )
+        {
+            var i;
+            var info = "";
+            info += "<h2>Novel markup for De Roberto</h2>";
+            info += this.describeSimpleProp("Sections",this.dialect.sections,"two blank lines");
+            info += this.describeSimpleProp("Paragraphs",this.dialect.paragraphs,"one blank line");
+            info += this.describeSimpleProp("Preformatted sections",this.dialect.codeblocks,
+                "four initial spaces");
+            info += this.describeSimpleProp("Quotations",this.dialect.quotations,
+                "initial '> ', which may be nested");
+            if ( this.dialect.softhyphens )
+                info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line will be joined up, "
+                 +"and the hyphen labelled 'soft-hyphen', which will be invisible but "
+                 +"still present. On save, soft-hyphens will be converted into visible "
+                 +"hard-hyphens if both halves are words in the current language, and "
+                 +"the hyphenated word is not listed as an exception.</p>";
+            else
+                info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line "
+                     +"will <em>not</em> be joined up.</p>";
+            if ( this.dialect.smartquotes )
+                info += "<p>Single and double plain <b>quotation marks</b> will be converted "
+                     +"automatically into curly quotes.</p>";
+            else
+                info += "<p>Single and double plain <b>quotation marks</b> will be left unchanged.</p>";
+            if ( this.dialect.headings != undefined && this.dialect.headings.length > 0 )
+            {
+                info += "<h3>Headings</h3><p>The following are defined:</p>";
+                for ( i=0;i<this.dialect.headings.length;i++ )
+                {
+                    var h = this.dialect.headings[i];
+                    var level = i+1;
+                    info += "<p>Text on a line followed by another line consisting entirely of "
+                         +h.tag+" characters will be displayed as a heading level "+level;
+                    if ( h.prop != undefined && h.prop.length>0 )
+                         info += ", and will be labelled '"+h.prop+"'.</p>";
+                    else
+                         info += ".</p>";
+                }
+            }
+            if ( this.dialect.dividers != undefined && this.dialect.dividers.length>0 )
+            {
+                info += "<p><h3>Dividers</h3>The following are defined:</p>";
+                for ( i=0;i<this.dialect.dividers.length;i++ )
+                {
+                    var d = this.dialect.dividers[i];
+                    if ( d.prop != undefined )
+                        info += "<p>"+d.tag+" on a line by itself will drawn in "
+                             +"accordance with the stylesheet definition for '"
+                             +d.prop+"', and will be labelled '"+d.prop+"'.</p>";
+                }
+            }
+            if ( this.dialect.charformats != undefined && this.dialect.charformats.length>0 )
+            {
+                info += "<h3>Character formats</h3><p>The following are defined:</p>";
+                for ( i=0;i<this.dialect.charformats.length;i++ )
+                {
+                    var c = this.dialect.charformats[i];
+                    if ( c.prop != undefined )
+                        info += "<p>Text within a paragraph that begins and ends with '"+c.tag
+                             + "' will drawn in accordance with the stylesheet definition for '"
+                             + c.prop+"', and will be labelled '"+c.prop+"'.</p>";
+                }
+            }
+            if ( this.dialect.paraformats != undefined && this.dialect.paraformats.length>0 )
+            {
+                info += "<h3>Paragraph formats</h3><p>The following are defined:</p>";
+                for ( i=0;i<this.dialect.paraformats.length;i++ )
+                {
+                    var p = this.dialect.paraformats[i];
+                    if ( p.prop != undefined && p.leftTag != undefined && p.rightTag != undefined )
+                        info += "<p>Text separated by one blank line before and after, "
+                             + "with '"+p.leftTag+"' at the start and '"+p.rightTag+"' at the end "
+                             + "will drawn in accordance with the stylesheet definition for "
+                             + p.prop+", and will be labelled '"+p.prop+"'.</p>";
+                }
+            }
+            if ( this.dialect.milestones != undefined && this.dialect.milestones.length>0 )
+            {
+                info += "<h3>Milestones</h3><p>The following are defined:</p>";
+                for ( i=0;i<this.dialect.milestones.length;i++ )
+                {
+                    var m = this.dialect.milestones[i];
+                    if ( m.prop != undefined && m.leftTag != undefined && m.rightTag != undefined )
+                        info += "<p>A line preceded by '"+m.leftTag+"' and followed by '"+m.rightTag
+                             +"' will mark an invisible dividing point that will be labelled '"
+                             + m.prop+"', and will have the value of the textual content.";
+                    if ( m.prop=="page" )
+                        info += " The page milestone will be used to align segments of the "
+                            + "transcription to the preview, and to fetch page images with that name.</p>";
+                    else
+                        info += "</p>";
+                }
+            }
+            $("#source").css("display","none");
+            $("#images").after('<div id="help"></div>');
+            var help = $("#help");
+            help.html(info);
+            help.width($("#target").width());
+            help.height($("#target").height());
+            this.infoDisplayed = true;
+            $("#info").val("edit");
+        }
         else
-            info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line "
-                 +"will <em>not</em> be joined up.</p>";
-        if ( this.dialect.smartquotes )
-            info += "<p>Single and double plain <b>quotation marks</b> will be converted "
-                 +"automatically into curly quotes.</p>";
-        else
-            info += "<p>Single and double plain <b>quotation marks</b> will be left unchanged.</p>";
-        if ( this.dialect.headings != undefined && this.dialect.headings.length > 0 )
         {
-            info += "<h3>Headings</h3><p>The following are defined:</p>";
-            for ( i=0;i<this.dialect.headings.length;i++ )
-            {
-                var h = this.dialect.headings[i];
-                var level = i+1;
-                info += "<p>Text on a line followed by another line consisting entirely of "
-                     +h.tag+" characters will be displayed as a heading level "+level;
-                if ( h.prop != undefined && h.prop.length>0 )
-                     info += ", and will be labelled '"+h.prop+"'.</p>";
-                else
-                     info += ".</p>";
-            }
+            $("#help").remove();
+            this.infoDisplayed = false;
+            $("#source").css("display","inline-block");
+            $("#info").val("info");
         }
-        if ( this.dialect.dividers != undefined && this.dialect.dividers.length>0 )
-        {
-            info += "<p><h3>Dividers</h3>The following are defined:</p>";
-            for ( i=0;i<this.dialect.dividers.length;i++ )
-            {
-                var d = this.dialect.dividers[i];
-                if ( d.prop != undefined )
-                    info += "<p>"+d.tag+" on a line by itself will drawn in "
-                         +"accordance with the stylesheet definition for '"
-                         +d.prop+"', and will be labelled '"+d.prop+"'.</p>";
-            }
-        }
-        if ( this.dialect.charformats != undefined && this.dialect.charformats.length>0 )
-        {
-            info += "<h3>Character formats</h3><p>The following are defined:</p>";
-            for ( i=0;i<this.dialect.charformats.length;i++ )
-            {
-                var c = this.dialect.charformats[i];
-                if ( c.prop != undefined )
-                    info += "<p>Text within a paragraph that begins and ends with '"+c.tag
-                         + "' will drawn in accordance with the stylesheet definition for '"
-                         + c.prop+"', and will be labelled '"+c.prop+"'.</p>";
-            }
-        }
-        if ( this.dialect.paraformats != undefined && this.dialect.paraformats.length>0 )
-        {
-            info += "<h3>Paragraph formats</h3><p>The following are defined:</p>";
-            for ( i=0;i<this.dialect.paraformats.length;i++ )
-            {
-                var p = this.dialect.paraformats[i];
-                if ( p.prop != undefined && p.leftTag != undefined && p.rightTag != undefined )
-                    info += "<p>Text separated by one blank line before and after, "
-                         + "with '"+p.leftTag+"' at the start and '"+p.rightTag+"' at the end "
-                         + "will drawn in accordance with the stylesheet definition for "
-                         + p.prop+", and will be labelled '"+p.prop+"'.</p>";
-            }
-        }
-        if ( this.dialect.milestones != undefined && this.dialect.milestones.length>0 )
-        {
-            info += "<h3>Milestones</h3><p>The following are defined:</p>";
-            for ( i=0;i<this.dialect.milestones.length;i++ )
-            {
-                var m = this.dialect.milestones[i];
-                if ( m.prop != undefined && m.leftTag != undefined && m.rightTag != undefined )
-                    info += "<p>A line preceded by '"+m.leftTag+"' and followed by '"+m.rightTag
-                         +"' will mark an invisible dividing point that will be labelled '"
-                         + m.prop+"', and will have the value of the textual content.";
-                if ( m.prop=="page" )
-                    info += " The page milestone will be used to align segments of the "
-                        + "transcription to the preview, and to fetch page images with that name.</p>";
-                else
-                    info += "</p>";
-            }
-        }
-        return info;
     };
     // this sets up the timer for updating
     window.setInterval(
