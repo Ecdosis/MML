@@ -915,6 +915,25 @@ function MMLEditor(opts, dialect) {
         elemToScroll[0].scrollTop = pos; 
     };
     /**
+     * Get the sum of the horizontalborder, padding and optionally margin
+     * @param jqObj the jQuery object to measure
+     * @param marg if true add the horizontal margin values
+     * @return the sum of the horizontal adjustments
+     */
+    this.hiAdjust = function( jqObj, marg )
+    {
+        var padLeft = parseInt(jqObj.css("padding-left"),10);
+        var padRight = parseInt(jqObj.css("padding-right"),10);  
+        var bordLeft = parseInt(jqObj.css("border-left-width"),10);
+        var bordRight = parseInt(jqObj.css("border-right-width"),10);
+        var margLeft = parseInt(jqObj.css("margin-left"),10);
+        var margRight = parseInt(jqObj.css("margin-right"),10);
+        var adjust = padLeft+padRight+bordLeft+bordRight;
+        if ( marg )
+            adjust += margLeft+margRight;
+        return adjust;
+    };
+    /**
      * Resize manually to full window height/width. This won't work if we 
      * are embedded in a CMS, but imgObj.parent().height() returns 0. Need
      * some better solution to wHeight and wWidth computation
@@ -923,12 +942,13 @@ function MMLEditor(opts, dialect) {
         var imgObj = $("#"+this.opts.images);
         var srcObj = $("#"+this.opts.source);
         var tgtObj = $("#"+this.opts.target);
-        var wHeight = $(window).height();
-        var wWidth = $(window).width()-50;
+        var topOffset = imgObj.parent().position().top;
+        var wHeight = $(window).height()-topOffset;
+        var wWidth = imgObj.parent().outerWidth();
         // compute width
-        imgObj.width(Math.floor(wWidth/3));
-        tgtObj.width(Math.floor(wWidth/3));
-        srcObj.width(Math.floor(wWidth/3));
+        imgObj.width(Math.floor(wWidth/3)-this.hiAdjust(imgObj));
+        tgtObj.width(Math.floor(wWidth/3)-this.hiAdjust(tgtObj));
+        srcObj.width(Math.floor(wWidth/3)-this.hiAdjust(srcObj));
         // compute height
         var sPadBot = parseInt(srcObj.css("padding-bottom"),10);
         var sPadTop = parseInt(srcObj.css("padding-top"),10);  
@@ -941,7 +961,6 @@ function MMLEditor(opts, dialect) {
         imgObj.height(wHeight);
         var tAdjust = tPadBot+tPadTop+tBordBot+tBordTop;
         var sAdjust = sPadBot+sPadTop+sBordBot+sBordTop+2;
-        console.log(wHeight);
         tgtObj.height(wHeight-tAdjust);
         srcObj.height(wHeight-sAdjust);
     };

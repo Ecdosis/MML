@@ -1,3 +1,5 @@
+/* overall container div */
+#wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
 /* box to receive text */
 #target { width: 430px; height:480px; border: 1px solid; float: left; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */

@@ -35,7 +35,7 @@ public class MMLGetHandler extends MMLHandler {
         HttpServletResponse response, String urn) throws MMLException {
         try {
             String service = Utils.first(urn);
-            System.out.println(urn );
+            //System.out.println(urn );
             if (service.equals(Service.TEST.toString())) {
                 try {
                     String second = Utils.second(urn);

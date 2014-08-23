@@ -84,16 +84,19 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "js/mml.js" );
         String editor = readFile( "js/editor.js" );
         doc.getHead().addScript( editor );
+        Element wrapper = new Element("div");
+        wrapper.addAttribute("id","wrapper");
         Element images = new Element("div");
         images.addAttribute("id", "images");
-        doc.addElement(images );
+        wrapper.addElement( images );
         Element textarea = new Element( "textarea" );
         textarea.addAttribute("id", "source" );
         String mml = readFile("test/DeRoberto-1920.mml");
         textarea.addText( mml );
-        doc.addElement( textarea );
+        wrapper.addElement( textarea );
         Element target = new Element("div");
         target.addAttribute("id","target");
-        doc.addElement( target );
+        wrapper.addElement( target );
+        doc.addElement( wrapper );
     }
 }
