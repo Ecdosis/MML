@@ -12,19 +12,19 @@ function RefLoc( ref, loc) {
  * In the first panel there is a succession of page-images.
  * In the second an editable text in a minimal markup language (MML).
  * In the third a HTML preview generated from the editable text.
- * The MML diaclet is defined from a JSON opts object.
+ * The MML dialect is defined via a JSON object.
  * To use it just create one:
  * var editor = new MMLEditor(opts,dialect);
  * @param opts the options neede to run MMLEditor:
  * source: the ID of a textarea on the page (no leading "#")
- * target: the ID of an empty div element (no leading "#")
- * images: the ID of the div to receive the images
+ * target: the ID of an empty div element (ditto)
+ * images: the ID of the div to receive the images (ditto)
  * data: contains the keys 
  *      prefix - the prefix before each image name
  *      suffix: the suffix for each image name e.g. ".png"
  *      url: the url to fetch the images from
         desc: an array of ref, width and height keys for each image
- * @param dialect an MML dialect description in JSON format, see mml-dialect.md
+ * @param dialect an MML dialect description in JSON format, see README.md
  */
 function MMLEditor(opts, dialect) {
     /** set to true when source altered, controls updating */
@@ -858,7 +858,7 @@ function MMLEditor(opts, dialect) {
             return ",0.0";
     };
     /**
-     * Load the images. 
+     * Load the images by just creating HTML &lt;img&gt; elements. 
      */
     this.loadImages = function() {
         var div = $("#"+this.opts.images);
@@ -915,7 +915,7 @@ function MMLEditor(opts, dialect) {
         elemToScroll[0].scrollTop = pos; 
     };
     /**
-     * Get the sum of the horizontalborder, padding and optionally margin
+     * Get the sum of the horizontal border, padding and optionally margin
      * @param jqObj the jQuery object to measure
      * @param marg if true add the horizontal margin values
      * @return the sum of the horizontal adjustments
@@ -934,9 +934,7 @@ function MMLEditor(opts, dialect) {
         return adjust;
     };
     /**
-     * Resize manually to full window height/width. This won't work if we 
-     * are embedded in a CMS, but imgObj.parent().height() returns 0. Need
-     * some better solution to wHeight and wWidth computation
+     * Resize manually to parent element width, height to bottom of screen. 
      */
     this.resize = function() {
         var imgObj = $("#"+this.opts.images);
@@ -964,6 +962,113 @@ function MMLEditor(opts, dialect) {
         tgtObj.height(wHeight-tAdjust);
         srcObj.height(wHeight-sAdjust);
     };
+    this.describeSimpleProp = function(name,prop,by) {
+        var info = "<p><b>"+name+"</b> will be marked by "+by;
+        if ( prop != undefined && prop.prop != undefined && prop.prop.length > 0 )
+            info += ", and will be labelled '"+prop.prop+"'</p>\n";
+        else
+            info += ".</p>\n";
+        return info;
+    };
+    /** 
+     * Display info about the dialect
+     * @return a plain text description of the dialect
+     */
+    this.displayInfo = function() {
+        var i;
+        var info = "";
+        info += "<h2>Novel markup for De Roberto</h2>";
+        info += this.describeSimpleProp("Sections",this.dialect.sections,"two blank lines");
+        info += this.describeSimpleProp("Paragraphs",this.dialect.paragraphs,"one blank line");
+        info += this.describeSimpleProp("Preformatted sections",this.dialect.codeblocks,
+            "four initial spaces");
+        info += this.describeSimpleProp("Quotations",this.dialect.quotations,
+            "initial '> ', which may be nested");
+        if ( this.dialect.softhyphens )
+            info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line will be joined up, "
+             +"and the hyphen labelled 'soft-hyphen', which will be invisible but "
+             +"still present. On save, soft-hyphens will be converted into visible "
+             +"hard-hyphens if both halves are words in the current language, and "
+             +"the hyphenated word is not listed as an exception.</p>";
+        else
+            info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line "
+                 +"will <em>not</em> be joined up.</p>";
+        if ( this.dialect.smartquotes )
+            info += "<p>Single and double plain <b>quotation marks</b> will be converted "
+                 +"automatically into curly quotes.</p>";
+        else
+            info += "<p>Single and double plain <b>quotation marks</b> will be left unchanged.</p>";
+        if ( this.dialect.headings != undefined && this.dialect.headings.length > 0 )
+        {
+            info += "<h3>Headings</h3><p>The following are defined:</p>";
+            for ( i=0;i<this.dialect.headings.length;i++ )
+            {
+                var h = this.dialect.headings[i];
+                var level = i+1;
+                info += "<p>Text on a line followed by another line consisting entirely of "
+                     +h.tag+" characters will be displayed as a heading level "+level;
+                if ( h.prop != undefined && h.prop.length>0 )
+                     info += ", and will be labelled '"+h.prop+"'.</p>";
+                else
+                     info += ".</p>";
+            }
+        }
+        if ( this.dialect.dividers != undefined && this.dialect.dividers.length>0 )
+        {
+            info += "<p><h3>Dividers</h3>The following are defined:</p>";
+            for ( i=0;i<this.dialect.dividers.length;i++ )
+            {
+                var d = this.dialect.dividers[i];
+                if ( d.prop != undefined )
+                    info += "<p>"+d.tag+" on a line by itself will drawn in "
+                         +"accordance with the stylesheet definition for '"
+                         +d.prop+"', and will be labelled '"+d.prop+"'.</p>";
+            }
+        }
+        if ( this.dialect.charformats != undefined && this.dialect.charformats.length>0 )
+        {
+            info += "<h3>Character formats</h3><p>The following are defined:</p>";
+            for ( i=0;i<this.dialect.charformats.length;i++ )
+            {
+                var c = this.dialect.charformats[i];
+                if ( c.prop != undefined )
+                    info += "<p>Text within a paragraph that begins and ends with '"+c.tag
+                         + "' will drawn in accordance with the stylesheet definition for '"
+                         + c.prop+"', and will be labelled '"+c.prop+"'.</p>";
+            }
+        }
+        if ( this.dialect.paraformats != undefined && this.dialect.paraformats.length>0 )
+        {
+            info += "<h3>Paragraph formats</h3><p>The following are defined:</p>";
+            for ( i=0;i<this.dialect.paraformats.length;i++ )
+            {
+                var p = this.dialect.paraformats[i];
+                if ( p.prop != undefined && p.leftTag != undefined && p.rightTag != undefined )
+                    info += "<p>Text separated by one blank line before and after, "
+                         + "with '"+p.leftTag+"' at the start and '"+p.rightTag+"' at the end "
+                         + "will drawn in accordance with the stylesheet definition for "
+                         + p.prop+", and will be labelled '"+p.prop+"'.</p>";
+            }
+        }
+        if ( this.dialect.milestones != undefined && this.dialect.milestones.length>0 )
+        {
+            info += "<h3>Milestones</h3><p>The following are defined:</p>";
+            for ( i=0;i<this.dialect.milestones.length;i++ )
+            {
+                var m = this.dialect.milestones[i];
+                if ( m.prop != undefined && m.leftTag != undefined && m.rightTag != undefined )
+                    info += "<p>A line preceded by '"+m.leftTag+"' and followed by '"+m.rightTag
+                         +"' will mark an invisible dividing point that will be labelled '"
+                         + m.prop+"', and will have the value of the textual content.";
+                if ( m.prop=="page" )
+                    info += " The page milestone will be used to align segments of the "
+                        + "transcription to the preview, and to fetch page images with that name.</p>";
+                else
+                    info += "</p>";
+            }
+        }
+        return info;
+    };
     // this sets up the timer for updating
     window.setInterval(
         (function(self) {
@@ -981,6 +1086,7 @@ function MMLEditor(opts, dialect) {
             }
         })(this)
     );
+    // scroll the textarea
     $("#"+opts.source).scroll( 
         (function(self) {
             return function(e) {
@@ -994,6 +1100,7 @@ function MMLEditor(opts, dialect) {
             }
         })(this)
     );
+    // scroll the preview
     $("#"+opts.target).scroll(
         (function(self) {
             return function(e) {
@@ -1008,6 +1115,7 @@ function MMLEditor(opts, dialect) {
             }
         })(this)
     );
+    // scroll the images
     $("#"+opts.images).scroll(
         (function(self) {
             return function(e) {

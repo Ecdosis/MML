@@ -73,6 +73,29 @@ public class Editor extends Test
         }
     }
     /**
+     * Create a temporary toolbar at the top.
+     * @return a div element with some buttons
+     */
+    Element createToolbar()
+    {
+        Element wrapper = new Element("div");
+        wrapper.addAttribute("id","toolbar-wrapper");
+        Element toolbar = new Element("div");
+        toolbar.addAttribute("id","toolbar");
+        Element save = new Element("input");
+        save.addAttribute("type","button");
+        save.addAttribute("value","save");
+        save.addAttribute("id","save");
+        wrapper.addElement(save);
+        Element info = new Element("input");
+        info.addAttribute("type","button");
+        info.addAttribute("value","info");
+        info.addAttribute("id","info");
+        wrapper.addElement(info);
+        toolbar.addElement( wrapper );
+        return toolbar;
+    }
+    /**
      * Build the test age for the editor
      * @throws MMLTestException 
      */
@@ -84,14 +107,8 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "js/mml.js" );
         String editor = readFile( "js/editor.js" );
         doc.getHead().addScript( editor );
-        Element toolbar = new Element("div");
-        toolbar.addAttribute("id","toolbar");
-        Element save = new Element("input");
-        save.addAttribute("type","button");
-        save.addAttribute("value","save");
-        save.addAttribute("id","save");
-        toolbar.addElement(save);
-        doc.addElement(toolbar );
+        Element toolbar = createToolbar();
+        doc.addElement( toolbar );
         Element wrapper = new Element("div");
         wrapper.addAttribute("id","wrapper");
         Element images = new Element("div");

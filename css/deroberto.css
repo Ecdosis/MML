@@ -1,8 +1,9 @@
 /* overall container div */
 #wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
+#toolbar-wrapper { width: 10%;    margin: 0 auto; }
 /* temporary toolbar */
 #toolbar { background: darkgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
-#save { margin: 0 auto; display: block }
+#save,#info { margin-left: 10px; margin-right:10px }
 /* box to receive text */
 #target { width: 430px; height:480px; border: 1px solid; float: left; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */
