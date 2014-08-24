@@ -114,6 +114,9 @@ public class Editor extends Test
         Element images = new Element("div");
         images.addAttribute("id", "images");
         wrapper.addElement( images );
+        Element help = new Element("div");
+        help.addAttribute("id", "help");
+        wrapper.addElement( help );
         Element textarea = new Element( "textarea" );
         textarea.addAttribute("id", "source" );
         String mml = readFile("test/DeRoberto-1920.mml");
