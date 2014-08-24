@@ -1019,7 +1019,7 @@ function MMLEditor(opts, dialect) {
             {
                 var d = this.dialect.dividers[i];
                 if ( d.prop != undefined )
-                    info += "<p>"+d.tag+" on a line by itself will drawn in "
+                    info += "<p>"+d.tag+" on a line by itself will be drawn in "
                          +"accordance with the stylesheet definition for '"
                          +d.prop+"', and will be labelled '"+d.prop+"'.</p>";
             }
@@ -1032,7 +1032,7 @@ function MMLEditor(opts, dialect) {
                 var c = this.dialect.charformats[i];
                 if ( c.prop != undefined )
                     info += "<p>Text within a paragraph that begins and ends with '"+c.tag
-                         + "' will drawn in accordance with the stylesheet definition for '"
+                         + "' will be drawn in accordance with the stylesheet definition for '"
                          + c.prop+"', and will be labelled '"+c.prop+"'.</p>";
             }
         }
@@ -1045,7 +1045,7 @@ function MMLEditor(opts, dialect) {
                 if ( p.prop != undefined && p.leftTag != undefined && p.rightTag != undefined )
                     info += "<p>Text separated by one blank line before and after, "
                          + "with '"+p.leftTag+"' at the start and '"+p.rightTag+"' at the end "
-                         + "will drawn in accordance with the stylesheet definition for "
+                         + "will be drawn in accordance with the stylesheet definition for "
                          + p.prop+", and will be labelled '"+p.prop+"'.</p>";
             }
         }
