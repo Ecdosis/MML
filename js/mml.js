@@ -1081,7 +1081,7 @@ function MMLEditor(opts, dialect) {
         var wHeight = $(window).height()-topOffset;
         var wWidth = imgObj.parent().outerWidth();
         // compute width
-        imgObj.width(Math.floor(wWidth/3)-this.hiAdjust(imgObj));
+        imgObj.width(Math.floor(wWidth/3));
         tgtObj.width(Math.floor(wWidth/3)-this.hiAdjust(tgtObj));
         helpObj.width(Math.floor(wWidth/3)-this.hiAdjust(helpObj));
         srcObj.width(Math.floor(wWidth/3)-this.hiAdjust(srcObj));
@@ -1152,7 +1152,8 @@ function MMLEditor(opts, dialect) {
                     var loc = self.getPixelPage($(this),self.html_lines);
                     self.scrollTo(loc,self.page_lines,$("#"+self.opts.source),lineHeight);
                     // for some reason this causes feedback, but it works without!!
-                    //self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
+                    if ( self.infoDisplayed )
+                        self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
                 }
             }
         })(this)
@@ -1163,11 +1164,14 @@ function MMLEditor(opts, dialect) {
             return function(e) {
                 if ( e.originalEvent )
                 {
+                    if ( this.infoDisplayed )
+                        console.log("nfo being displayed!");
                     var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
                     var loc = self.getPixelPage($(this),self.image_lines);
                     self.scrollTo(loc,self.page_lines,$("#"+self.opts.source),lineHeight);
                     self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
-                }
+                } else if ( this.infoDisplayed )
+                    console.log("not scolling images because e.originalEvent is null");
             }
         })(this)
     );
