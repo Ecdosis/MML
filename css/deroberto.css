@@ -1,12 +1,32 @@
 /* overall container div */
 #wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
 /* temporary toolbar */
-.glyphicon  {
-    font-size: 1.2em;
+.edit-button, .info-button, .save-button, .saved-button {
+    padding-left: 15px;
+    height: 30px;
+    width: 32px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+.edit-button {
+    background: url('./images/glyphicons_150_edit.png') center no-repeat;
+    cursor: pointer;
+}
+.info-button {
+    background: url('./images/glyphicons_195_circle_info.png') center no-repeat;
+    cursor: pointer;
+}
+.save-button {
+    background: url('./images/glyphicons_446_floppy_save.png') center no-repeat;
+    cursor: pointer;
+}
+.saved-button {
+    background: url('./images/glyphicons_444_floppy_saved.png') center no-repeat;
 }
 #toolbar-wrapper { text-align: center; display: block; }
 #toolbar { background: lightgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
-#save,#info,#saved,#toolbar-wrapper { margin-left: 10px; margin-right:10px }
+#save,#info,#toolbar-wrapper { margin-left: 10px; margin-right:10px }
 /* box to receive text */
 #target { width: 430px; height:480px; border: 1px solid; float: right; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */

@@ -1103,6 +1103,7 @@ function MMLEditor(opts, dialect) {
             $("#"+this.opts.source).css("display","none");
             $("#help").css("display","inline-block");
             $("#info").val("edit");
+            $("#info").attr("title","back to editing");
             this.toggleInfo();
         }
         else
@@ -1111,6 +1112,7 @@ function MMLEditor(opts, dialect) {
             $("#help").css("display","none");
             $("#"+this.opts.source).css("display","inline-block");
             $("#info").val("info");
+            $("#info").attr("title","about the markup");
             this.toggleInfo();
         }
         this.resize();
@@ -1135,15 +1137,16 @@ function MMLEditor(opts, dialect) {
     this.toggleSave = function() {
         if ( !this.saved  )
         {
-            $("#saveicon").attr("class","glyphicon glyphicon-floppy-save");
             $("#save").removeAttr("disabled");
             $("#save").attr("title","save");
+            $("#save").attr("class","save-button");
         }
         else
         {
-            $("#saveicon").attr("class","glyphicon glyphicon-floppy-saved");
             $("#save").attr("disabled","disabled");
             $("#save").attr("title","saved");
+            $("#save").attr("class","saved-button");
+            
         }
     };
     /**
@@ -1151,9 +1154,9 @@ function MMLEditor(opts, dialect) {
      */
     this.toggleInfo = function() {
         if ( !this.infoDisplayed  )
-            $("#infoicon").attr("class","glyphicon glyphicon-info-sign");
+            $("#info").attr("class","info-button");
         else
-            $("#infoicon").attr("class","glyphicon glyphicon-edit");
+            $("#info").attr("class","edit-button");
     };
     // this sets up the timer for updating
     window.setInterval(
