@@ -113,10 +113,14 @@ public class MMLPostHandler extends MMLHandler
      * @param request the raw request
      * @param response the response we will write to
      * @param urn the rest of the URL after stripping off the context
-     * @throws TiltException 
+     * @throws MMLException 
      */
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
     {
+        String json = request.getParameter("dialect");
+        String html = request.getParameter("HTML");
+        System.out.println(json);
+        System.out.println(html);
     }
 }

@@ -24,7 +24,7 @@ import mml.exception.*;
 import html.*;
 import java.io.File;
 import java.io.FileInputStream;
-
+import mml.Utils;
 
 /**
  * Test interface for editor
@@ -32,6 +32,8 @@ import java.io.FileInputStream;
  */
 public class Editor extends Test
 {
+    String service;
+    String host;
     public Editor()
     {
         super();
@@ -42,6 +44,8 @@ public class Editor extends Test
     {
         try
         {
+            this.service = Utils.first(request.getRequestURI());
+            this.host = request.getServerName();
             composePage();
             response.setContentType("text/html;charset=UTF-8");
             response.getWriter().println(doc);
@@ -82,14 +86,23 @@ public class Editor extends Test
         wrapper.addAttribute("id","toolbar-wrapper");
         Element toolbar = new Element("div");
         toolbar.addAttribute("id","toolbar");
-        Element save = new Element("input");
-        save.addAttribute("type","button");
-        save.addAttribute("value","save");
+        Element save = new Element("button");
+        save.addAttribute("class", "btn btn-default");
+        save.addAttribute("title","save");
+        Element saveIcon = new Element("span");
+        saveIcon.addAttribute("class","glyphicon glyphicon-floppy-saved");
+        saveIcon.addAttribute("id","saveicon");
+        save.addAttribute("disabled","disabled");
+        save.addElement(saveIcon);
         save.addAttribute("id","save");
         wrapper.addElement(save);
-        Element info = new Element("input");
-        info.addAttribute("type","button");
-        info.addAttribute("value","info");
+        Element info = new Element("button");
+        info.addAttribute("class", "btn btn-default");
+        info.addAttribute("title","about the markup");
+        Element infoIcon = new Element("span");
+        infoIcon.addAttribute("class","glyphicon glyphicon-info-sign");
+        infoIcon.addAttribute("id","infoicon");
+        info.addElement(infoIcon);
         info.addAttribute("id","info");
         wrapper.addElement(info);
         toolbar.addElement( wrapper );
@@ -102,7 +115,9 @@ public class Editor extends Test
     void composePage()throws MMLTestException
     {
         doc.getHead().addEncoding( encoding );
+        doc.getHead().addCssFile("css/bootstrap-glyphicons.css");
         doc.getHead().addCssFile("css/deroberto.css");
+        doc.getHead().addCssFile("css/bootstrap.css");
         doc.getHead().addScriptFile( "js/jquery-1.11.1.js" );
         doc.getHead().addScriptFile( "js/mml.js" );
         String editor = readFile( "js/editor.js" );

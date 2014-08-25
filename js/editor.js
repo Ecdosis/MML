@@ -1,6 +1,7 @@
 $( document ).ready(function() {
   var dialect = {
         "description": "Novel markup for De Roberto",
+        "language": "it",
         "section": {"prop": "section"},
         "paragraph": {"prop": ""},
         "codeblocks": {"prop": ""},
@@ -17,6 +18,7 @@ $( document ).ready(function() {
         "source": "source",
         "target": "target",
         "images": "images",
+        "formid": "tostil",
         "data": {
             "prefix": "p",
             "suffix": ".png",
@@ -67,5 +69,8 @@ $( document ).ready(function() {
    var editor = new MMLEditor(opts, dialect);
    $("#info").click( function() {
         editor.toggleHelp();
+   });
+   $("#save").click( function() {
+        editor.save();
    });
 }); 

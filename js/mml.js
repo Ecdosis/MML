@@ -29,6 +29,8 @@ function RefLoc( ref, loc) {
 function MMLEditor(opts, dialect) {
     /** set to true when source altered, controls updating */
     this.changed = true;
+    /** set to false whenever use edits and does not save*/
+    this.saved = true;
     /** quote chars for smartquotes */
     this.quotes = {"'":1,"‘":1,"’":1,'"':1,'”':1,'“':1};
     /** number of lines in textarea source */
@@ -1101,6 +1103,7 @@ function MMLEditor(opts, dialect) {
             $("#"+this.opts.source).css("display","none");
             $("#help").css("display","inline-block");
             $("#info").val("edit");
+            this.toggleInfo();
         }
         else
         {
@@ -1108,8 +1111,49 @@ function MMLEditor(opts, dialect) {
             $("#help").css("display","none");
             $("#"+this.opts.source).css("display","inline-block");
             $("#info").val("info");
+            this.toggleInfo();
         }
         this.resize();
+    };
+    /**
+     * Save the current state of the preview to the server
+     */
+    this.save = function() {
+        $.post( "", (function(self) {
+            return function() {
+                self.saved = true;
+                self.toggleSave();
+            }
+        })(this))
+        .fail(function() {
+            alert("Save failed. Please try again");
+        });
+    };
+    /**
+     * Do whatever is needed to indicate that the document has/has not been saved
+     */
+    this.toggleSave = function() {
+        if ( !this.saved  )
+        {
+            $("#saveicon").attr("class","glyphicon glyphicon-floppy-save");
+            $("#save").removeAttr("disabled");
+            $("#save").attr("title","save");
+        }
+        else
+        {
+            $("#saveicon").attr("class","glyphicon glyphicon-floppy-saved");
+            $("#save").attr("disabled","disabled");
+            $("#save").attr("title","saved");
+        }
+    };
+    /**
+     * Do whatever is needed to indicate the information status
+     */
+    this.toggleInfo = function() {
+        if ( !this.infoDisplayed  )
+            $("#infoicon").attr("class","glyphicon glyphicon-info-sign");
+        else
+            $("#infoicon").attr("class","glyphicon glyphicon-edit");
     };
     // this sets up the timer for updating
     window.setInterval(
@@ -1125,6 +1169,11 @@ function MMLEditor(opts, dialect) {
         (function(self) {
             return function() {
                 self.changed = true;
+                if ( self.saved )
+                {
+                    self.saved = false;
+                    self.toggleSave();
+                }
             }
         })(this)
     );

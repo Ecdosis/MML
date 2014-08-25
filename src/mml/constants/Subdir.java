@@ -12,5 +12,5 @@ package mml.constants;
  */
 public enum Subdir 
 {
-    JS,CSS,IMAGES;
+    JS,CSS,IMAGES,FONTS;
 }

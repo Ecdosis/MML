@@ -1,9 +1,12 @@
 /* overall container div */
 #wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
 /* temporary toolbar */
+.glyphicon  {
+    font-size: 1.2em;
+}
 #toolbar-wrapper { text-align: center; display: block; }
-#toolbar { background: darkgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
-#save,#info { margin-left: 10px; margin-right:10px }
+#toolbar { background: lightgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
+#save,#info,#saved,#toolbar-wrapper { margin-left: 10px; margin-right:10px }
 /* box to receive text */
 #target { width: 430px; height:480px; border: 1px solid; float: right; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */
