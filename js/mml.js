@@ -1121,15 +1121,31 @@ function MMLEditor(opts, dialect) {
      * Save the current state of the preview to the server
      */
     this.save = function() {
-        $.post( "", (function(self) {
-            return function() {
-                self.saved = true;
-                self.toggleSave();
+        var jsonStr = JSON.stringify(this.dialect);
+        var html = $("#"+this.opts.target).html();
+        var docid = $("#DOCID").val();
+        var obj = {
+            docid: docid,
+                dialect: jsonStr,
+                html: html, 
+        };
+        var url = window.location.protocol
+            +"//"+window.location.host
+            +"/"+window.location.pathname.split("/")[1]
+            +"/html";
+        $.ajax( url, 
+            {
+                type: "POST",
+                data: obj,
+                success: $.proxy(function(data, textStatus, jqXHR) {
+                        this.saved = true;
+                        this.toggleSave();
+                    },this),
+                error: function(jqXHR, textStatus, errorThrown ) {
+                    alert("Save failed. Error: "+textStatus+" ("+errorThrown+")");
+                }
             }
-        })(this))
-        .fail(function() {
-            alert("Save failed. Please try again");
-        });
+        );
     };
     /**
      * Do whatever is needed to indicate that the document has/has not been saved

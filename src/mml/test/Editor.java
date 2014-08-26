@@ -131,6 +131,11 @@ public class Editor extends Test
         Element target = new Element("div");
         target.addAttribute("id","target");
         wrapper.addElement( target );
+        Element docid = new Element("input");
+        docid.addAttribute("type","hidden");
+        docid.addAttribute("id","DOCID");
+        docid.addAttribute("value","italian/deroberto/ivicere/cap1");
+        wrapper.addElement(docid);
         doc.addElement( wrapper );
     }
 }

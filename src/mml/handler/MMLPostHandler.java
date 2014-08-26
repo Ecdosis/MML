@@ -16,17 +16,22 @@
  *  (c) copyright Desmond Schmidt 2014
  */
 package mml.handler;
-import java.util.List;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.*;
 
 import mml.exception.*;
 import java.net.InetAddress;
+import java.util.List;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import mml.constants.*;
+import mml.handler.json.STILDocument;
+import mml.handler.json.Range;
+import mml.constants.Params;
+import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+
 /**
  * Handle a POST request
  * @author desmond
@@ -35,78 +40,184 @@ public class MMLPostHandler extends MMLHandler
 {
     InetAddress poster;
     String html;
+    StringBuilder sb;
+    STILDocument stil;
+    JSONObject dialect;
+    String langCode;
+    String docid;
+    /**
+     * Create a POST handler for HTML that used to be MML
+     */
     public MMLPostHandler()
     {
         encoding = "UTF-8";
+        langCode = Locale.getDefault().getLanguage();
+        stil = new STILDocument();
     }
     /**
-     * Parse the import params from the request
-     * @param request the http request
+     * Parse a div (section)
+     * @param div the div
+     * @throws JSONException 
      */
-    private void parseImportParams( HttpServletRequest request ) 
-        throws MMLException
+    private void parseDiv( Element div ) throws JSONException
     {
-        try
+        List<Node> children = div.childNodes();
+        int offset = sb.length();
+        for ( Node child: children )
         {
-            FileItemFactory factory = new DiskFileItemFactory();
-            // Create a new file upload handler
-            ServletFileUpload upload = new ServletFileUpload(factory);
-            // Parse the request
-            List items = upload.parseRequest( request );
-            for ( int i=0;i<items.size();i++ )
+            if ( child instanceof Element )
             {
-                FileItem item = (FileItem) items.get( i );
-                if ( item.isFormField() )
+                String nName = child.nodeName().toLowerCase();
+                if ( nName.equals("p") )
+                    parsePara( (Element)child, "p" );
+                else if ( nName.matches("(h|H)\\d") )
+                    parsePara( (Element) child, nName );
+                else if ( child.nodeName().toLowerCase().equals("span") )
+                    parseSpan( (Element)child );
+                else
+                    parseOtherElement((Element)child);
+            }
+        }
+        sb.append("\n\n");
+        int len = sb.length()-offset;
+        String name = div.attr("class");
+        if ( name == null )
+            name = "section";
+        Range r = new Range( name, offset, len );
+        stil.add( r );
+    }
+    /**
+     * May happen but should not
+     * @param elem an element that is not a span, p or div
+     */
+    private void parseOtherElement( Element elem )
+    {
+        List<Node> children = elem.childNodes();
+        for ( Node child: children )
+        {
+            if ( child instanceof Element )
+                parseOtherElement( (Element)child );
+            else if ( child instanceof TextNode )
+                sb.append( ((TextNode)child).text() );
+        }
+    }
+    /**
+     * Parse a paragraph. These are always "p" elements, often with classes
+     * @param p the paragraph element from the document fragment
+     * @param defaultName the default name for the property
+     */
+    private void parsePara( Element p, String defaultName ) throws JSONException
+    {
+        List<Node> children = p.childNodes();
+        int offset = sb.length();
+        for ( Node child: children )
+        {
+            if ( child instanceof Element )
+            {
+                String nName = child.nodeName().toLowerCase();
+                if ( nName.equals("span") )
+                    parseSpan( (Element)child );
+                else
+                    parseOtherElement((Element)child);
+            }
+            else if ( child instanceof TextNode )
+            {
+                TextNode tn = (TextNode)child;
+                sb.append(tn.text());
+            }
+        }
+        sb.append("\n");
+        int len = sb.length()-offset;
+        String name = p.attr("class");
+        if ( name == null )
+            name = defaultName;
+        Range r = new Range( name, offset, len );
+        stil.add( r );
+    }
+    /**
+     * Check if the span name is a milestone
+     * @param name the name of the milestone property
+     * @return true if there is a prop in the milestones called name
+     */
+    boolean isMilestone( String name )
+    {
+        Object obj = dialect.get("milestones");
+        if ( obj != null )
+        {
+            JSONArray milestones = (JSONArray)obj;
+            for ( Object milestone : milestones )
+            {
+                if ( milestone instanceof JSONObject )
                 {
-                    String fieldName = item.getFieldName();
-                    if ( fieldName != null )
-                    {
-                        if ( fieldName.equals(Params.ENCODING) )
-                        {
-                            encoding = item.getString();
-                        }
-                    }
-                }
-                else if ( item.getName().length()>0 )
-                {
-                    try
-                    {
-                        // assuming that the contents are text
-                        // item.getName retrieves the ORIGINAL file name
-                        String type = item.getContentType();
-                        if ( type != null && type.equals("text/html") )
-                        {
-                            byte[] rawData = item.get();
-                            //System.out.println(encoding);
-                            html = new String(rawData, encoding);
-                        }
-                    }
-                    catch ( Exception e )
-                    {
-                        throw new MMLException( e );
-                    }
+                    JSONObject m = (JSONObject)milestone;
+                    if ( m.containsKey("prop") && ((String)m.get("prop")).equals(name) )
+                        return true;
                 }
             }
         }
-        catch ( Exception e )
-        {
-            throw new MMLException( e );
-        }
+        return false;
     }
     /**
-     * Get the sender's IP-address (prevent DoS via too many uploads)
-     * @param request raw request
-     * @return the server'sIP as a string
+     * Parse a span with a class or not
+     * @param span the span in HTML
      */
-    private InetAddress getIPAddress( HttpServletRequest request ) 
-        throws Exception
+    private void parseSpan( Element span ) throws JSONException
     {
-        String ipAddress = request.getHeader("HTTP_X_FORWARDED_FOR");
-        if (ipAddress == null) {
-            ipAddress = request.getRemoteAddr();
+        if ( span.hasText() )
+        {
+            if ( span.hasAttr("class") )
+            {
+                String name = span.attr("class");
+                int offset = sb.length();
+                this.sb.append( span.text() );
+                if ( isMilestone(name) )
+                {
+                    if ( sb.charAt(offset)!='\n' && offset >0 )
+                        sb.insert(offset,'\n');
+                    this.sb.append("\n");
+                }
+                int len = sb.length()-offset;
+                Range r = new Range(name, offset, len);
+                stil.add( r );
+            }
+            else
+                sb.append( span.text() );
         }
-        InetAddress addr = InetAddress.getByName(ipAddress);
-        return addr;
+        // else strangely no text: ignore it
+    }
+    /**
+     * Parse the body of the HTML fragment
+     * @param body should be contents of the target div in the editor
+     * @throws JSONException 
+     */
+    private void parseBody( Element body ) throws JSONException
+    {
+        this.sb = new StringBuilder();
+        if ( body.nodeName().toLowerCase().equals("div") )
+            parseDiv( body );
+        else
+        {
+            List<Node> children = body.childNodes();
+            for ( Node child: children )
+            {
+                if ( child instanceof Element )
+                {
+                    String nName = child.nodeName().toLowerCase();
+                    if ( nName.equals("div") )
+                        parseDiv( (Element)child);
+                    else if ( nName.equals("p") )
+                        parsePara((Element)child,"p");
+                    else if ( nName.equals("span") )
+                        parseSpan( (Element) child );
+                    else if ( nName.matches("(h|H)\\d") )
+                        parsePara( (Element) child, nName );
+                    else
+                        parseOtherElement( (Element)child );
+                    
+                }
+                // else it is insignificant white space
+            }
+        }
     }
     /**
      * Handle a POST request
@@ -118,9 +229,38 @@ public class MMLPostHandler extends MMLHandler
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
     {
-        String json = request.getParameter("dialect");
-        String html = request.getParameter("HTML");
-        System.out.println(json);
-        System.out.println(html);
+        try
+        {
+            // get required docid
+            docid = request.getParameter(Params.DOCID);
+            if ( docid == null || docid.length()==0 )
+                throw new MMLSaveException("Save where? No docid, mate");
+            // get required dialect
+            String d = request.getParameter(Params.DIALECT);
+            if ( d == null )
+                throw new MMLSaveException("Save how? Supply a dialect");
+            JSONObject jv = (JSONObject) JSONValue.parse(d);
+            if ( jv.get("language") != null )
+                this.langCode = (String)jv.get("language");
+            this.dialect = jv;
+            html = request.getParameter(Params.HTML);
+            if ( html == null )
+                throw new MMLSaveException("Save what? Supply some HTML!");
+            // get optional encoding if present
+            String enc = request.getParameter(Params.ENCODING);
+            if ( enc != null && enc.length()>0 )
+                this.encoding = enc;
+            sb = new StringBuilder();
+            Document doc = Jsoup.parseBodyFragment(html);
+            Element body = doc.body();  
+            parseBody( body );
+            // to do: send the text and STIL to the database
+            System.out.println(sb.toString());
+            System.out.println(dialect);
+        }
+        catch ( Exception e )
+        {
+            throw new MMLException(e);
+        }
     }
 }
