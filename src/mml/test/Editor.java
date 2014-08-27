@@ -25,6 +25,7 @@ import html.*;
 import java.io.File;
 import java.io.FileInputStream;
 import mml.Utils;
+import mml.constants.Params;
 
 /**
  * Test interface for editor
@@ -100,6 +101,32 @@ public class Editor extends Test
         toolbar.addElement( wrapper );
         return toolbar;
     }
+    void writeHiddenTag( Element parent, String name, String value  )
+    {
+        Element docid = new Element("input");
+        docid.addAttribute("type","hidden");
+        docid.addAttribute("name",name);
+        docid.addAttribute("value",value);
+        parent.addElement(docid);
+    }
+    /**
+     * Write the hidden metadata needed back by the server
+     */
+    void writeHiddenTags()
+    {
+        Element form = new Element("form");
+        // if visible it will take up space
+        form.addAttribute("style","display:none");
+        writeHiddenTag( form, Params.DOCID,"italian/deroberto/ivicere/cap1");
+        writeHiddenTag( form,Params.ENCODING,"UTF-8");
+        writeHiddenTag( form, Params.AUTHOR, "De Roberto" );
+        writeHiddenTag( form, Params.TITLE, "I Vicerè" );
+        writeHiddenTag( form, Params.STYLE,"italian/deroberto" ); 
+        writeHiddenTag( form, Params.FORMAT, "MVD/TEXT" );
+        writeHiddenTag( form, Params.SECTION, "cap1" );
+        writeHiddenTag( form, Params.VERSION1, "/Base/1920" );
+        doc.addElement( form );
+    }
     /**
      * Build the test age for the editor
      * @throws MMLTestException 
@@ -131,11 +158,7 @@ public class Editor extends Test
         Element target = new Element("div");
         target.addAttribute("id","target");
         wrapper.addElement( target );
-        Element docid = new Element("input");
-        docid.addAttribute("type","hidden");
-        docid.addAttribute("id","DOCID");
-        docid.addAttribute("value","italian/deroberto/ivicere/cap1");
-        wrapper.addElement(docid);
         doc.addElement( wrapper );
+        writeHiddenTags();
     }
 }

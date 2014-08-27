@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import mml.constants.Service;
+import mml.database.Repository;
+import mml.database.Connector;
 import mml.handler.*;
 import mml.exception.*;
 
@@ -35,6 +37,9 @@ import mml.exception.*;
 public class JettyServer extends AbstractHandler
 {
     static String host;
+    static String user;
+    static String password;
+    static int dbPort;
     public static int wsPort;
     /**
      * Main entry point
@@ -93,26 +98,45 @@ public class JettyServer extends AbstractHandler
     static boolean readArgs(String[] args)
     {
         boolean sane = true;
-        wsPort = 8083;
-        host = "localhost";
-        for ( int i=0;i<args.length;i++ )
+        try
         {
-            if ( args[i].charAt(0)=='-' && args[i].length()==2 )
+            wsPort = 8083;
+            host = "localhost";
+            Repository repository = Repository.MONGO;
+            for ( int i=0;i<args.length;i++ )
             {
-                if ( args.length>i+1 )
+                if ( args[i].charAt(0)=='-' && args[i].length()==2 )
                 {
-                    if ( args[i].charAt(1) == 'h' )
-                        host = args[i+1];
-                    else if ( args[i].charAt(1) == 'w' )
-                        wsPort = Integer.parseInt(args[i+1]);
+                    if ( args.length>i+1 )
+                    {
+                        if ( args[i].charAt(1) == 'u' )
+                            user = args[i+1];
+                        else if ( args[i].charAt(1) == 'p' )
+                            password = args[i+1];
+                        else if ( args[i].charAt(1) == 'h' )
+                            host = args[i+1];
+                        else if ( args[i].charAt(1) == 'd' )
+                            dbPort = Integer.parseInt(args[i+1]);
+                        else if ( args[i].charAt(1) == 'w' )
+                            wsPort = Integer.parseInt(args[i+1]);
+                        else if ( args[i].charAt(1) == 'r' )
+                            repository = Repository.valueOf(args[i+1]);
+                        else
+                            sane = false;
+                    } 
                     else
                         sane = false;
-                } 
-                else
-                    sane = false;
+                }
+                if ( !sane )
+                    break;
             }
-            if ( !sane )
-                break;
+            Connector.init( repository, user, 
+                password, host, dbPort, wsPort, "/var/www" );
+        }
+        catch ( Exception e )
+        {
+            e.printStackTrace( System.out );
+            sane = false;
         }
         return sane;
     }

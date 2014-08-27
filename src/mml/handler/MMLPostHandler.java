@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.handler.json.STILDocument;
 import mml.handler.json.Range;
-import mml.handler.json.JDocWrapper;
+import mml.handler.mvd.Archive;
 import mml.constants.Params;
 import mml.constants.Database;
 import org.json.simple.JSONValue;
@@ -419,19 +419,16 @@ public class MMLPostHandler extends MMLHandler
             Element body = doc.body();  
             parseBody( body );
             // to do: send the text and STIL to the database
-            HashMap<String,String> jsonKeys= new HashMap<>();
-            jsonKeys.put( "author", this.author );
-            jsonKeys.put( "title", this.title ); 
-            jsonKeys.put( "style", this.style); 
-            jsonKeys.put( "format", this.format); 
-            jsonKeys.put( "section", this.section ); 
-            jsonKeys.put( "version1", this.version1 );
-            jsonKeys.put( "docid", docid );
-            JDocWrapper jDoc = new JDocWrapper( sb.toString(), jsonKeys );
-            String jsonDoc = jDoc.toString();
+            Archive cortex = new Archive(title, 
+                this.author,"MVD/TEXT",encoding);
+            cortex.put( version1, html.getBytes(encoding) );
+//            Archive corcode = new Archive(title, 
+//                docID.getAuthor(),Formats.MVD_STIL,encoding);
+            String jsonDoc = cortex.toResource(docid);
+            System.out.println(cortex.getLog());
             String resp = Connector.getConnection().putToDb( 
                   Database.CORTEX, docid, jsonDoc );
-            System.out.println(dialect);
+            System.out.println(resp );
         }
         catch ( Exception e )
         {

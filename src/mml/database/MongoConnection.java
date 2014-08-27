@@ -104,8 +104,9 @@ public class MongoConnection extends Connection
             if ( obj != null )
                 return obj.toString();
             else
-                throw new FileNotFoundException( "failed to find "
-                    +collName+"/"+docID );
+                return null;
+//                throw new FileNotFoundException( "failed to find "
+//                    +collName+"/"+docID );
         }
         catch ( Exception e )
         {

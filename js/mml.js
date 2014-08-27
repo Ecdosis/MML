@@ -1123,12 +1123,15 @@ function MMLEditor(opts, dialect) {
     this.save = function() {
         var jsonStr = JSON.stringify(this.dialect);
         var html = $("#"+this.opts.target).html();
-        var docid = $("#DOCID").val();
         var obj = {
-            docid: docid,
-                dialect: jsonStr,
-                html: html, 
+            dialect: jsonStr,
+            html: html, 
         };
+        $("form").children().each( (function(obj) {
+            return function() {
+                obj[this.name] = $(this).val();
+            }
+        })(obj));
         var url = window.location.protocol
             +"//"+window.location.host
             +"/"+window.location.pathname.split("/")[1]
