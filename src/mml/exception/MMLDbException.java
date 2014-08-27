@@ -15,22 +15,28 @@
  *  along with MML.  If not, see <http://www.gnu.org/licenses/>.
  *  (c) copyright Desmond Schmidt 2014
  */
-package mml.constants;
+package mml.exception;
 
 /**
- * Parameters passed to and from the webapp
+ * Specific exception classes for various parts of TILT
  * @author desmond
  */
-public class Params 
+public class MMLDbException extends MMLException
 {
-    public static String DOCID="docid";
-    public static String ENCODING="encoding";
-    public static String HTML="html";
-    public static String DIALECT = "dialect";
-    public static String AUTHOR = "author";
-    public static String TITLE = "title"; 
-    public static String STYLE = "style"; 
-    public static String FORMAT = "format";
-    public static String SECTION = "section";
-    public static String VERSION1 = "version1";
+    /**
+     * Create a general MMLException from scratch
+     * @param message the message it is to bear
+     */
+    public MMLDbException( String message )
+    {
+        super( message );
+    }
+    /**
+     * Wrapper for another exception
+     * @param e the other exception
+     */
+    public MMLDbException( Exception e )
+    {
+        super( e );
+    }
 }

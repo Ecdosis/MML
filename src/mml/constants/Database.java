@@ -18,19 +18,23 @@
 package mml.constants;
 
 /**
- * Parameters passed to and from the webapp
+ * mongo database names
  * @author desmond
  */
-public class Params 
+public class Database 
 {
-    public static String DOCID="docid";
-    public static String ENCODING="encoding";
-    public static String HTML="html";
-    public static String DIALECT = "dialect";
-    public static String AUTHOR = "author";
-    public static String TITLE = "title"; 
-    public static String STYLE = "style"; 
-    public static String FORMAT = "format";
-    public static String SECTION = "section";
-    public static String VERSION1 = "version1";
+    /** database name for cortexs */
+    public static String CORTEX = "cortex";
+    /** database name for corcodes */
+    public static String CORCODE = "corcode";
+    /** database name for corforms */
+    public static String CORFORM = "corform";
+    /** database name for corpix */
+    public static String CORPIX = "corpix";
+    /** config files for import */
+    public static String CONFIG = "config";
+    /** paratexts */
+    public static String PARATEXT = "paratext";
+    /** miscellaneous */
+    public static String MISC = "misc";
 }

@@ -18,16 +18,21 @@
 package mml.handler;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
+import calliope.AeseSpeller;
+import mml.database.*;
 
 import mml.exception.*;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.handler.json.STILDocument;
 import mml.handler.json.Range;
+import mml.handler.json.JDocWrapper;
 import mml.constants.Params;
+import mml.constants.Database;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -38,12 +43,19 @@ import org.json.simple.JSONArray;
  */
 public class MMLPostHandler extends MMLHandler
 {
+    AeseSpeller speller;
     InetAddress poster;
     String html;
     StringBuilder sb;
     STILDocument stil;
     JSONObject dialect;
     String langCode;
+    String author;
+    String title; 
+    String style; 
+    String format;
+    String section;
+    String version1;
     String docid;
     /**
      * Create a POST handler for HTML that used to be MML
@@ -158,6 +170,105 @@ public class MMLPostHandler extends MMLHandler
         return false;
     }
     /**
+     * Get the text of the element
+     * @param elem the element in question
+     * @return 
+     */
+    String getTextOf( Node elem )
+    {
+        if ( elem instanceof TextNode )
+            return ((TextNode)elem).text();
+        else if ( elem instanceof Element )
+        {
+            String nName = elem.nodeName().toLowerCase();
+            // skip milestones
+            if ( nName.equals("span") 
+                && ((Element)elem).attr("class") != null 
+                && isMilestone(((Element)elem).attr("class")) )
+                return getTextOf(elem.nextSibling());
+            else
+            {
+                List<Node> children = elem.childNodes();
+                StringBuilder concat = new StringBuilder();
+                for ( Node child: children )
+                {
+                    concat.append(getTextOf(child));
+                }
+                return concat.toString();
+            }
+        }
+        else
+            return "";
+    }
+    /**
+     * Get the next word AFTER the given element
+     * @param span the element span) after which we seek the next word
+     * @return the word
+     */
+    String nextWord( Element span )
+    {
+        StringBuilder word = new StringBuilder();
+        Node next = span.nextSibling();
+        String text = "";
+        if ( next != null )
+        {
+            if ( next instanceof TextNode )
+            {
+                text = ((TextNode)next).text();
+            }
+            else if ( next instanceof Element )
+            {
+                text = getTextOf(next);
+            }
+        }
+        text = text.trim();
+        for ( int i=0;i<text.length();i++ )
+            if ( !Character.isWhitespace(text.charAt(i)) )
+                word.append(text.charAt(i));
+            else
+                break;
+        return word.toString();
+    }
+    /**
+     * Remove leading and trailing punctuation
+     * @param input the raw string
+     * @param leading true if this is the first word of a hyphenated pair
+     * @return the trimmed string
+     */
+    private String clean( String input, boolean leading )
+    {
+        int start = 0;
+        while ( start < input.length() )
+            if ( !Character.isLetter(input.charAt(start)) )
+                start++;
+            else
+                break;
+        int end = input.length()-1;
+        while ( end >= 0 )
+            if ( !Character.isLetter(input.charAt(end)) )
+                end--;
+            else
+                break;
+        // reset start or end after internal punctuation
+        if ( leading )
+        {
+            for ( int i=start;i<=end;i++ )
+            {
+                if ( !Character.isLetter(input.charAt(i)) )
+                    start = i+1;
+            }
+        }
+        else
+        {
+            for ( int i=end;i>=start;i-- )
+            {
+                if ( !Character.isLetter(input.charAt(i)) )
+                    end = i-1;
+            }
+        }
+        return (start<=end)?input.substring(start,end+1):"";
+    }
+    /**
      * Parse a span with a class or not
      * @param span the span in HTML
      */
@@ -176,6 +287,18 @@ public class MMLPostHandler extends MMLHandler
                         sb.insert(offset,'\n');
                     this.sb.append("\n");
                 }
+                else if ( name.equals("soft-hyphen") )
+                {
+                    int i = sb.length()-1;
+                    while ( i > 0 && !Character.isWhitespace(sb.charAt(i)) )
+                        i--;
+                    if ( i > 0 )
+                        i++;
+                    String prev = clean(sb.substring(i),true);
+                    String next = clean(nextWord(span),false);  
+                    if ( this.speller.isHardHyphen(prev,next) )
+                        name = "hard-hyphen";
+                }
                 int len = sb.length()-offset;
                 Range r = new Range(name, offset, len);
                 stil.add( r );
@@ -190,34 +313,93 @@ public class MMLPostHandler extends MMLHandler
      * @param body should be contents of the target div in the editor
      * @throws JSONException 
      */
-    private void parseBody( Element body ) throws JSONException
+    private void parseBody( Element body ) throws MMLSaveException
     {
-        this.sb = new StringBuilder();
-        if ( body.nodeName().toLowerCase().equals("div") )
-            parseDiv( body );
-        else
+        try
         {
-            List<Node> children = body.childNodes();
-            for ( Node child: children )
+            this.speller = new AeseSpeller( this.langCode );
+            this.sb = new StringBuilder();
+            if ( body.nodeName().toLowerCase().equals("div") )
+                parseDiv( body );
+            else
             {
-                if ( child instanceof Element )
+                List<Node> children = body.childNodes();
+                for ( Node child: children )
                 {
-                    String nName = child.nodeName().toLowerCase();
-                    if ( nName.equals("div") )
-                        parseDiv( (Element)child);
-                    else if ( nName.equals("p") )
-                        parsePara((Element)child,"p");
-                    else if ( nName.equals("span") )
-                        parseSpan( (Element) child );
-                    else if ( nName.matches("(h|H)\\d") )
-                        parsePara( (Element) child, nName );
-                    else
-                        parseOtherElement( (Element)child );
-                    
+                    if ( child instanceof Element )
+                    {
+                        String nName = child.nodeName().toLowerCase();
+                        if ( nName.equals("div") )
+                            parseDiv( (Element)child);
+                        else if ( nName.equals("p") )
+                            parsePara((Element)child,"p");
+                        else if ( nName.equals("span") )
+                            parseSpan( (Element) child );
+                        else if ( nName.matches("(h|H)\\d") )
+                            parsePara( (Element) child, nName );
+                        else
+                            parseOtherElement( (Element)child );
+
+                    }
+                   // else it is insignificant white space
                 }
-                // else it is insignificant white space
             }
+            this.speller.cleanup();
         }
+        catch ( Exception e )
+        {
+            if ( this.speller != null )
+                this.speller.cleanup();
+            throw new MMLSaveException( e );
+        }
+    }
+    /**
+     * Load one param
+     * @param request the request to read from
+     * @param key the param key
+     * @param dflt the default value or null
+     * @param reqdMessage if not null the param is required 
+     * @return the param value
+     * @throws MMLSaveException if it was required and not present
+     */
+    private String checkParam( HttpServletRequest request, String key, 
+        String dflt, String reqdMessage ) throws MMLSaveException
+    {
+        String value = request.getParameter(key);
+        if ( value == null || value.length()==0 )
+        {
+            if ( reqdMessage != null )
+                throw new MMLSaveException( reqdMessage );
+            else
+                value = dflt;
+        }
+        return value;
+    }
+    /**
+     * Read all the params you can from the request
+     * @param request the current request
+     * @throws MMLSaveException 
+     */
+    private void readParams( HttpServletRequest request ) 
+        throws MMLSaveException
+    {
+        this.docid = checkParam( request,Params.DOCID, null,
+            "Save where? No docid, mate");
+        String json = checkParam( request, Params.DIALECT, null,
+            "Save how? Supply a dialect");
+        JSONObject jv = (JSONObject) JSONValue.parse(json);
+        if ( jv.get("language") != null )
+            this.langCode = (String)jv.get("language");
+        this.dialect = jv;
+        html = checkParam( request, Params.HTML, null,
+            "Save what? Supply some HTML!");
+        this.encoding = checkParam(request,Params.ENCODING,"UTF-8",null);
+        this.author = checkParam( request, Params.AUTHOR, "Anon", null );
+        this.title = checkParam( request, Params.TITLE, "Untitled", null );
+        this.style = checkParam( request, Params.STYLE,"TEI/default",null); 
+        this.format = checkParam( request, Params.FORMAT, "MVD/TEXT",null);
+        this.section = checkParam( request, Params.SECTION, "", null);
+        this.version1 = checkParam( request, Params.VERSION1, "/Base/first", null);
     }
     /**
      * Handle a POST request
@@ -231,31 +413,24 @@ public class MMLPostHandler extends MMLHandler
     {
         try
         {
-            // get required docid
-            docid = request.getParameter(Params.DOCID);
-            if ( docid == null || docid.length()==0 )
-                throw new MMLSaveException("Save where? No docid, mate");
-            // get required dialect
-            String d = request.getParameter(Params.DIALECT);
-            if ( d == null )
-                throw new MMLSaveException("Save how? Supply a dialect");
-            JSONObject jv = (JSONObject) JSONValue.parse(d);
-            if ( jv.get("language") != null )
-                this.langCode = (String)jv.get("language");
-            this.dialect = jv;
-            html = request.getParameter(Params.HTML);
-            if ( html == null )
-                throw new MMLSaveException("Save what? Supply some HTML!");
-            // get optional encoding if present
-            String enc = request.getParameter(Params.ENCODING);
-            if ( enc != null && enc.length()>0 )
-                this.encoding = enc;
+            readParams( request);
             sb = new StringBuilder();
             Document doc = Jsoup.parseBodyFragment(html);
             Element body = doc.body();  
             parseBody( body );
             // to do: send the text and STIL to the database
-            System.out.println(sb.toString());
+            HashMap<String,String> jsonKeys= new HashMap<>();
+            jsonKeys.put( "author", this.author );
+            jsonKeys.put( "title", this.title ); 
+            jsonKeys.put( "style", this.style); 
+            jsonKeys.put( "format", this.format); 
+            jsonKeys.put( "section", this.section ); 
+            jsonKeys.put( "version1", this.version1 );
+            jsonKeys.put( "docid", docid );
+            JDocWrapper jDoc = new JDocWrapper( sb.toString(), jsonKeys );
+            String jsonDoc = jDoc.toString();
+            String resp = Connector.getConnection().putToDb( 
+                  Database.CORTEX, docid, jsonDoc );
             System.out.println(dialect);
         }
         catch ( Exception e )
