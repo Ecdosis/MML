@@ -37,4 +37,6 @@ public class Database
     public static String PARATEXT = "paratext";
     /** miscellaneous */
     public static String MISC = "misc";
+    /** dialect definitions */
+    public static String DIALECTS = "dialects";
 }

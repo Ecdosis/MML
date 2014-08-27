@@ -33,6 +33,7 @@ import mml.handler.mvd.Archive;
 import mml.constants.Params;
 import mml.constants.Database;
 import mml.constants.Formats;
+import mml.handler.json.Dialect;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -424,6 +425,18 @@ public class MMLPostHandler extends MMLHandler
             log.append("No "+db+" created (empty)\n");
     }
     /**
+     * Reduce the docid to the language/author/work triple
+     * @return a string
+     */
+    String baseDocID()
+    {
+        String[] parts = docid.split("/");
+        if ( parts.length >= 3 )
+            return parts[0]+"/"+parts[1]+"/"+parts[2];
+        else
+            return docid;
+    }
+    /**
      * Handle a POST request
      * @param request the raw request
      * @param response the response we will write to
@@ -440,7 +453,7 @@ public class MMLPostHandler extends MMLHandler
             Document doc = Jsoup.parseBodyFragment(html);
             Element body = doc.body();  
             parseBody( body );
-            // to do: send the text and STIL to the database
+            // send the text,STIL and dialect to the database
             Archive cortex = new Archive(title, 
                 this.author,Formats.MVD_TEXT,encoding);
             cortex.put( version1, html.getBytes(encoding) );
@@ -452,6 +465,13 @@ public class MMLPostHandler extends MMLHandler
             StringBuilder log = new StringBuilder();
             addToDBase( cortex, Database.CORTEX, log );
             addToDBase( corcode, Database.CORCODE, log );
+            String baseid = baseDocID();
+            String oldDialect = Connector.getConnection().getFromDb(
+                Database.DIALECTS, baseid );
+            if ( oldDialect == null || !Dialect.compare(dialect,
+                (JSONObject)JSONValue.parse(oldDialect)) )
+                log.append( Connector.getConnection().putToDb(Database.DIALECTS, 
+                    baseid, dialect.toJSONString()));
             System.out.println(log.toString() );
         }
         catch ( Exception e )
