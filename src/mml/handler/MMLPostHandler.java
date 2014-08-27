@@ -25,7 +25,6 @@ import mml.exception.*;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Locale;
-import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.handler.json.STILDocument;
@@ -33,6 +32,7 @@ import mml.handler.json.Range;
 import mml.handler.mvd.Archive;
 import mml.constants.Params;
 import mml.constants.Database;
+import mml.constants.Formats;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -402,6 +402,28 @@ public class MMLPostHandler extends MMLHandler
         this.version1 = checkParam( request, Params.VERSION1, "/Base/first", null);
     }
     /**
+     * Add the archive to the database
+     * @param archive the archive
+     * @param db cortex or corcode
+     * @throws MMLException 
+     */
+    protected void addToDBase( Archive archive, String db, StringBuilder log ) 
+        throws MMLException
+    {
+        // now get the json docs and add them at the right docid
+        if ( !archive.isEmpty() )
+        {
+            String path = new String(docid);
+            if ( db.equals("corcode") )
+                path += "/default";
+            Connector.getConnection().putToDb( db, path, 
+                archive.toResource(db) );
+            log.append( archive.getLog() );
+        }
+        else
+            log.append("No "+db+" created (empty)\n");
+    }
+    /**
      * Handle a POST request
      * @param request the raw request
      * @param response the response we will write to
@@ -420,15 +442,17 @@ public class MMLPostHandler extends MMLHandler
             parseBody( body );
             // to do: send the text and STIL to the database
             Archive cortex = new Archive(title, 
-                this.author,"MVD/TEXT",encoding);
+                this.author,Formats.MVD_TEXT,encoding);
             cortex.put( version1, html.getBytes(encoding) );
-//            Archive corcode = new Archive(title, 
-//                docID.getAuthor(),Formats.MVD_STIL,encoding);
-            String jsonDoc = cortex.toResource(docid);
-            System.out.println(cortex.getLog());
-            String resp = Connector.getConnection().putToDb( 
-                  Database.CORTEX, docid, jsonDoc );
-            System.out.println(resp );
+            Archive corcode = new Archive(title, 
+                this.author,Formats.MVD_STIL,encoding);
+            cortex.setStyle( style );
+            corcode.setStyle( style );
+            corcode.put( version1, stil.toString().getBytes(encoding) );
+            StringBuilder log = new StringBuilder();
+            addToDBase( cortex, Database.CORTEX, log );
+            addToDBase( corcode, Database.CORCODE, log );
+            System.out.println(log.toString() );
         }
         catch ( Exception e )
         {

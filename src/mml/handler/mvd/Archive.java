@@ -15,8 +15,6 @@
  */
 
 package mml.handler.mvd;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
