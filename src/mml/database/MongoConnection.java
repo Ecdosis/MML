@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.HashSet;
+import java.awt.Rectangle;
 
 
 /**
@@ -177,28 +178,57 @@ public class MongoConnection extends Connection
     {
         try
         {
-            connect();
-            DBCollection coll = getCollectionFromName( collName );
-            if ( coll != null )
+            try
             {
-                BasicDBObject q = new BasicDBObject();
-                q.put(JSONKeys.DOCID, Pattern.compile(expr) );
-                DBCursor curs = coll.find( q );
-                ArrayList<String> docids = new ArrayList<String>();
-                Iterator<DBObject> iter = curs.iterator();
-                int i = 0;
-                while ( iter.hasNext() )
+                connect();
+            }
+            catch ( Exception e )
+            {
+                throw new MMLDbException( e );
+            }
+            if ( !collName.equals(Database.CORPIX) )
+            {
+                DBCollection coll = getCollectionFromName( collName );
+                if ( coll != null )
                 {
-                    String dId = (String)iter.next().get(JSONKeys.DOCID);
-                    if ( dId.matches(expr) )
-                        docids.add( dId );
+                    BasicDBObject q = new BasicDBObject();
+                    q.put(JSONKeys.DOCID, Pattern.compile(expr) );
+                    DBCursor curs = coll.find( q );
+                    ArrayList<String> docids = new ArrayList<String>();
+                    Iterator<DBObject> iter = curs.iterator();
+                    int i = 0;
+                    while ( iter.hasNext() )
+                    {
+                        String dId = (String)iter.next().get(JSONKeys.DOCID);
+                        if ( dId.matches(expr) )
+                            docids.add( dId );
+                    }
+                    String[] array = new String[docids.size()];
+                    docids.toArray( array );
+                    return array;
                 }
-                String[] array = new String[docids.size()];
-                docids.toArray( array );
-                return array;
+                else
+                    throw new MMLDbException("collection "+collName+" not found");
             }
             else
-                throw new MMLDbException("collection "+collName+" not found");
+            {
+                GridFS gfs = new GridFS( db, collName );
+                BasicDBObject q = new BasicDBObject();
+                q.put(JSONKeys.FILENAME, Pattern.compile(expr) );
+                DBCursor curs = gfs.getFileList(q);
+                int i = 0;
+                List<DBObject> list = curs.toArray();
+                HashSet<String> set = new HashSet<>();
+                Iterator<DBObject> iter = list.iterator();
+                while ( iter.hasNext() )
+                {
+                    String name = (String)iter.next().get("filename");
+                    set.add(name);
+                }
+                String[] docs = new String[set.size()];
+                set.toArray( docs );
+                return docs;
+            }
         }
         catch ( Exception e )
         {
@@ -246,7 +276,7 @@ public class MongoConnection extends Connection
             DBCursor curs = gfs.getFileList();
             int i = 0;
             List<DBObject> list = curs.toArray();
-            HashSet<String> set = new HashSet<String>();
+            HashSet<String> set = new HashSet<>();
             Iterator<DBObject> iter = list.iterator();
             while ( iter.hasNext() )
             {
@@ -265,7 +295,7 @@ public class MongoConnection extends Connection
      * @return the image data
      */
     @Override
-    public byte[] getImageFromDb( String collName, String docID )
+    public byte[] getImageFromDb( String collName, String docID, MimeType type )
     {
         try
         {
@@ -275,6 +305,7 @@ public class MongoConnection extends Connection
             if ( file != null )
             {
                 InputStream ins = file.getInputStream();
+                type.mimeType = file.getContentType();
                 long dataLen = file.getLength();
                 // this only happens if it is > 2 GB
                 if ( dataLen > Integer.MAX_VALUE )
@@ -298,20 +329,68 @@ public class MongoConnection extends Connection
         }
     }
     /**
+     * Get the image dimensions without loading it
+     * @param coll the collection it is stored in
+     * @param docID the document identifier
+     * @return a Rect containing width and height only or null
+     * @param type VAR param for mime type
+     */
+    public Rectangle getImageDimensions( String coll, String docID, MimeType type )
+    {
+        try
+        {
+           connect();
+            GridFS gfs = new GridFS( db, coll );
+            GridFSDBFile file = gfs.findOne( docID );
+            if ( file != null )
+            {
+                DBObject obj = file.getMetaData();
+                Object width = obj.get("width");
+                Object height = obj.get("height");
+                if ( width != null && height != null )
+                {
+                    Integer intW = (Integer)width;
+                    Integer intH = (Integer)height;
+                    Rectangle r = new Rectangle( intW.intValue(), 
+                        intH.intValue() );
+                    type.mimeType = file.getContentType();
+                    return r;
+                }
+                else
+                    return null;
+            }
+            else
+                throw new Exception("file "+docID+" not found");
+        }
+        catch ( Exception e )
+        {
+            e.printStackTrace( System.out );
+            return null;
+        }
+    }
+    /**
      * Store an image in the database
      * @param collName name of the image collection
      * @param docID the docid of the resource
      * @param data the image data to store
+     * @param width the width of the image in pixels
+     * @param height the height of the image in pixels
+     * @param mimeType the type of the image
      * @throws MMLDbException 
      */
     @Override
-    public void putImageToDb( String collName, String docID, byte[] data ) 
-        throws MMLDbException
+    public void putImageToDb( String collName, String docID, byte[] data, 
+        int width, int height, String mimeType ) throws MMLDbException
     {
         docIDCheck( collName, docID );
         GridFS gfs = new GridFS( db, collName );
         GridFSInputFile	file = gfs.createFile( data );
         file.setFilename( docID );
+        BasicDBObject r = new BasicDBObject();
+        r.put( "width", width );
+        r.put( "height", height );
+        file.setMetaData( r );
+        file.setContentType(mimeType);
         file.save();
     }
     /**

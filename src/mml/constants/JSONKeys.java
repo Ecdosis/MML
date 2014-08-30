@@ -103,4 +103,5 @@ public class JSONKeys
     public static String SORTBY = "sortBy";
     public static String SORTTYPE = "sortType";
     public static String EXCLUDE = "exclude";
+    public static String FILENAME = "filename";
 }

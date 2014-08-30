@@ -24,6 +24,7 @@ package mml.constants;
 public class Params 
 {
     public static String DOCID="docid";
+    public static String DOC_ID = "DOC_ID";
     public static String ENCODING="encoding";
     public static String HTML="html";
     public static String DIALECT = "dialect";

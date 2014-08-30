@@ -43,6 +43,18 @@ public class Utils
         return sb.toString();
     }
     /**
+     * Remove the rightmost segment of the path and resource
+     * @return the remains of the path
+     */
+    public static String chomp( String path )
+    {
+        String popped = "";
+        int index = path.lastIndexOf( "/" );
+        if ( index != -1 )
+            popped = path.substring( 0, index );
+        return popped;
+    }
+    /**
      * Chop off the first component of a urn
      * @param urn the urn to chop
      * @return the first urn component
@@ -163,6 +175,43 @@ public class Utils
                 sb.append( " " );
         }
         return sb.toString();
+    }
+    /**
+     * Reduce the docid to the language/author/work triple
+     * @param a full docid to reduce to its first 3 terms
+     * @return a string
+     */
+    public static String baseDocID( String docid )
+    {
+        String[] parts = docid.split("/");
+        if ( parts.length >= 3 )
+            return parts[0]+"/"+parts[1]+"/"+parts[2];
+        else
+            return docid;
+    }
+    /**
+     * Separate the group from the full path
+     * @param path the path to split
+     */
+    public static String getGroupName( String path )
+    {
+        int index = path.lastIndexOf("/");
+        if ( index == -1 )
+            return "";
+        else
+            return path.substring( 0, index );
+    }
+    /**
+     * Separate the short name from the full path
+     * @param path the path to split
+     */
+    public static String getShortName( String path )
+    {
+        int index = path.lastIndexOf("/");
+        if ( index == -1 )
+            return path;
+        else
+            return path.substring( index+1 );
     }
     
 }

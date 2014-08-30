@@ -20,6 +20,7 @@ import mml.constants.Formats;
 import mml.exception.JSONException;
 import java.io.File;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.ArrayList;
 /**
  *
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 public class STILDocument extends JSONDocument
 {
     ArrayList<JSONDocument> ranges;
+    HashMap<Range,JSONDocument> map;
     /** array of actual ranges with absolute offsets */
     ArrayList<Range> rangeArray;
     int lastOffset;
@@ -40,6 +42,7 @@ public class STILDocument extends JSONDocument
         put( JSONKeys.RANGES, ranges );
         put( JSONKeys.FORMAT, Formats.STIL );
         lastOffset = 0;
+        map = new HashMap<>();
     }
     /**
      * Add a range to the STIL Document. Must be added in sequence
@@ -67,7 +70,14 @@ public class STILDocument extends JSONDocument
             doc.put( JSONKeys.ANNOTATIONS, attrs );
         }
         ranges.add( doc );
+        // remember for later update
+        map.put( r, doc );
         return doc;
+    }
+    public void updateLen( Range r, int len )
+    {
+        JSONDocument doc = map.get(r);
+        doc.put(JSONKeys.LEN, len );
     }
     /**
      * Read in a CorCode document

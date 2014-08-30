@@ -18,9 +18,7 @@
 
 package mml.handler.json;
 
-import mml.constants.JSONKeys;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
+import org.json.simple.*;
 import java.util.Set;
 import java.util.Iterator;
 
@@ -29,6 +27,36 @@ import java.util.Iterator;
  * @author desmond
  */
 public class Dialect {
+    static String dia1 = 
+    "{\n\t\t\"description\": \"Novel markup for De Roberto\",\n\t\t"
+    +"\"language\": \"it\",\n\t\t\"section\": {\"prop\": \"sectio"
+    +"n\"},\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
+    +"s\": {\"prop\": \"\"},\n\t\t\"quotations\": {\"prop\": \"\"}"
+    +",\n\t\t\"smartquotes\": true,\n\t\t\"softhyphens\": true,\n\t"
+    +"\t\"headings\": [{\"tag\":\"=\",\"prop\":\"h1\"},{\"tag\":\""
+    +"-\",\"prop\":\"h2\"},{\"tag\":\"_\",\"prop\":\"h3\"}],\n\t\t"
+    +"\"dividers\": [{\"tag\":\"-----\",\"prop\":\"dash\"}, {\"ta"
+    +"g\":\"--+--\",\"prop\":\"plus\"}],\n\t\t\"charformats\": [{\""
+    +"tag\":\"*\",\"prop\":\"italics\"},{\"tag\":\"`\",\"prop\":\""
+    +"letter-spacing\"},{\"tag\":\"@\",\"prop\":\"small-caps\"}],"
+    +"\n\t\t\"paraformats\": [{\"leftTag\":\"->\",\"rightTag\":\"<"
+    +"-\",\"prop\":\"centered\"}],\n\t\t\"milestones\": [{\"leftTa"
+    +"g\":\"[\",\"rightTag\":\"]\",\"prop\":\"page\"}]\n}\n";
+    static String dia2 = 
+    "{\n\t\t\"description\": \"Novel markup for De Roberto\",\n\t\t"
+    +"\"language\": \"en\",\n\t\t\"section\": {\"prop\": \"sectio"
+    +"n\"},\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
+    +"s\": {\"prop\": \"\"},\n\t\t\"quotations\": {\"prop\": \"\"}"
+    +",\n\t\t\"smartquotes\": true,\n\t\t\"softhyphens\": true,\n\t"
+    +"\t\"headings\": [{\"tag\":\"=\",\"prop\":\"h1\"},{\"tag\":\""
+    +"-\",\"prop\":\"h2\"},{\"tag\":\"_\",\"prop\":\"h3\"}],\n\t\t"
+    +"\"dividers\": [{\"tag\":\"-----\",\"prop\":\"dash\"}, {\"ta"
+    +"g\":\"--+--\",\"prop\":\"plus\"}],\n\t\t\"charformats\": [{\""
+    +"tag\":\"*\",\"prop\":\"italics\"},{\"tag\":\"`\",\"prop\":\""
+    +"letter-spacing\"},{\"tag\":\"@\",\"prop\":\"small-caps\"}],"
+    +"\n\t\t\"paraformats\": [{\"leftTag\":\"->\",\"rightTag\":\"<"
+    +"-\",\"prop\":\"centered\"}],\n\t\t\"milestones\": [{\"leftTa"
+    +"g\":\"[\",\"rightTag\":\"]\",\"prop\":\"page\"}]\n}\n";
     private static boolean compareArrays( JSONArray a1, JSONArray a2 )
     {
         boolean res = true;
@@ -81,6 +109,8 @@ public class Dialect {
                     res = compareArrays((JSONArray)obj1,(JSONArray)obj2);
                 else if ( obj1 instanceof JSONObject )
                     res = compareObjects((JSONObject)obj1,(JSONObject)obj2);
+                else if ( obj1 instanceof Boolean )
+                    res = obj1.equals(obj2);
                 else
                     res = false;
             }
@@ -103,5 +133,14 @@ public class Dialect {
         d1.remove("_id");
         d2.remove("_id");
         return compareObjects(d1,d2);
+    }
+    public static void main(String[] args )
+    {
+        JSONObject o1 = (JSONObject) org.json.simple.JSONValue.parse(dia1);
+        JSONObject o2 = (JSONObject) org.json.simple.JSONValue.parse(dia2);
+        if ( Dialect.compare(o1,o2) )
+            System.out.println("The two objects are the same!");
+        else
+            System.out.println("The two objects are different");
     }
 }

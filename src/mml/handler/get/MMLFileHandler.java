@@ -16,7 +16,7 @@
  *  (c) copyright Desmond Schmidt 2014
  */
 
-package mml.handler;
+package mml.handler.get;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URLConnection;
 import javax.servlet.ServletOutputStream;
+import mml.handler.MMLHandler;
 
 /**
  * Handle requests for ordinary files like scripts

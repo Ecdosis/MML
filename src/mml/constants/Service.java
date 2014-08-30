@@ -30,4 +30,10 @@ public class Service
     public static final String MML = "mml";
     /** sub-service that returns a particular type of image */
     public static final String IMAGE = "image";
+    /** posting and getting of html */
+    public static final String HTML = "html";
+    /** options for editor */
+    public static final String OPTS = "opts";
+    public static final String IMPORT = "import";
+    public static final String LITERAL = "literal";
 }

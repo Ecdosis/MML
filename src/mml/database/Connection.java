@@ -17,6 +17,7 @@
  */
 package mml.database;
 
+import java.awt.Rectangle;
 import mml.exception.MMLDbException;
 
 /**
@@ -91,10 +92,12 @@ public abstract class Connection
         throws MMLDbException;
     public abstract String removeFromDb( String coll, String docID ) 
         throws MMLDbException;
-    public abstract byte[] getImageFromDb( String coll, String docID ) 
+    public abstract byte[] getImageFromDb( String coll, String docID, MimeType type ) 
         throws MMLDbException;
-    public abstract void putImageToDb( String coll, String docID, byte[] data ) 
-        throws MMLDbException;
+    public abstract void putImageToDb( String coll, String docID, byte[] data, 
+        int width, int height, String mimeType ) throws MMLDbException;
     public abstract void removeImageFromDb( String coll, String docID ) 
         throws MMLDbException;
+    public abstract Rectangle getImageDimensions( String coll, String docID, 
+        MimeType type );
 }
