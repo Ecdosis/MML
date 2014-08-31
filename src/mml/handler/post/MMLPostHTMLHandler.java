@@ -326,8 +326,6 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 this.sb.append( span.text() );
                 if ( isMilestone(name) )
                 {
-                    if ( sb.charAt(offset)!='\n' && offset >0 )
-                        sb.insert(offset,'\n');
                     this.sb.append("\n");
                 }
                 else if ( name.equals("soft-hyphen") )

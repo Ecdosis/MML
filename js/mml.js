@@ -986,11 +986,13 @@ function MMLEditor(opts, dialect) {
         info += this.describeSimpleProp("Quotations",this.dialect.quotations,
             "initial '> ', which may be nested");
         if ( this.dialect.softhyphens )
-            info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line will be joined up, "
+        {
+            info += "<p><b>Hyphens:</b> Lines ending in '-' will be joined up, "
              +"and the hyphen labelled 'soft-hyphen', which will be invisible but "
-             +"still present. On save, soft-hyphens will be converted into visible "
-             +"hard-hyphens if both halves are words in the current language, and "
-             +"the hyphenated word is not listed as an exception.</p>";
+             +"still present.</p>";
+            info += "<p>Lines ending in '--' will be joined to the next line but "
+            +"one hyphen will remain. These wil be labelled as 'hard-hyphens' on save.</p>";
+        }
         else
             info += "<p><b>Hyphens:</b> Lines ending in '-' followed by a new line "
                  +"will <em>not</em> be joined up.</p>";

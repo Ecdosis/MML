@@ -92,7 +92,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case paraformats:
                 return (String)defn.get("leftTag");
             case milestones:
-                return (offset>0)?"\n":""+(String)defn.get("leftTag");
+                return ((offset>0)?"\n":"")+(String)defn.get("leftTag");
             default:
                 return "";
         }
@@ -222,6 +222,29 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
     }
     /**
+     * Prune trailing NLs in mml the max of trailing and leading NLs
+     * @param tag the new tag start with leading NLs
+     */
+    private void normaliseNewlines( String tag )
+    {
+        int leadingNLs = 0;
+        for( int i=0;i<tag.length();i++ )
+            if ( tag.charAt(i)=='\n')
+                leadingNLs++;
+            else
+                break;
+        int trailingNLs =0;
+        for ( int i=mml.length()-1;i>=0;i-- )
+            if ( mml.charAt(i)=='\n' )
+                trailingNLs++;
+            else
+                break;
+        int both = Math.max(leadingNLs,trailingNLs);
+        int total = leadingNLs+trailingNLs;
+        int delenda = total-both;
+        mml.setLength(mml.length()-delenda);
+    }
+    /**
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
      * @param corcode the STIL markup for that plain text
@@ -264,6 +287,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 for ( int j=pos;j<start;j++ )
                     mml.append(text.charAt(j));
                 // 3. insert new start tag
+                normaliseNewlines(startTag);
                 mml.append(startTag);
                 stack.push(new EndTag(start+len.intValue(),endTag));
             }
