@@ -18,25 +18,42 @@ package mml.handler.post;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.exception.MMLException;
 import mml.Utils;
+import mml.database.Connector;
+import mml.exception.MMLException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.json.simple.JSONObject;
 import mml.constants.Database;
+import mml.constants.JSONKeys;
+
 /**
- * Handle some kind of import
+ *Handle uploads of CSS files
  * @author desmond
  */
-public class MMLPostLiteralHandler extends MMLPostHandler
+public class MMLPostCSSHandler  extends MMLPostHandler
 {
+    @Override
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
     {
-        String first = Utils.first(urn);
-        urn = Utils.pop(urn);
-        if ( first.equals(Database.CORFORM) )
-            new MMLPostCSSHandler().handle(request,response,urn);
-        else if ( first.equals(Database.CORPIX) )
-            new MMLPostImageHandler().handle(request,response,urn);
-        else
-            throw new MMLException("Unknown service "+first);
+        try
+        {
+            if (ServletFileUpload.isMultipartContent(request) )
+            {
+                parseImportParams( request );
+                for ( int i=0;i<files.size();i++ )
+                {
+                    String style = files.get(i);
+                    JSONObject jDoc = new JSONObject();
+                    jDoc.put( JSONKeys.BODY, style );
+                    Connector.getConnection().putToDb( Database.CORFORM, 
+                        docid, jDoc.toJSONString() );
+                }
+            } 
+        }
+        catch ( Exception e )
+        {
+            throw new MMLException( e );
+        }
     }
 }

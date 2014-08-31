@@ -134,7 +134,6 @@ public class Editor extends Test
     void composePage()throws MMLTestException
     {
         doc.getHead().addEncoding( encoding );
-        //doc.getHead().addCssFile("css/bootstrap-glyphicons.css");
         doc.getHead().addCssFile("css/deroberto.css");
         doc.getHead().addScriptFile( "js/jquery-1.11.1.js" );
         doc.getHead().addScriptFile( "js/mml.js" );
