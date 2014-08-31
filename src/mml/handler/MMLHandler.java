@@ -19,6 +19,7 @@ package mml.handler;
 import mml.exception.MMLException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.Charset;
 
 /**
  * Abstract super-class for all handlers: PUT, POST, DELETE, GET
@@ -27,7 +28,10 @@ import javax.servlet.http.HttpServletResponse;
 abstract public class MMLHandler 
 {
     protected String encoding;
-    
+    public MMLHandler()
+    {
+        this.encoding = Charset.defaultCharset().name();
+    }
     public abstract void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException;
 }

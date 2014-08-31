@@ -443,8 +443,11 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 Database.DIALECTS, baseid );
             if ( oldDialect == null || !Dialect.compare(dialect,
                 (JSONObject)JSONValue.parse(oldDialect)) )
+            {
+                JSONObject jDoc = Dialect.wrap(dialect,baseid);
                 log.append( Connector.getConnection().putToDb(Database.DIALECTS, 
-                    baseid, dialect.toJSONString()));
+                    baseid, jDoc.toJSONString()));
+            }
             System.out.println(log.toString() );
         }
         catch ( Exception e )

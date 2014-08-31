@@ -21,6 +21,7 @@ package mml.handler.json;
 import org.json.simple.*;
 import java.util.Set;
 import java.util.Iterator;
+import mml.constants.JSONKeys;
 
 /**
  * Dialect class just exists to compare two dialect files
@@ -133,6 +134,19 @@ public class Dialect {
         d1.remove("_id");
         d2.remove("_id");
         return compareObjects(d1,d2);
+    }
+    /**
+     * Wrap a dialect doc in some more JSON for storage
+     * @param dialect the dialect file
+     * @param docid its docid
+     * @return a BSON basic document
+     */
+    public static JSONObject  wrap( JSONObject dialect, String docid )
+    {
+        JSONObject wrap = new JSONObject();
+        wrap.put(JSONKeys.BODY, dialect.toJSONString());
+        wrap.put(JSONKeys.DOCID, docid );
+        return wrap;
     }
     public static void main(String[] args )
     {

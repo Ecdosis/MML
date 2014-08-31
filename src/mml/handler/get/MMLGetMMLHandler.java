@@ -26,10 +26,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.constants.Database;
 import mml.constants.Params;
+import mml.constants.JSONKeys;
 import mml.database.Connection;
 import mml.database.Connector;
-import mml.exception.MMLException;
-import mml.exception.MMLDbException;
+import mml.exception.*;
 import mml.handler.AeseVersion;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
@@ -65,9 +65,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
     /**
      * Emit the start "tag" of an MML property
      * @param defn the property definition
+     * @param offset the offset in the text
      * @return the text associated with tag-start
      */
-    String mmlStartTag( JSONObject defn )
+    String mmlStartTag( JSONObject defn, int offset )
     {
         String kind = (String)defn.get("kind");
         DialectKeys key = DialectKeys.valueOf(kind);
@@ -84,11 +85,14 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case dividers:
                 return "\n";
             case charformats:
-                return (String)defn.get("tag");
+                if ( defn.containsKey("tag") )
+                    return (String)defn.get("tag");
+                else
+                    return (String)defn.get("leftTag");
             case paraformats:
-                return (String)defn.get("startTag");
+                return (String)defn.get("leftTag");
             case milestones:
-                return "\n"+(String)defn.get("startTag");
+                return (offset>0)?"\n":""+(String)defn.get("leftTag");
             default:
                 return "";
         }
@@ -96,9 +100,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
     /**
      * Emit the end-tag associated with an MML property
      * @param defn the property definition
+     * @param length of the property
      * @return the text associated with the end of the property
      */
-    String mmlEndTag( JSONObject defn )
+    String mmlEndTag( JSONObject defn, int len )
     {
         String kind = (String)defn.get("kind");
         DialectKeys key = DialectKeys.valueOf(kind);
@@ -113,26 +118,21 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case quotations:
                 return "\n";
             case headings:
-                int len = 0;
-                for ( int i=mml.length()-1;i>=0;i-- )
-                {
-                    if ( mml.charAt(i)=='\n' )
-                        break;
-                    else
-                        len++;
-                }
                 StringBuilder sb = new StringBuilder();
-                for ( int i=0;i<len;i++ )
+                for ( int i=0;i<len-1;i++ )
                     sb.append(defn.get("tag"));
-                return sb.toString()+"\n\n";
+                return "\n"+sb.toString()+"\n\n";
             case dividers:
                 return (String)defn.get("tag")+"\n";
             case charformats:
-                return (String)defn.get("tag");
+                if ( defn.containsKey("tag") )
+                    return (String)defn.get("tag");
+                else
+                    return (String)defn.get("rightTag");
             case paraformats:
-                return (String)defn.get("endTag")+"\n\n";
+                return (String)defn.get("rightTag")+"\n\n";
             case milestones:
-                return (String)defn.get("endTag")+"\n";
+                return (String)defn.get("rightTag")+"\n";
             default:
                 return "";
         }
@@ -171,6 +171,21 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 case section:
                     enterProp(value,keyword,"div");
                     break;
+                case softhyphens:
+                    if (((Boolean)value).booleanValue() )
+                    {
+                        JSONObject sh = new JSONObject();
+                        sh.put("kind","charformats");
+                        sh.put("leftTag","");
+                        sh.put("rightTag","\n");
+                        this.invertIndex.put("soft-hyphen",sh);
+                        JSONObject hh = new JSONObject();
+                        hh.put("kind","charformats");
+                        hh.put("leftTag","");
+                        hh.put("rightTag","-\n");
+                        this.invertIndex.put("hard-hyphen",sh);
+                    }
+                    break;
                 case paragraph:
                     enterProp(value,keyword,"p");
                     break;
@@ -188,12 +203,19 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         enterProp(obj,keyword,(String)obj.get("tag"));
                     }
                     break;
-                case paraformats: case milestones:
+                case paraformats: 
                     array = (JSONArray)value;
                     for ( int i=0;i<array.size();i++ )
                     {
                         JSONObject obj = (JSONObject)array.get(i);
-                        enterProp(obj,keyword,(String)obj.get(""));
+                        enterProp(obj,keyword,"p");
+                    }
+                case milestones:
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject obj = (JSONObject)array.get(i);
+                        enterProp(obj,keyword,"span");
                     }
                 break;
             }
@@ -216,20 +238,34 @@ public class MMLGetMMLHandler extends MMLGetHandler
         for ( int i=0;i<ranges.size();i++ )
         {
             JSONObject r = (JSONObject)ranges.get(i);
-            Integer len = (Integer)r.get("len");
-            Integer relOff = (Integer)r.get("refoff");
+            Long len = (Long)r.get("len");
+            Long relOff = (Long)r.get("reloff");
             String name = (String)r.get("name");
             if ( len.intValue() > 0 && invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
-                String startTag = mmlStartTag(def);
-                String endTag = mmlEndTag(def);
-                if ( stack.peek().offset <= offset )
+                String startTag = mmlStartTag(def,offset);
+                String endTag = mmlEndTag(def,len.intValue());
+                int start = offset+relOff.intValue();
+                // 1. insert pending end-tags and text
+                int pos = offset;
+                while ( !stack.isEmpty() && stack.peek().offset <= start )
+                {
+                    int tagEnd = stack.peek().offset;
+                    for ( int j=pos;j<tagEnd;j++ )
+                        mml.append(text.charAt(j));
+                    pos = tagEnd;
+                    // newlines are not permitted before tag end
+                    while ( mml.length()>0 && mml.charAt(mml.length()-1)=='\n')
+                        mml.setLength(mml.length()-1);
                     mml.append( stack.pop().text );
-                for ( int j=offset;j<offset+relOff.intValue();j++ )
+                }
+                // 2. insert intervening text
+                for ( int j=pos;j<start;j++ )
                     mml.append(text.charAt(j));
+                // 3. insert new start tag
                 mml.append(startTag);
-                stack.push(new EndTag(offset+len.intValue(),endTag));
+                stack.push(new EndTag(start+len.intValue(),endTag));
             }
             offset += relOff.intValue();
         }
@@ -269,6 +305,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             this.dialect = getDialect( shortID );
             invertDialect();
             createMML(cortex,corcode);
+            response.setCharacterEncoding(encoding);
             response.getWriter().println(mml.toString());
         }
         catch ( Exception e )
@@ -290,7 +327,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 Database.DIALECTS,docID);
             if ( jStr != null )
             {
-                return (JSONObject)JSONValue.parse( jStr );
+                JSONObject jDoc = (JSONObject)JSONValue.parse( jStr );
+                String bodyStr = (String)jDoc.get(JSONKeys.BODY);
+                JSONObject body = (JSONObject)JSONValue.parse(bodyStr);
+                if ( body == null )
+                    throw new JSONException("body key not found");
+                return body;
             }
             else
                 throw new MMLDbException("couldn't find dialect "+docID );

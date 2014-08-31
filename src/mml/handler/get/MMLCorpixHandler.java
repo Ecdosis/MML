@@ -21,8 +21,6 @@ import mml.database.Connector;
 import mml.constants.Database;
 import mml.exception.MMLException;
 import javax.servlet.ServletOutputStream;
-import java.io.ByteArrayInputStream;
-import java.net.URLConnection;
 
 /**
  * Fetch an image from the corpix collection
@@ -42,9 +40,7 @@ public class MMLCorpixHandler extends MMLGetHandler
                 Database.CORPIX, urn, type );
             if ( data != null)
             {
-                ByteArrayInputStream bis = new ByteArrayInputStream(data);
-                String mimeType = URLConnection.guessContentTypeFromStream(bis);
-                response.setContentType(mimeType);
+                response.setContentType(type.mimeType);
                 ServletOutputStream sos = response.getOutputStream();
                 sos.write( data );
                 sos.close();
