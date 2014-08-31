@@ -124,7 +124,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             else if ( child instanceof TextNode )
             {
                 TextNode tn = (TextNode)child;
-                sb.append(tn.text());
+                sb.append(tn.getWholeText());
             }
         }
         sb.append("\n");
@@ -148,7 +148,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             if ( child instanceof Element )
                 parseOtherElement( (Element)child );
             else if ( child instanceof TextNode )
-                sb.append( ((TextNode)child).text() );
+                sb.append( ((TextNode)child).getWholeText() );
         }
         this.stil.updateLen(r,sb.length()-offset);
     }
@@ -254,7 +254,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     String getTextOf( Node elem )
     {
         if ( elem instanceof TextNode )
-            return ((TextNode)elem).text();
+            return ((TextNode)elem).getWholeText();
         else if ( elem instanceof Element )
         {
             String nName = elem.nodeName().toLowerCase();
@@ -291,7 +291,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         {
             if ( next instanceof TextNode )
             {
-                text = ((TextNode)next).text();
+                text = ((TextNode)next).getWholeText();
             }
             else if ( next instanceof Element )
             {
