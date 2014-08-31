@@ -21,6 +21,7 @@ package mml.handler.get;
 import java.awt.Rectangle;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,26 @@ public class MMLGetOptsHandler extends MMLGetHandler
 {
     String docid;
     String version1;
+    class ImageComparator implements Comparator<String>
+    {
+        private int toNumber( String name )
+        {
+            int num = 0;
+            for ( int i=0;i<name.length();i++ )
+            {
+                num*=10;
+                if ( Character.isDigit(name.charAt(i)) )
+                    num += name.charAt(i)-'0';
+            }
+            return num;
+        }
+        public int compare( String name1, String name2 )
+        {
+            int num1 = toNumber(name1);
+            int num2 = toNumber(name2);
+            return (num1>num2)?1:(num1<num2)?-1:0;
+        }
+    }
     /**
      * Create the editor options
      * @param req the http request
@@ -59,13 +80,15 @@ public class MMLGetOptsHandler extends MMLGetHandler
         opts.put("data",data);
         data.put("prefix","p");
         data.put("suffix","");
+        String port = (req.getServerPort()==80)?"":":"+req.getServerPort();
         data.put("url",req.getScheme()+"://"+req.getServerName()
-            +"/"+Database.CORPIX+"/"+docid+version1+"/");
+            +port+"/mml/"+Database.CORPIX+"/"+docid+version1);
         JSONArray desc = new JSONArray();
         Set<String> keys = map.keySet();
         String[] names = new String[keys.size()];
         keys.toArray(names);
-        Arrays.sort(names);
+        ImageComparator comp = new ImageComparator();
+        Arrays.sort(names,comp);
         for ( String name: names )
         {
             JSONObject obj = new JSONObject();

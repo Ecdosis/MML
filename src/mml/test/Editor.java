@@ -25,6 +25,7 @@ import html.*;
 import java.io.File;
 import java.io.FileInputStream;
 import mml.Utils;
+import mml.URLEncoder;
 import mml.constants.Params;
 
 /**
@@ -35,6 +36,12 @@ public class Editor extends Test
 {
     String service;
     String host;
+    static String EDITOR_START_JS = 
+        "$( document ).ready(function() {";
+    static String EDITOR_END_JS =
+    "var editor = new MMLEditor(opts, dialect);\n$(\"#info\").clic"
+    +"k( function() {\n\teditor.toggleHelp();\n});\n$(\"#save\").c"
+    +"lick( function() {\n\teditor.save();\n});\n});";
     public Editor()
     {
         super();
@@ -128,6 +135,39 @@ public class Editor extends Test
         doc.addElement( form );
     }
     /**
+     * Get a dialect
+     * @return an Element (div) containing the content
+     */
+    private String getDialect( String docid ) throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost:8083/mml/dialects/italian/deroberto/ivicere";
+            return URLEncoder.getResponseForUrl(url).trim();
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+    /**
+     * Get the opts for this editor
+     * @return an Element (div) containing the content
+     */
+    private String getOpts( String docid, String version1 ) throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost:8083/mml/opts?docid="+docid
+                +"&version1="+version1;
+            return URLEncoder.getResponseForUrl(url).trim();
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+    /**
      * Build the test age for the editor
      * @throws MMLTestException 
      */
@@ -137,8 +177,18 @@ public class Editor extends Test
         doc.getHead().addCssFile("css/deroberto.css");
         doc.getHead().addScriptFile( "js/jquery-1.11.1.js" );
         doc.getHead().addScriptFile( "js/mml.js" );
-        String editor = readFile( "js/editor.js" );
-        doc.getHead().addScript( editor );
+        String dialect = getDialect("italian/deroberto/ivicere");
+        String opts = getOpts("italian/deroberto/ivicere/cap1","/Base/1920");
+        StringBuilder js = new StringBuilder();
+        js.append(EDITOR_START_JS);
+        js.append("var dialect = ");
+        js.append(dialect);
+        js.append(";\n");
+        js.append("var opts = ");
+        js.append(opts);
+        js.append(";\n");
+        js.append(EDITOR_END_JS);
+        doc.getHead().addScript( js.toString() );
         Element toolbar = createToolbar();
         doc.addElement( toolbar );
         Element wrapper = new Element("div");
