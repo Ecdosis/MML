@@ -18,20 +18,23 @@ package mml.handler.post;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.Utils;
 import mml.database.Connector;
 import mml.exception.MMLException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONObject;
-import mml.constants.Database;
 import mml.constants.JSONKeys;
 
 /**
  *Handle uploads of CSS files
  * @author desmond
  */
-public class MMLPostCSSHandler  extends MMLPostHandler
+public class MMLPostResourceHandler  extends MMLPostHandler
 {
+    String database;
+    public MMLPostResourceHandler( String database )
+    {
+        this.database = database;
+    }
     @Override
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
@@ -46,7 +49,19 @@ public class MMLPostCSSHandler  extends MMLPostHandler
                     String style = files.get(i);
                     JSONObject jDoc = new JSONObject();
                     jDoc.put( JSONKeys.BODY, style );
-                    Connector.getConnection().putToDb( Database.CORFORM, 
+                    if ( this.author != null )
+                        jDoc.put(JSONKeys.AUTHOR,this.author);
+                    if ( this.title != null )
+                        jDoc.put(JSONKeys.TITLE,this.title);
+                    if ( this.style != null )
+                        jDoc.put(JSONKeys.STYLE,this.style);
+                    if ( this.format != null )
+                        jDoc.put( JSONKeys.FORMAT, this.format );
+                    if ( this.section != null )
+                        jDoc.put(JSONKeys.SECTION,this.section);
+                    if ( this.version1 != null )
+                        jDoc.put(JSONKeys.VERSION1,this.version1 );
+                    Connector.getConnection().putToDb( database, 
                         docid, jDoc.toJSONString() );
                 }
             } 

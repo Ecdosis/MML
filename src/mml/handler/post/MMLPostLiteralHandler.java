@@ -33,9 +33,15 @@ public class MMLPostLiteralHandler extends MMLPostHandler
         String first = Utils.first(urn);
         urn = Utils.pop(urn);
         if ( first.equals(Database.CORFORM) )
-            new MMLPostCSSHandler().handle(request,response,urn);
+            new MMLPostResourceHandler(Database.CORFORM).handle(request,response,urn);
         else if ( first.equals(Database.CORPIX) )
             new MMLPostImageHandler().handle(request,response,urn);
+        else if ( first.equals(Database.CORTEX) )
+            new MMLPostResourceHandler(Database.CORTEX).handle(request,response,urn);
+        else if ( first.equals(Database.CORCODE) )
+            new MMLPostResourceHandler(Database.CORCODE).handle(request,response,urn);
+        else if ( first.equals(Database.DIALECTS) )
+            new MMLPostResourceHandler(Database.DIALECTS).handle(request,response,urn);
         else
             throw new MMLException("Unknown service "+first);
     }

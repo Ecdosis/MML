@@ -127,7 +127,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 sb.append(tn.getWholeText());
             }
         }
-        sb.append("\n");
+        ensure(2);
         this.stil.updateLen(r,sb.length()-offset);
     }
     /**
@@ -151,6 +151,32 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 sb.append( ((TextNode)child).getWholeText() );
         }
         this.stil.updateLen(r,sb.length()-offset);
+    }
+    /**
+     * Ensure that there are at least a number of NLs
+     * @param nNLs the number of newlines that must be at the end of sb
+     */
+    private void ensure( int nNLs )
+    {
+        int current = 0;
+        int end = sb.length()-1;
+        while ( end > 0 )
+        {
+            if ( sb.charAt(end--)=='\n')
+                current++;
+            else
+                break;
+        }
+        int toadd = nNLs-current;
+        if ( toadd < 0 )
+        {
+            sb.setLength(sb.length()+toadd);
+        }
+        else
+        {
+            for ( int i=0;i<toadd;i++ )
+                sb.append("\n");
+        }
     }
     /**
      * Parse a div (section)
@@ -181,7 +207,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                     parseOtherElement((Element)child);
             }
         }
-        sb.append("\n\n");
+        ensure(3);
         this.stil.updateLen(r,sb.length()-offset);
     }
     /**

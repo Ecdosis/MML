@@ -293,6 +293,19 @@ public class MMLGetMMLHandler extends MMLGetHandler
             }
             offset += relOff.intValue();
         }
+        //empty stack
+        int pos = offset;
+        while ( !stack.isEmpty() )
+        {
+            int tagEnd = stack.peek().offset;
+            for ( int j=pos;j<tagEnd;j++ )
+                mml.append(text.charAt(j));
+            pos = tagEnd;
+            // newlines are not permitted before tag end
+            while ( mml.length()>0 && mml.charAt(mml.length()-1)=='\n')
+                mml.setLength(mml.length()-1);
+            mml.append( stack.pop().text );
+        }
     }
     /**
      * Get the short form of the full docid

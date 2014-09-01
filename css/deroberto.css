@@ -10,19 +10,19 @@
     border-radius: 5px;
 }
 .edit-button {
-    background: url('./images/glyphicons_150_edit.png') center no-repeat;
+    background: url('/mml/corpix/editor/icons/edit') center no-repeat;
     cursor: pointer;
 }
 .info-button {
-    background: url('./images/glyphicons_195_circle_info.png') center no-repeat;
+    background: url('/mml/corpix/editor/icons/info') center no-repeat;
     cursor: pointer;
 }
 .save-button {
-    background: url('./images/glyphicons_446_floppy_save.png') center no-repeat;
+    background: url('/mml/corpix/editor/icons/save') center no-repeat;
     cursor: pointer;
 }
 .saved-button {
-    background: url('./images/glyphicons_444_floppy_saved.png') center no-repeat;
+    background: url('/mml/corpix/editor/icons/saved') center no-repeat;
 }
 #toolbar-wrapper { text-align: center; display: block; }
 #toolbar { background: lightgrey; border-width: 0; margin: 0; padding: 0; width: 100% }

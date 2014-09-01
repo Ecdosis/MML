@@ -80,9 +80,8 @@ public class MMLGetOptsHandler extends MMLGetHandler
         opts.put("data",data);
         data.put("prefix","p");
         data.put("suffix","");
-        String port = (req.getServerPort()==80)?"":":"+req.getServerPort();
-        data.put("url",req.getScheme()+"://"+req.getServerName()
-            +port+"/mml/"+Database.CORPIX+"/"+docid+version1);
+        //String port = (req.getServerPort()==80)?"":":"+req.getServerPort();
+        data.put("url","/mml/"+Database.CORPIX+"/"+docid+version1);
         JSONArray desc = new JSONArray();
         Set<String> keys = map.keySet();
         String[] names = new String[keys.size()];

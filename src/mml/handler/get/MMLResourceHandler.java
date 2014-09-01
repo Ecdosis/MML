@@ -13,19 +13,23 @@ import mml.constants.JSONKeys;
 import mml.constants.Params;
 import mml.database.Connection;
 import mml.database.Connector;
-import mml.exception.JSONException;
 import mml.exception.MMLDbException;
 import mml.exception.MMLException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 /**
- *
+ * Get a general resource
  * @author desmond
  */
-public class MMLDialectHandler extends MMLGetHandler
+public class MMLResourceHandler extends MMLGetHandler
 {
-/**
+    String database;
+    public MMLResourceHandler( String database )
+    {
+        this.database = database;
+    }
+    /**
      * Handle the request
      * @param request the request
      * @param response the response
@@ -39,7 +43,7 @@ public class MMLDialectHandler extends MMLGetHandler
         {
             Connection conn = Connector.getConnection();
             String jStr = Connector.getConnection().getFromDb(
-                Database.DIALECTS,urn);
+                database,urn);
             String newEncoding = request.getParameter(Params.ENCODING);
             if ( newEncoding != null && newEncoding.length()>0 )
                 this.encoding = encoding;

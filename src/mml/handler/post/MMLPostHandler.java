@@ -90,7 +90,7 @@ public class MMLPostHandler extends MMLHandler
                     String fieldName = item.getFieldName();
                     if ( fieldName != null )
                     {
-                        String contents = item.getString();
+                        String contents = item.getString(this.encoding);
                         if ( fieldName.equals(Params.DOCID) )
                         {
                             int index = contents.lastIndexOf(".");
@@ -98,6 +98,18 @@ public class MMLPostHandler extends MMLHandler
                                 contents = contents.substring(0,index);
                             docid = contents;
                         }
+                        else if ( fieldName.equals(Params.AUTHOR) )
+                            this.author = contents;
+                        else if ( fieldName.equals(Params.TITLE) )
+                            this.title = contents; 
+                        else if ( fieldName.equals(Params.STYLE) )
+                            this.style = contents;
+                        else if ( fieldName.equals(Params.FORMAT) )
+                            this.format = contents;
+                        else if ( fieldName.equals(Params.SECTION) )
+                            this.section = contents;
+                        else if ( fieldName.equals(Params.VERSION1) )
+                            this.version1 = contents;
                         else if ( fieldName.equals(Params.ENCODING) )
                             encoding = contents;
                     }

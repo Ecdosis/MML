@@ -168,13 +168,47 @@ public class Editor extends Test
         }
     }
     /**
+     * Get the opts for this editor
+     * @return an Element (div) containing the content
+     */
+    private String getMml( String docid, String version1 ) throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost:8083/mml/mml?docid="+docid
+                +"&version1="+version1;
+            return URLEncoder.getResponseForUrl(url);
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+    /**
+     * Get the css for this document
+     * @return an Element (div) containing the content
+     */
+    private String getCss( String docid ) throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost:8083/mml/corform/"+docid+"/default";
+            return URLEncoder.getResponseForUrl(url).trim();
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+    /**
      * Build the test age for the editor
      * @throws MMLTestException 
      */
     void composePage()throws MMLTestException
     {
         doc.getHead().addEncoding( encoding );
-        doc.getHead().addCssFile("css/deroberto.css");
+        String css = getCss("italian/deroberto/ivicere");
+        doc.getHead().addCss(css);
         doc.getHead().addScriptFile( "js/jquery-1.11.1.js" );
         doc.getHead().addScriptFile( "js/mml.js" );
         String dialect = getDialect("italian/deroberto/ivicere");
@@ -201,7 +235,7 @@ public class Editor extends Test
         wrapper.addElement( help );
         Element textarea = new Element( "textarea" );
         textarea.addAttribute("id", "source" );
-        String mml = readFile("test/DeRoberto-1920.mml");
+        String mml = getMml("italian/deroberto/ivicere/cap1","/Base/1920");
         textarea.addText( mml );
         wrapper.addElement( textarea );
         Element target = new Element("div");
