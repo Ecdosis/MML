@@ -1,0 +1,15 @@
+{
+        "description": "Markup for Harpur's Poetry",
+        "language": "en",
+        "section": {"prop": "section"},
+        "paragraph": {"prop": ""},
+        "codeblocks": [{"tag":"pre","prop": "level1"},{"tag":"pre","prop":"level2"},{"tag":"pre","prop":"level3"}],
+        "quotations": {"prop": ""},
+        "smartquotes": true,
+        "softhyphens": true,
+        "headings": [{"tag":"=","prop":"h1"},{"tag":"-","prop":"h2"},{"tag":"_","prop":"h3"}],
+        "dividers": [{"tag":"-----","prop":"dash"}, {"tag":"--+--","prop":"plus"}, {"tag":"--<>--","prop":"diamond"}],
+        "charformats": [{"tag":"*","prop":"italics"},{"tag":"`","prop":"letter-spacing"},{"tag":"@","prop":"small-caps"}],
+        "paraformats": [{"leftTag":"->","rightTag":"<-","prop":"centered"}],
+        "milestones": [{"leftTag":"[","rightTag":"]","prop":"page"}]
+}
