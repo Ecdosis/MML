@@ -153,7 +153,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         this.stil.updateLen(r,sb.length()-offset);
     }
     /**
-     * Ensure that there are at least a number of NLs
+     * Ensure that there are at least a given number of NLs
      * @param nNLs the number of newlines that must be at the end of sb
      */
     private void ensure( int nNLs )
@@ -203,6 +203,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                     parsePara( (Element) child, nName );
                 else if ( child.nodeName().toLowerCase().equals("span") )
                     parseSpan( (Element)child );
+                else if ( nName.equals("pre") )
+                    parsePre( (Element) child );
                 else
                     parseOtherElement((Element)child);
             }
@@ -333,6 +335,42 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         return word.toString();
     }
     /**
+     * Parse a codeblock
+     * @param elem the element to parse
+     * @throws a JSON exception
+     */
+    private void parsePre( Element elem ) throws JSONException
+    {
+        if ( elem.hasText() )
+        {
+            int offset = sb.length();
+            String name = elem.attr("class");
+            if ( name == null||name.length()==0 )
+                name = "pre";
+            Range r = new Range( name, offset, 0 );
+            stil.add( r );
+            if ( elem.hasAttr("class") )
+            {
+                List<Node> children = elem.childNodes();
+                for ( Node child: children )
+                {
+                    if ( child instanceof Element )
+                    {
+                        if ( child.nodeName().equals("span") )
+                            parseSpan( (Element)child );
+                        else
+                            parseOtherElement( (Element)child );
+                    }
+                    else if ( child instanceof TextNode )
+                        sb.append( ((TextNode)child).getWholeText() );
+                }
+            }
+            else
+                sb.append( elem.text() );
+            this.stil.updateLen(r,sb.length()-offset);
+        }
+    }
+    /**
      * Parse a span with a class or not
      * @param span the span in HTML
      */
@@ -402,6 +440,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                             parseSpan( (Element) child );
                         else if ( nName.matches("(h|H)\\d") )
                             parsePara( (Element) child, nName );
+                        else if ( nName.equals("pre") )
+                            parsePre( (Element) child );
                         else
                             parseOtherElement( (Element)child );
 

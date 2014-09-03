@@ -74,4 +74,12 @@ $( document ).ready(function() {
    $("#save").click( function() {
         editor.save();
    });
+   $("#dropdown").change( function() {
+        var parts = $("#dropdown").val().split("&");
+        if ( parts.length==2 ) {
+            $("#docid").val(parts[0]);
+            var version = parts[1].split("=");
+            $("#version1").val(version[1]);
+        }
+   });
 }); 

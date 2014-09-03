@@ -35,7 +35,7 @@ function MMLEditor(opts, dialect) {
     this.quotes = {"'":1,"‘":1,"’":1,'"':1,'”':1,'“':1};
     /** number of lines in textarea source */
     this.num_lines = 0;
-    /** flag to indicate if current para was foratted */
+    /** flag to indicate if current para was formatted */
     this.formatted = false;
     /** flag to indicate when images have been loaded */
     this.imagesLoaded = false;
@@ -345,42 +345,109 @@ function MMLEditor(opts, dialect) {
         return text;
     };
     /**
+     * Get the indent level of this line
+     * @param line the line with some leading spaces
+     * @return the level (4 spaces or a tab == 1 level)
+     */
+    this.getLevel = function( line )
+    {
+        var level = 0;
+        var spaces = 0;
+        var j;
+        for ( j=0;j<line.length;j++ )
+        {
+            var token = line.charAt(j);
+            if ( token =='\t' )
+                level++;
+            else if ( token==' ' )
+            {
+                spaces++;
+                if ( spaces >= 4 )
+                {
+                    level++;
+                    spaces = 0;
+                }
+            }
+            else
+                break;
+        }
+        // completely blank lines are NOT indented
+        return (j==line.length)?0:level;
+    };
+    /**
+     * Start a new level of preformatting
+     * @param level the depth of the level (greater than 0)
+     */
+    this.startPre = function( level )
+    {
+        var text = "<pre";
+        var prop = this.dialect.codeblocks[level-1].prop;
+        if ( prop != undefined && prop.length > 0 )
+            text += ' class="'+prop+'">';
+        else
+            text += '>';
+        this.formatted = true;
+        return text;
+    };
+    /**
+     * Remove leading white space. If no such whitespace do nothing.
+     * @param line the line to remove it from
+     * @param level the level of the preformatting
+     * @return the modified line
+     */
+    this.leadTrim = function(line,level)
+    {
+        for ( var i=0;i<level;i++ )
+        {
+            if ( line.indexOf("    ")==0 )
+                line = line.substring(4);
+            else if ( line.indexOf("\t")==0)
+                line = line.substring(1);
+        }
+        return line;
+    };
+    /**
      * Look for four leading white spaces and format as pre
      * @param text the text of the paragraph
      */
     this.processCodeBlocks = function( input )
     {
+        var text = "";
         if ( this.dialect.codeblocks!=undefined )
         {
-            var text = "";
             var lines = input.split("\n");
-            var start = false;
-            var attr = (this.dialect.codeblocks.prop!=undefined
-                &&this.dialect.codeblocks.prop.length>0)
-                ?' class="'+this.dialect.codeblocks.prop+'"':"";
+            var level = 0;
+            var mss = (this.dialect.milestones!=undefined
+                &&this.dialect.milestones.length>0)
+                ?this.dialect.milestones:undefined;
             for ( var i=0;i<lines.length;i++ )
             {
-                if ( lines[i].indexOf("    ")==0||lines[i].indexOf('\t')==0 )
+                var currLevel = this.getLevel(lines[i]);
+                if ( mss == undefined || this.isMilestone(lines[i],mss)==undefined )
                 {
-                    if ( start==false )
+                    if ( currLevel > level )
                     {
-                        text += '<pre'+attr+'>';
-                        start = true;
+                        if ( level > 0 )
+                            text += '</pre>';
+                        if ( currLevel <= this.dialect.codeblocks.length )
+                            text += this.startPre(currLevel);
+                        else // stay at current level
+                            currLevel = level;
                     }
-                    text += lines[i].slice(4)+"\n";
+                    else if ( currLevel < level )
+                    {
+                        text += '</pre>';
+                        if ( currLevel > 0 )
+                            text += this.startPre(currLevel);
+                    }
+                    level = currLevel;
                 }
-                else
-                {
-                    if ( start )
-                    {
-                        text += "</pre>";
-                        start = false;
-                    }
-                    text += lines[i]+"\n";
-                }   
+                text += (lines[i].length>0)?this.leadTrim(lines[i],currLevel):"";
+                if ( i < lines.length-1 )
+                    text += '\n';
             }
-            if ( start )
-                text += "</pre>\n";
+            if ( level > 0 )
+                text += "</pre><p></p>";
         }
         else
             text = input;
@@ -541,7 +608,7 @@ function MMLEditor(opts, dialect) {
     {
         if ( this.dialect.headings !=undefined )
         {
-            var i,ms,line;
+            var i;
             var res = "";
             var mss = (this.dialect.milestones!=undefined&&this.dialect.milestones.length>0)
                 ?this.dialect.milestones:undefined;
@@ -559,58 +626,42 @@ function MMLEditor(opts, dialect) {
             var lines = text.split("\n");
             for ( i=0;i<lines.length;i++ )
             {
-                line = lines[i];
-                if ( i > 0 )
-                    this.num_lines++;
-                if ( i>0 && line.length > 0 )
+                var ms;
+                var line = lines[i];
+                this.num_lines++;
+                if ( line.length > 0 )
                 {
-                    var prev = lines[i-1];
-                    if ( line.charAt(0) in heads )
+                    var c = line.charAt(0);
+                    if ( c in heads && i>0 && this.isHeading(lines[i],c) )
                     {
-                        var j = 0;
-                        var c = line.charAt(0);
                         var attr = ' class="'+heads[c]+'" title="'+heads[c]+'"';
-                        if ( this.isHeading(line,c) )
-                        {
-                            // all chars the same
-                            res += '<'+tags[heads[c]]+attr+'>'+prev
-                                +'</'+tags[heads[c]]+'>\n';  
-                            this.formatted = true; 
-                        }
-                        else 
-                            res += prev+'\n';
+                        res += '<'+tags[heads[c]]+attr+'>'+lines[i-1]
+                            +'</'+tags[heads[c]]+'>\n';  
+                        this.formatted = true; 
                     }
-                    else if ( prev.length > 0 )
+                    else if ( mss != undefined 
+                        && (ms=this.isMilestone(line,mss))!=undefined )
                     {
-                        if ( mss != undefined 
-                            && this.isMilestone(prev,mss)!=undefined )
+                        var ref = line.slice(ms.leftTag.length,
+                            this.endPos(line,ms.rightTag));
+                        if ( ms.prop=="page" )
                         {
-                            ms = this.isMilestone(prev,mss);
-                            var ref = prev.slice(ms.leftTag.length,
-                                this.endPos(prev,ms.rightTag));
-                            if ( ms.prop=="page" )
-                                this.page_lines.push(new RefLoc(ref,this.num_lines));
-                            res += '<span class="'+ms.prop+'">'
-                                +ref+'</span>';
+                            //console.log("ref="+ref+" num_lines="+this.num_lines);
+                            this.page_lines.push(new RefLoc(ref,this.num_lines));
                         }
-                        else
-                            res += prev+'\n';
+                        res += '<span class="'+ms.prop+'">'
+                            +ref+'</span>';
+                    }
+                    else if ( i == lines.length-1 )
+                         res += line+'\n';
+                    else
+                    {
+                        var next = lines[i+1];
+                        var d = next.charAt(0);
+                        if ( !(d in heads && this.isHeading(next,d)) )
+                            res += line+'\n';
                     }
                 }
-            }
-            if ( lines[lines.length-1].length > 0 )
-            {
-                line = lines[lines.length-1];
-                if ( mss != undefined && this.isMilestone(line,mss)!=undefined )
-                {
-                    ms = this.isMilestone(line,mss);
-                    var ref = line.slice(ms.leftTag.length,this.endPos(line,ms.rightTag));
-                    if ( ms.prop="page" )
-                        this.page_lines.push( new RefLoc(ref,this.num_lines) );
-                    res += '<span class="'+ms.prop+'">'+ref+'</span>';
-                }
-                else if ( !this.isHeading(line,line.charAt(0)) )
-                    res += line + "\n";
             }
             text = res;
         }
@@ -630,14 +681,15 @@ function MMLEditor(opts, dialect) {
             ?' class="'+this.dialect.paragraph.prop+'" title="'
             +this.dialect.paragraph.prop+'"':"";
         text = this.processSmartQuotes(text);
-        text = this.processHeadings(text);
         text = this.processCodeBlocks(text);
+        text = this.processHeadings(text);
         text = this.processQuotations(text);
         text = this.processPfmts(text);
         text = this.processDividers(text);
         text = this.processCfmts(text);
         if ( !this.formatted && text.length > 0 )
             text = '<p'+attr+'>'+text+'</p>';
+        console.log("num_lines="+this.num_lines);
         return text;
     };
     /**
@@ -651,12 +703,21 @@ function MMLEditor(opts, dialect) {
         var paras = section.split("\n\n");
         for ( var i=0;i<paras.length;i++ )
         {
-            if ( i > 0 )
-                this.num_lines += 2;
             if ( paras[i].length > 0 )
                 html += this.processPara(paras[i]);
+            this.num_lines++;
         }
         return html;
+    };
+    this.isEmptySection = function(section) {
+        var empty = true;
+        for ( var i=0;i<section.length;i++ )
+        {
+            var c = section.charAt(i);
+            if ( c!='\t'||c!=' '||c!= '\n' )
+                return false;
+        }
+        return true;
     };
     /**
      * Convert the MML text into HTML
@@ -666,18 +727,21 @@ function MMLEditor(opts, dialect) {
     this.toHTML = function(text)
     {
         var html = "";
+        this.num_lines = 0;
         var sectionName = (this.dialect.section!=undefined
             &&this.dialect.section.prop!=undefined)
             ?this.dialect.section.prop:"section";
         var sections = text.split("\n\n\n");
+        if ( this.isEmptySection(sections[sections.length-1]) )
+            sections = sections.slice(0,sections.length-1);
         for ( var i=0;i<sections.length;i++ )
         {
-            if ( i > 0 )
-                this.num_lines += 3;
             html+= '<div class="'+sectionName+'">'
                 +this.processSection(sections[i]);
             html += '</div>';
+            this.num_lines ++;
         }
+        //console.log("num_lines="+this.num_lines);
         return html;
     };
     /**
@@ -687,7 +751,6 @@ function MMLEditor(opts, dialect) {
     {
         if ( this.changed )
         {
-            this.num_lines = 0;
             this.page_lines = new Array();
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
@@ -740,6 +803,7 @@ function MMLEditor(opts, dialect) {
                     break;
             }
         }
+        //console.log("value="+value+" mid="+mid);
         return mid;
     }
     /**
@@ -833,6 +897,7 @@ function MMLEditor(opts, dialect) {
                 // convert scrollPos to lines
                 var lineHeight = src.prop("scrollHeight")/this.num_lines;
                 var linePos = Math.round(scrollPos/lineHeight);
+                //console.log("linePos="+linePos+" scrollPos="+scrollPos);
                 // find page after which linePos occurs
                 var index = this.findHighestIndex(this.page_lines,linePos);
                 var linesOnPage;
@@ -981,8 +1046,6 @@ function MMLEditor(opts, dialect) {
         info += "<h2>Novel markup for De Roberto</h2>";
         info += this.describeSimpleProp("Sections",this.dialect.sections,"two blank lines");
         info += this.describeSimpleProp("Paragraphs",this.dialect.paragraphs,"one blank line");
-        info += this.describeSimpleProp("Preformatted sections",this.dialect.codeblocks,
-            "four initial spaces");
         info += this.describeSimpleProp("Quotations",this.dialect.quotations,
             "initial '> ', which may be nested");
         if ( this.dialect.softhyphens )
@@ -1001,6 +1064,21 @@ function MMLEditor(opts, dialect) {
                  +"automatically into curly quotes.</p>";
         else
             info += "<p>Single and double plain <b>quotation marks</b> will be left unchanged.</p>";
+        if ( this.dialect.codeblocks != undefined && this.dialect.codeblocks.length > 0 )
+        {
+            info += "<h3>Preformatted sections</h3><p>The following are defined:</p>";
+            for ( i=0;i<this.dialect.codeblocks.length;i++ )
+            {
+                var h = this.dialect.codeblocks[i];
+                var level = i+1;
+                info += "<p>A line starting with "+(level*4)+" spaces will be treated"
+                    "as preformatted and will be indented to tab-stop "+level;
+                if ( h.prop != undefined && h.prop.length>0 )
+                     info += ", and will be labelled '"+h.prop+"'.</p>";
+                else
+                     info += ".</p>";
+            }
+        }
         if ( this.dialect.headings != undefined && this.dialect.headings.length > 0 )
         {
             info += "<h3>Headings</h3><p>The following are defined:</p>";
@@ -1209,6 +1287,7 @@ function MMLEditor(opts, dialect) {
                 if ( e.originalEvent )
                 {
                     var loc = self.getSourcePage($(this));
+                    var parts = loc.split(",");
                     self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
                     self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
                 }
@@ -1237,14 +1316,11 @@ function MMLEditor(opts, dialect) {
             return function(e) {
                 if ( e.originalEvent )
                 {
-                    if ( this.infoDisplayed )
-                        console.log("nfo being displayed!");
                     var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
                     var loc = self.getPixelPage($(this),self.image_lines);
                     self.scrollTo(loc,self.page_lines,$("#"+self.opts.source),lineHeight);
-                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
-                } else if ( this.infoDisplayed )
-                    console.log("not scolling images because e.originalEvent is null");
+                        self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+                }
             }
         })(this)
     );

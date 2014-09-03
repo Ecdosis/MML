@@ -58,7 +58,15 @@ public class MMLGetHandler extends MMLHandler {
             else if ( service.equals(Service.OPTS))
                 new MMLGetOptsHandler().handle( request, response, urn );
         } catch (Exception e) {
-            throw new MMLException(e);
+            try
+            {
+                response.setCharacterEncoding(encoding);
+                response.getWriter().println(e.getMessage());
+            }
+            catch ( Exception ex )
+            {
+                throw new MMLException(ex);
+            }
         }
     }
     /**

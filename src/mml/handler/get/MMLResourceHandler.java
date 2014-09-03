@@ -8,8 +8,9 @@ package mml.handler.get;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.constants.Database;
+import mml.Utils;
 import mml.constants.JSONKeys;
+import mml.constants.Database;
 import mml.constants.Params;
 import mml.database.Connection;
 import mml.database.Connector;
@@ -42,8 +43,32 @@ public class MMLResourceHandler extends MMLGetHandler
         try
         {
             Connection conn = Connector.getConnection();
-            String jStr = Connector.getConnection().getFromDb(
-                database,urn);
+            String original = new String(urn);
+            String jStr = null;
+            do
+            {
+                jStr = Connector.getConnection().getFromDb(
+                    database,urn);
+                if ( jStr == null )
+                {
+                    if ( this.database.equals(Database.CORFORM) )
+                    {
+                        String last = Utils.last(urn);
+                        if ( last.equals("default") )
+                        {
+                            urn = Utils.chomp(urn);
+                            urn = Utils.chomp(urn)+"/"+last;
+                        }
+                        else
+                            urn = Utils.chomp(urn);
+                    }
+                    else
+                        break;
+                }
+            }
+            while ( jStr == null );
+            if ( jStr == null )
+                throw new MMLDbException("Failed to find "+original);
             String newEncoding = request.getParameter(Params.ENCODING);
             if ( newEncoding != null && newEncoding.length()>0 )
                 this.encoding = encoding;

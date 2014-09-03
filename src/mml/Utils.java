@@ -75,6 +75,21 @@ public class Utils
             return urn;
     }
     /**
+     * Fetch the last component of a urn
+     * @param urn the urn to look at
+     * @return the first urn component
+     */
+    public static String last( String urn )
+    {
+        int index = urn.lastIndexOf("/");
+        if ( index != -1 )
+        {
+            return urn.substring(index+1);
+        }
+        else
+            return urn;
+    }
+    /**
      * Extract the second component of a urn
      * @param urn the urn to extract from
      * @return the second urn component

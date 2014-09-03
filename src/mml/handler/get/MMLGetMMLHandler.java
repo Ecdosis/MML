@@ -30,6 +30,7 @@ import mml.constants.JSONKeys;
 import mml.database.Connection;
 import mml.database.Connector;
 import mml.exception.*;
+import mml.Utils;
 import mml.handler.AeseVersion;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
@@ -190,7 +191,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     enterProp(value,keyword,"p");
                     break;
                 case codeblocks:
-                    enterProp(value,keyword,"pre");
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject obj = (JSONObject)array.get(i);
+                        enterProp(obj,keyword,(String)obj.get("tag")+i);
+                    }
                     break;
                 case quotations:
                     enterProp(value,keyword,"quote");
@@ -360,8 +366,20 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         try
         {
-            String jStr = Connector.getConnection().getFromDb(
-                Database.DIALECTS,docID);
+            String originalDocID = new String(docID);
+            String jStr = null;
+            do
+            {
+                jStr = Connector.getConnection().getFromDb(
+                    Database.DIALECTS,docID);
+                if ( jStr == null )
+                {
+                    if ( docID.length()>0 && docID.indexOf("/")!= -1 )
+                        docID = Utils.chomp(docid);
+                    else
+                        break;
+                }
+            } while ( jStr == null );
             if ( jStr != null )
             {
                 JSONObject jDoc = (JSONObject)JSONValue.parse( jStr );
@@ -372,7 +390,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 return body;
             }
             else
-                throw new MMLDbException("couldn't find dialect "+docID );
+                throw new MMLDbException("couldn't find dialect "+originalDocID );
         }
         catch ( Exception e )
         {
