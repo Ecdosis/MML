@@ -137,22 +137,22 @@ public class Editor extends Test
         dropdown.addAttribute("class","dropdown");
         dropdown.addAttribute("id","dropdown");
         Element option1 = new Element("option");
-        String currentValue = docid+"&version1="+version1;
+        String currentValue = "docid="+docid+"&version1="+version1;
         option1.addAttribute("value",DEROBERTO_1920);
-        if ( currentValue.equals(DEROBERTO_1920) )
+        if ( DEROBERTO_1920.startsWith(currentValue) )
             option1.addAttribute("selected","");
         option1.addText("De Roberto I Vicerè 1920 Chapter 1");
         dropdown.addElement(option1);
         Element option2 = new Element("option");
         option2.addAttribute("value",HARPUR_1883);
-        if ( currentValue.equals(HARPUR_1883) )
+        if ( HARPUR_1883.startsWith(currentValue) )
             option2.addAttribute("selected","");
         option2.addText("Harpur Tower of the Dream 1883");
         dropdown.addElement(option2);
         Element option3 = new Element("option");
         option3.addAttribute("value",DEROBERTO_1894);
         option3.addText("De Roberto I Vicerè 1894 Chapter 1");
-        if ( currentValue.equals(DEROBERTO_1894) )
+        if ( DEROBERTO_1894.startsWith(currentValue) )
             option3.addAttribute("selected","");
         dropdown.addElement(option3);
         wrapper.addElement(dropdown);
