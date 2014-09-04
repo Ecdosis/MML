@@ -1,0 +1,16 @@
+<!doctype HTML>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+</head>
+<body>
+<form name="myWebForm" action="http://localhost:8083/mml/html" method="POST" enc="multipart/form-data">
+<input name ="html" type="file">
+<input type="submit">
+<textarea name="dialect" rows="25" cols="50">
+{ "description": "Markup for Harpur's Poetry", "language": "en", "section": {"prop": "section"}, "paragraph": {"prop": ""}, "codeblocks": [{"tag":"pre","prop": "level1"},{"tag":"pre","prop":"level2"},{"tag":"pre","prop":"level3"}], "quotations": {"prop": ""}, "smartquotes": true, "softhyphens": true, "headings": [{"tag":"=","prop":"h1"},{"tag":"-","prop":"h2"},{"tag":"_","prop":"h3"}], "dividers": [{"tag":"-----","prop":"dash"}, {"tag":"--+--","prop":"plus"}, {"tag":"--<>--","prop":"diamond"}], "charformats": [{"tag":"*","prop":"italics"},{"tag":"`","prop":"letter-spacing"},{"tag":"@","prop":"small-caps"}], "paraformats": [{"leftTag":"->","rightTag":"<-","prop":"centered"}], "milestones": [{"leftTag":"[","rightTag":"]","prop":"page"}]}
+</textarea>
+<input type="text" name="docid" value="english/harpur/h642j">
+<input type="text" name="version1" value="/Base/1883">
+</form>
+</body>
+</html>

@@ -689,7 +689,7 @@ function MMLEditor(opts, dialect) {
         text = this.processCfmts(text);
         if ( !this.formatted && text.length > 0 )
             text = '<p'+attr+'>'+text+'</p>';
-        console.log("num_lines="+this.num_lines);
+        //console.log("num_lines="+this.num_lines);
         return text;
     };
     /**

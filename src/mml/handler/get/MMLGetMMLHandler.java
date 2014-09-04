@@ -57,10 +57,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         String text;
         int offset;
-        EndTag( int offset, String text )
+        JSONObject def;
+        EndTag( int offset, String text, JSONObject def )
         {
             this.offset = offset;
             this.text = text;
+            this.def = def;
         }
     }
     /**
@@ -80,11 +82,11 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case headings:
                 return "";
             case codeblocks:
-                return "    ";
+                return "";
             case quotations:
                 return "> ";
             case dividers:
-                return "\n";
+                return "";
             case charformats:
                 if ( defn.containsKey("tag") )
                     return (String)defn.get("tag");
@@ -124,7 +126,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     sb.append(defn.get("tag"));
                 return "\n"+sb.toString()+"\n\n";
             case dividers:
-                return (String)defn.get("tag")+"\n";
+                return "\n\n"+(String)defn.get("tag")+"\n\n";
             case charformats:
                 if ( defn.containsKey("tag") )
                     return (String)defn.get("tag");
@@ -196,6 +198,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     {
                         JSONObject obj = (JSONObject)array.get(i);
                         enterProp(obj,keyword,(String)obj.get("tag")+i);
+                        // remember level
+                        obj.put("level",i+1);
                     }
                     break;
                 case quotations:
@@ -235,20 +239,49 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         int leadingNLs = 0;
         for( int i=0;i<tag.length();i++ )
-            if ( tag.charAt(i)=='\n')
+        {
+            char c = tag.charAt(i);
+            if ( c =='\n')
                 leadingNLs++;
-            else
+            else if ( c != '\r'&&c!=' '&&c!='\t' )
                 break;
+        }
         int trailingNLs =0;
         for ( int i=mml.length()-1;i>=0;i-- )
-            if ( mml.charAt(i)=='\n' )
+        {
+            char c = mml.charAt(i);
+            if ( c=='\n' )
                 trailingNLs++;
-            else
+            else if ( c != '\r'&&c!=' '&&c!='\t' )
                 break;
+        }
         int both = Math.max(leadingNLs,trailingNLs);
         int total = leadingNLs+trailingNLs;
         int delenda = total-both;
-        mml.setLength(mml.length()-delenda);
+        int mmlEnd = mml.length()-1;
+        while ( mmlEnd> 0 && delenda > 0 )
+        {
+            char c =  mml.charAt(mmlEnd);
+            if ( c=='\n' )
+                delenda--;
+            mmlEnd--;
+        }
+        mml.setLength(mmlEnd+1);
+    }
+    boolean isInPre( Stack<EndTag> stack )
+    {
+        if ( !stack.isEmpty() )
+        {
+            EndTag top = stack.peek();
+            if ( top != null )
+            {
+                JSONObject obj = top.def;
+                return "codeblocks".equals(obj.get("kind"));
+            }
+            else
+                return false;
+        }
+        else return false;
     }
     /**
      * Create the MMLtext using the invert index and the cortex and corcode
@@ -270,7 +303,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             Long len = (Long)r.get("len");
             Long relOff = (Long)r.get("reloff");
             String name = (String)r.get("name");
-            if ( len.intValue() > 0 && invertIndex.containsKey(name) )
+            if ( invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
                 String startTag = mmlStartTag(def,offset);
@@ -280,9 +313,22 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 int pos = offset;
                 while ( !stack.isEmpty() && stack.peek().offset <= start )
                 {
+                    // check for NLs here if obj is of type codeblocks
+                    // and insert however many spaces approporiate for that level
                     int tagEnd = stack.peek().offset;
+                    boolean inPre = isInPre( stack );
                     for ( int j=pos;j<tagEnd;j++ )
-                        mml.append(text.charAt(j));
+                    {
+                        char c = text.charAt(j);
+                        mml.append(c);
+                        if ( c=='\n' && inPre && j<tagEnd-1 )
+                        {
+                            JSONObject oldDef = stack.peek().def;
+                            Integer level = (Integer)oldDef.get("level");
+                            for (int k=0;k<level;k++ )
+                                mml.append("    ");
+                        }
+                    }
                     pos = tagEnd;
                     // newlines are not permitted before tag end
                     while ( mml.length()>0 && mml.charAt(mml.length()-1)=='\n')
@@ -290,12 +336,23 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     mml.append( stack.pop().text );
                 }
                 // 2. insert intervening text
+                boolean inPre =isInPre(stack);
                 for ( int j=pos;j<start;j++ )
-                    mml.append(text.charAt(j));
+                {
+                    char c = text.charAt(j);
+                    mml.append(c);
+                    if ( c=='\n' && inPre )
+                    {
+                        JSONObject oldDef = stack.peek().def;
+                        Integer level = (Integer)oldDef.get("level");
+                        for ( int k=0;k<level;k++ )
+                            mml.append("    ");
+                    }
+                }
                 // 3. insert new start tag
                 normaliseNewlines(startTag);
                 mml.append(startTag);
-                stack.push(new EndTag(start+len.intValue(),endTag));
+                stack.push(new EndTag(start+len.intValue(),endTag,def));
             }
             offset += relOff.intValue();
         }
@@ -304,8 +361,19 @@ public class MMLGetMMLHandler extends MMLGetHandler
         while ( !stack.isEmpty() )
         {
             int tagEnd = stack.peek().offset;
+            boolean inPre = isInPre( stack );
             for ( int j=pos;j<tagEnd;j++ )
-                mml.append(text.charAt(j));
+            {
+                char c = text.charAt(j);
+                mml.append(c);
+                if ( c=='\n' && inPre && j<tagEnd-1 )
+                {
+                    JSONObject oldDef = stack.peek().def;
+                    Integer level = (Integer)oldDef.get("level");
+                    for (int k=0;k<level;k++ )
+                        mml.append("    ");
+                }
+            }
             pos = tagEnd;
             // newlines are not permitted before tag end
             while ( mml.length()>0 && mml.charAt(mml.length()-1)=='\n')

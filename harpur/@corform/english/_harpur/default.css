@@ -42,7 +42,7 @@
 /* formats supported by the MML dialect */
 body {margin: 0px 0px 0px 0px; font: 14px arial, sans-serif;}
 p {margin-top:0}
-pre {font: 14px arial, sans-serif}
+pre {font: 14px arial, sans-serif;margin-top:0px; margin-bottom:0px;}
 .level1 {margin-left: 20px; }
 .level2 {margin-left: 40px; }
 .level3 {margin-left: 60px;}

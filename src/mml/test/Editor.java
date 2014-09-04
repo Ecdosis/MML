@@ -52,13 +52,13 @@ public class Editor extends Test
     +"al().split(\"&\");\n\t\tfor ( var i=0;i<parts.length;i++ ) "
     +"{\n\t\t\tvar value = parts["
     +"i].split(\"=\");\n\t\t\tif ( value.length== 2 )\n\t\t\t\t$(\""
-    +"#\"+value[0]).val(value[1]);\n\t\t}\n\t\t//$(\"form\").submit"
+    +"#\"+value[0]).val(value[1]);\n\t\t}\n\t\t$(\"form\").submit"
     +"();\n});\n}); \n";
     static String DEROBERTO_1920 = "docid=italian/deroberto/ivicere/cap1&version1="
         +"/Base/1920&title=I Vicerè&author=De Roberto";
     static String DEROBERTO_1894 = "docid=italian/deroberto/ivicere/cap1&version1="
         +"/Base/1894&title=I Vicerè&author=De Roberto";
-    static String HARPUR_1883 = "docid=english/harpur/h642j&version1=/Base/1883"
+    static String HARPUR_1883 = "docid=english/_harpur/h642j&version1=/Base/1883"
         +"&title=Poems&author=Harpur";
     public Editor()
     {
