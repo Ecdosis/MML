@@ -833,15 +833,10 @@ function MMLEditor(opts, dialect) {
         if ( this.num_lines > 0 && lines.length > 0 )
         {
             var scrollPos = div.scrollTop();
-            var scrollHt = div.prop("scrollHeight");
-            var divHeight = div.height();
-            var padBot = div.css("padding-bottom");
-            var padTop = div.css("padding-top");
-            var padding = parseInt(padBot)+parseInt(padTop);
-            var maximum = scrollHt-(divHeight+padding);
+            var scrollHt = div[0].scrollHeight;
             if ( scrollPos == 0 )
                 return lines[0].ref+",0.0";
-            else if ( scrollPos == maximum )
+            else if ( scrollPos == div[0].scrollTopMax )
                 return lines[lines.length-1].ref+",1.0";
             else
             {
@@ -886,7 +881,7 @@ function MMLEditor(opts, dialect) {
         if ( this.num_lines > 0 && this.page_lines.length > 0 )
         {
             var scrollPos = src.scrollTop();
-            var maximum = src.prop("scrollHeight")-src.height();
+            var maximum = src[0].scrollTopMax;
             if ( scrollPos == 0 )
                 return this.page_lines[0].ref+",0.0";
             else if ( scrollPos == maximum )
