@@ -761,11 +761,17 @@ function MMLEditor(opts, dialect) {
             var base = 0;
             var self = this;
             $(".page").each( function(i) {
-                if ( base==0 && $(this).offset().top < 0 )
-                    base = Math.abs($(this).offset().top);
-                self.html_lines.push(new RefLoc($(this).text(),$(this).offset().top+base));
+                var pos = $(this).position().top;
+                if ( base==0 && pos < 0 )
+                    base = Math.abs(pos);
+                self.html_lines.push(new RefLoc($(this).text(),pos+base));
+                // inefficient but the only way
+                $(this).css("display","none");
             });
-            $(".page").css("display","none");
+            console.log("base="+base);
+            // doing it here accumulates error down the page
+            // the .page elements are ALL visible, and change the text flow
+            //$(".page").css("display","none");
         }
     };
     /**
@@ -941,7 +947,7 @@ function MMLEditor(opts, dialect) {
             }
             this.imagesLoaded = true;
         }
-        console.log("currHt="+currHt);
+        //console.log("currHt="+currHt);
     };
     /**
      * Scroll to the specified location
