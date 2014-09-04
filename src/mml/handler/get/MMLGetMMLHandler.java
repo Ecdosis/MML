@@ -75,6 +75,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         String kind = (String)defn.get("kind");
         DialectKeys key = DialectKeys.valueOf(kind);
+        StringBuilder sb;
         switch ( key )
         {
             case section:
@@ -82,7 +83,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case headings:
                 return "";
             case codeblocks:
-                return "";
+                sb = new StringBuilder();
+                for ( int i=0;i<(Integer)defn.get("level");i++ )
+                    sb.append("    ");
+                return sb.toString();
             case quotations:
                 return "> ";
             case dividers:
@@ -283,6 +287,13 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
         else return false;
     }
+    void startPreLine( Stack<EndTag> stack )
+    {
+        JSONObject oldDef = stack.peek().def;
+        Integer level = (Integer)oldDef.get("level");
+        for (int k=0;k<level;k++ )
+            mml.append("    ");
+    }
     /**
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
@@ -317,17 +328,14 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     // and insert however many spaces approporiate for that level
                     int tagEnd = stack.peek().offset;
                     boolean inPre = isInPre( stack );
+                    if ( inPre && mml.charAt(mml.length()-1) == '\n' )
+                        startPreLine( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
                         char c = text.charAt(j);
                         mml.append(c);
                         if ( c=='\n' && inPre && j<tagEnd-1 )
-                        {
-                            JSONObject oldDef = stack.peek().def;
-                            Integer level = (Integer)oldDef.get("level");
-                            for (int k=0;k<level;k++ )
-                                mml.append("    ");
-                        }
+                            startPreLine(stack);
                     }
                     pos = tagEnd;
                     // newlines are not permitted before tag end
@@ -343,10 +351,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     mml.append(c);
                     if ( c=='\n' && inPre )
                     {
-                        JSONObject oldDef = stack.peek().def;
-                        Integer level = (Integer)oldDef.get("level");
-                        for ( int k=0;k<level;k++ )
-                            mml.append("    ");
+                        startPreLine(stack);
                     }
                 }
                 // 3. insert new start tag
@@ -362,17 +367,14 @@ public class MMLGetMMLHandler extends MMLGetHandler
         {
             int tagEnd = stack.peek().offset;
             boolean inPre = isInPre( stack );
+            if ( inPre && mml.charAt(mml.length()-1) == '\n' )
+                startPreLine( stack );
             for ( int j=pos;j<tagEnd;j++ )
             {
                 char c = text.charAt(j);
                 mml.append(c);
                 if ( c=='\n' && inPre && j<tagEnd-1 )
-                {
-                    JSONObject oldDef = stack.peek().def;
-                    Integer level = (Integer)oldDef.get("level");
-                    for (int k=0;k<level;k++ )
-                        mml.append("    ");
-                }
+                    startPreLine(stack );
             }
             pos = tagEnd;
             // newlines are not permitted before tag end
