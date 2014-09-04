@@ -834,9 +834,14 @@ function MMLEditor(opts, dialect) {
         {
             var scrollPos = div.scrollTop();
             var scrollHt = div[0].scrollHeight;
+            var maximum;
+            if ( div[0].scrollTopMax != undefined )
+                maximum = div[0].scrollTopMax;
+            else 
+                maximum = scrollHt - div.outerHeight(true);
             if ( scrollPos == 0 )
                 return lines[0].ref+",0.0";
-            else if ( scrollPos == div[0].scrollTopMax )
+            else if ( scrollPos == maximum )
                 return lines[lines.length-1].ref+",1.0";
             else
             {
@@ -881,7 +886,12 @@ function MMLEditor(opts, dialect) {
         if ( this.num_lines > 0 && this.page_lines.length > 0 )
         {
             var scrollPos = src.scrollTop();
-            var maximum = src[0].scrollTopMax;
+            var maximum;
+            var scrollHt = src[0].scrollHeight;
+            if ( src[0].scrollTopMax != undefined )
+                maximum = src[0].scrollTopMax;
+            else 
+                maximum = scrollHt - src.outerHeight(true);
             if ( scrollPos == 0 )
                 return this.page_lines[0].ref+",0.0";
             else if ( scrollPos == maximum )
