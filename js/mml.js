@@ -768,7 +768,6 @@ function MMLEditor(opts, dialect) {
                 // inefficient but the only way
                 $(this).css("display","none");
             });
-            console.log("base="+base);
             // doing it here accumulates error down the page
             // the .page elements are ALL visible, and change the text flow
             //$(".page").css("display","none");
@@ -941,7 +940,12 @@ function MMLEditor(opts, dialect) {
                     +'" style="width: 100%; max-width: '
                     +opts.data.desc[i].width+'px"></div>';
                 div.append(image);
-                var scaledHeight = $("#image_"+ref).height();
+                var divWidth = div.width();
+                var scale = divWidth/opts.data.desc[i].width;
+                var scaledHeight = Math.floor(opts.data.desc[i].height*(scale));
+                var imgHeight = $("#image_"+ref).height();
+                if ( scaledHeight == 0 && imgHeight > 0 )
+                    scaledHeight = imgHeight;
                 this.image_lines.push( new RefLoc(ref,currHt) );    
                 currHt += scaledHeight;
             }
