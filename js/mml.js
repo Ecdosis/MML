@@ -42,7 +42,7 @@ function MMLEditor(opts, dialect) {
     /** flag for info displayed */
     this.infoDisplayed = false;
     /** page break RefLoc page starts in textarea (lines) */
-    this.page_lines = new Array();
+    this.text_lines = new Array();
     /** page break RefLocs for html target */
     this.html_lines = new Array();
     /** page-breaks for images */
@@ -647,7 +647,7 @@ function MMLEditor(opts, dialect) {
                         if ( ms.prop=="page" )
                         {
                             //console.log("ref="+ref+" num_lines="+this.num_lines);
-                            this.page_lines.push(new RefLoc(ref,this.num_lines));
+                            this.text_lines.push(new RefLoc(ref,this.num_lines));
                         }
                         res += '<span class="'+ms.prop+'">'
                             +ref+'</span>';
@@ -751,7 +751,7 @@ function MMLEditor(opts, dialect) {
     {
         if ( this.changed )
         {
-            this.page_lines = new Array();
+            this.text_lines = new Array();
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
             $("#"+this.opts.target).html(this.toHTML(text));
@@ -848,31 +848,23 @@ function MMLEditor(opts, dialect) {
                 // align on middle of target window
                 scrollPos += div.height()/2;
                 var index = this.findHighestIndex( lines, scrollPos ); 
-                var pixelsOnPage;
-                if ( index == -1 )
+                var pageHeight;
+                if ( index == lines.length-1)
                 {
-                    pixelsOnPage = lines[0].loc;
-                }
-                else if ( index == lines.length-1)
-                {
-                    pixelsOnPage = div.prop('scrollHeight')-lines[index].loc;
+                    pageHeight = scrollHt-lines[index].loc;
                 }  
-                else
+                else if ( index != -1 )
                 {
-                    var nextPageStart = lines[index+1].loc;
-                    pixelsOnPage = nextPageStart-lines[index].loc;
+                    pageHeight = lines[index+1].loc-lines[index].loc;
                 }              
-                if ( index == -1 )
-                    return ",0.0";
                 else
-                {
-                    var fraction = (scrollPos-lines[index].loc)/pixelsOnPage;
-                    return lines[index].ref+","+fraction;
-                }
+                    return lines[0].ref+",0.0";
+                var pageFraction = (scrollPos-lines[index].loc)/pageHeight;
+                return lines[index].ref+","+pageFraction;
             }
         }
         else
-            return ",0.0";
+            return lines[0].ref+",0.0";
     };
     /**
      * Get the source page number currently in view in the textarea, 
@@ -883,7 +875,7 @@ function MMLEditor(opts, dialect) {
      */
     this.getSourcePage = function( src )
     {
-        if ( this.num_lines > 0 && this.page_lines.length > 0 )
+        if ( this.num_lines > 0 && this.text_lines.length > 0 )
         {
             var scrollPos = src.scrollTop();
             var maximum;
@@ -893,9 +885,9 @@ function MMLEditor(opts, dialect) {
             else 
                 maximum = scrollHt - src.outerHeight(true);
             if ( scrollPos == 0 )
-                return this.page_lines[0].ref+",0.0";
+                return this.text_lines[0].ref+",0.0";
             else if ( scrollPos == maximum )
-                return this.page_lines[this.page_lines.length-1].ref+",1.0";
+                return this.text_lines[this.text_lines.length-1].ref+",1.0";
             else
             {
                 scrollPos += src.height()/2;
@@ -904,42 +896,35 @@ function MMLEditor(opts, dialect) {
                 var linePos = Math.round(scrollPos/lineHeight);
                 //console.log("linePos="+linePos+" scrollPos="+scrollPos);
                 // find page after which linePos occurs
-                var index = this.findHighestIndex(this.page_lines,linePos);
+                var index = this.findHighestIndex(this.text_lines,linePos);
                 var linesOnPage;
-                if ( index == -1 )
+                if ( index == this.text_lines.length-1)
                 {
-                    linesOnPage = this.page_lines[0].loc;
-                }
-                else if ( index == this.page_lines.length-1)
-                {
-                    linesOnPage = this.num_lines-this.page_lines[index].loc;
+                    linesOnPage = this.num_lines-this.text_lines[index].loc;
                 }  
-                else
+                else if ( index != -1 )
                 {
-                    var nextPageStart = this.page_lines[index+1].loc;
-                    linesOnPage = nextPageStart-this.page_lines[index].loc;
+                    var nextPageStart = this.text_lines[index+1].loc;
+                    linesOnPage = nextPageStart-this.text_lines[index].loc;
                 }              
-                if ( index == -1 )
-                    return ",0.0";
                 else
-                {
-                    var fraction = (linePos-this.page_lines[index].loc)/linesOnPage;
-                    return this.page_lines[index].ref+","+fraction;
-                }
+                    return this.text_lines.ref+",0.0";
+                var fraction = (linePos-this.text_lines[index].loc)/linesOnPage;
+                return this.text_lines[index].ref+","+fraction;
             }
         }
         else
-            return ",0.0";
+            return this.text_lines.ref+",0.0";
     };
     /**
      * Load the images by just creating HTML &lt;img&gt; elements. 
      */
     this.loadImages = function() {
         var div = $("#"+this.opts.images);
-        // go through the already loaded page numbers in this.page_lines
+        // go through the already loaded page numbers in this.text_lines
+        var currHt = 0;
         if ( !this.imagesLoaded )
         {
-            var currHt = 0;
             var num_pages = (opts.data.desc != undefined)?opts.data.desc.length:0;
             for ( var i=0;i<num_pages;i++ )
             {
@@ -950,14 +935,13 @@ function MMLEditor(opts, dialect) {
                     +'" style="width: 100%; max-width: '
                     +opts.data.desc[i].width+'px"></div>';
                 div.append(image);
-                var divWidth = div.width();
-                var scale = divWidth/opts.data.desc[i].width;
-                var scaledHeight = Math.floor(opts.data.desc[i].height*(scale));
+                var scaledHeight = $("#image_"+ref).height();
                 this.image_lines.push( new RefLoc(ref,currHt) );    
                 currHt += scaledHeight;
             }
             this.imagesLoaded = true;
         }
+        console.log("currHt="+currHt);
     };
     /**
      * Scroll to the specified location
@@ -974,6 +958,7 @@ function MMLEditor(opts, dialect) {
             pos = lines[index].loc*scale;
         else
             pos = 0;
+        //console.log(loc);
         var pageHeight;
         if ( index == -1 )
             pageHeight = 0;
@@ -1292,9 +1277,15 @@ function MMLEditor(opts, dialect) {
                 if ( e.originalEvent )
                 {
                     var loc = self.getSourcePage($(this));
-                    var parts = loc.split(",");
+                    // console.log("loc sent to other scrollbars:"+loc);
                     self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
                     self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
+                    //console.log($("#images")[0].scrollHeight);
+                    //var height = 0;
+                    //var images = $(".image");
+                    //for ( var i=0;i<images.length;i++ )
+                    //    height += images[i].clientHeight;
+                    //console.log("overall height="+height);
                 }
             }
         })(this)
@@ -1307,7 +1298,7 @@ function MMLEditor(opts, dialect) {
                 {
                     var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
                     var loc = self.getPixelPage($(this),self.html_lines);
-                    self.scrollTo(loc,self.page_lines,$("#"+self.opts.source),lineHeight);
+                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
                     // for some reason this causes feedback, but it works without!!
                     if ( self.infoDisplayed )
                         self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
@@ -1323,7 +1314,7 @@ function MMLEditor(opts, dialect) {
                 {
                     var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
                     var loc = self.getPixelPage($(this),self.image_lines);
-                    self.scrollTo(loc,self.page_lines,$("#"+self.opts.source),lineHeight);
+                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
                         self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
                 }
             }
