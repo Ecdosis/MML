@@ -971,7 +971,7 @@ function MMLEditor(opts, dialect) {
             editor.image_lines.push( new RefLoc(ref,currHt) );    
             currHt += imgHeight;
         });
-        console.log("scrollHeight="+$("#images")[0].scrollHeight+" currHt="+currHt);
+        //console.log("scrollHeight="+$("#images")[0].scrollHeight+" currHt="+currHt);
     };
     /**
      * Scroll to the specified location
@@ -1001,7 +1001,7 @@ function MMLEditor(opts, dialect) {
         pos -= Math.round(elemToScroll.height()/2);
         if ( pos < 0 )
         {
-            console.log("pos="+pos);
+            //console.log("pos="+pos);
             pos = 0;
         }
         if ( elemToScroll[0].scrollTopMax !=undefined && pos > elemToScroll[0].scrollTopMax )
@@ -1009,7 +1009,7 @@ function MMLEditor(opts, dialect) {
         else if ( pos > elemToScroll[0].scrollHeight-elemToScroll[0].clientHeight )
         {
             pos = elemToScroll[0].scrollHeight-elemToScroll[0].clientHeight;
-            console.log(pos);
+            //console.log(pos);
         }
         elemToScroll[0].scrollTop = pos; 
     };
