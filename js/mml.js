@@ -767,9 +767,7 @@ function MMLEditor(opts, dialect) {
                 // inefficient but the only way
                 $(this).css("display","none");
             });
-            // doing it here accumulates error down the page
-            // the .page elements are ALL visible, and change the text flow
-            //$(".page").css("display","none");
+            this.recomputeImageHeights();
         }
     };
     /**
@@ -923,55 +921,20 @@ function MMLEditor(opts, dialect) {
             return this.text_lines.ref+",0.0";
     };
     /**
-     * Load the images by just creating HTML &lt;img&gt; elements. 
-     */
-    this.loadImages = function() {
-        var div = $("#"+this.opts.images);
-        // go through the already loaded page numbers in this.text_lines
-        var currHt = 0;
-        if ( !this.imagesLoaded )
-        {
-            var editor = this;
-            $(".image").each( function(index) {
-                var img = $(this).children().first();
-                var ref = img.attr("data-ref");
-                // precompute image heights to get something working
-                // but we'll need to recompute when the page is fully loaded
-                var divWidth = div.width();
-                var imgWidth = parseInt(img.attr("data-width"));
-                var imgHeight = parseInt(img.attr("data-height"));
-                var scale = divWidth/imgWidth;
-                var imgHeight = img.height();
-                var scaledHeight;
-                if ( imgHeight == 0 )
-                    scaledHeight = Math.floor(imgHeight*(scale));
-                else
-                    scaledHeight = imgHeight;
-                editor.image_lines.push( new RefLoc(ref,currHt) );    
-                currHt += scaledHeight;
-            });
-            this.imagesLoaded = true;
-        }
-        //console.log("currHt="+currHt);
-    };
-    /**
      * Recompute the height of the images after the window is fully loaded
      */
     this.recomputeImageHeights = function()
     {
         var currHt = 0;
-        //console.log("recomputing page image heights!");
-        this.image_lines = new Array();
+        this.image_lines = [];
         var editor = this;
         $(".image").each( function(index) {
             var img = $(this).children().first();
             var ref = img.attr("data-ref");
             var imgHeight = img.height();
-            //console.log("imgHt for "+ref+" is "+imgHeight+" currHt="+currHt);
             editor.image_lines.push( new RefLoc(ref,currHt) );    
             currHt += imgHeight;
         });
-        //console.log("scrollHeight="+$("#images")[0].scrollHeight+" currHt="+currHt);
     };
     /**
      * Scroll to the specified location
@@ -997,7 +960,7 @@ function MMLEditor(opts, dialect) {
         else
             pageHeight = elemToScroll.prop("scrollHeight")-(lines[index].loc*scale);
         pos += Math.round(parseFloat(parts[1])*pageHeight);
-        // scrolldown one half-page
+        // scrolldown one half-pagescp js mml.js
         pos -= Math.round(elemToScroll.height()/2);
         if ( pos < 0 )
         {
