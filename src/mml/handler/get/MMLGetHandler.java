@@ -55,8 +55,8 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLGetTestHandler().handle(request,response,urn);
             else if ( service.equals(Service.MML) )
                 new MMLGetMMLHandler().handle( request, response, urn );
-            else if ( service.equals(Service.OPTS))
-                new MMLGetOptsHandler().handle( request, response, urn );
+            else if ( service.equals(Service.IMAGES))
+                new MMLGetImgHandler().handle( request, response, urn );
         } catch (Exception e) {
             try
             {

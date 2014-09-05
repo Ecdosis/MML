@@ -32,14 +32,13 @@ import mml.database.Connector;
 import mml.database.MimeType;
 import mml.database.ImgInfo;
 import mml.exception.MMLException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import html.*;
 
 /**
  * Handle a request for editor options
  * @author desmond
  */
-public class MMLGetOptsHandler extends MMLGetHandler
+public class MMLGetImgHandler extends MMLGetHandler
 {
     String docid;
     String version1;
@@ -67,22 +66,13 @@ public class MMLGetOptsHandler extends MMLGetHandler
      * Create the editor options
      * @param req the http request
      * @param map the page reference to dimensions map
-     * @return the finished opts
+     * @return the images as a sequence of IMGs inside divs
      */
-    JSONObject createOpts( HttpServletRequest req, HashMap<String,ImgInfo> map )
-    {
-        JSONObject opts = new JSONObject();
-        opts.put("source","source");
-        opts.put("target","target");
-        opts.put("images","images");
-        opts.put("formid","tostil");
-        JSONObject data = new JSONObject();
-        opts.put("data",data);
-        data.put("prefix","p");
-        data.put("suffix","");
-        //String port = (req.getServerPort()==80)?"":":"+req.getServerPort();
-        data.put("url","/mml/"+Database.CORPIX+"/"+docid+version1);
-        JSONArray desc = new JSONArray();
+    String createImgs( HttpServletRequest req, HashMap<String,ImgInfo> map )
+    { 
+        Element images = new Element("div");
+        images.addAttribute("id","images");
+        String url = "/mml/"+Database.CORPIX+"/"+docid+version1;
         Set<String> keys = map.keySet();
         String[] names = new String[keys.size()];
         keys.toArray(names);
@@ -90,15 +80,22 @@ public class MMLGetOptsHandler extends MMLGetHandler
         Arrays.sort(names,comp);
         for ( String name: names )
         {
-            JSONObject obj = new JSONObject();
-            obj.put("ref",name);
-            obj.put("width",map.get(name).width);
-            obj.put("height",map.get(name).height);
-            obj.put("type",map.get(name).mimeType);
-            desc.add( obj );
+            ImgInfo info = map.get(name);
+            Element wrap = new Element("div");
+            wrap.addAttribute("class","image");
+            Element img = new Element("img");
+            String src = url+"/p"+name;
+            img.addAttribute("src",src);
+            img.addAttribute("id","image_"+name);
+            img.addAttribute("style","width: 100%; max-width: "
+                +map.get(name).width+"px");
+            img.addAttribute("data-width",Integer.toString(info.width));
+            img.addAttribute("data-height",Integer.toString(info.height));
+            img.addAttribute("data-ref",name);
+            wrap.addElement( img );
+            images.addElement( wrap );
         }
-        data.put("desc",desc);
-        return opts;
+        return images.toString();
     }
     /**
      * Extract the page reference from the full docid (including versionID)
@@ -132,20 +129,21 @@ public class MMLGetOptsHandler extends MMLGetHandler
             String[] imgs = conn.listDocuments( Database.CORPIX, 
                 "^"+docid+version1 );
             HashMap<String,ImgInfo> imageMap = new HashMap<>();
-            for ( int i=0;i<imgs.length;i++ )
+            for ( String img: imgs )
             {
                 MimeType mType = new MimeType();
                 Rectangle r = conn.getImageDimensions(Database.CORPIX, 
-                    imgs[i], mType);
+                    img, mType);
                 if ( r != null )
                 {
-                    ImgInfo iInfo = new ImgInfo( r.width,r.height, 
+                    ImgInfo iInfo = new ImgInfo( r.width, r.height, 
                         mType.mimeType );
-                    imageMap.put(pageRef(imgs[i]), iInfo );
+                    imageMap.put( pageRef(img), iInfo );
                 }
             }
-            JSONObject opts = createOpts(request,imageMap);
-            response.getWriter().println(opts.toJSONString());
+            // write out html
+            String html = createImgs(request,imageMap);
+            response.getWriter().println(html);
         }
         catch ( Exception e )
         {

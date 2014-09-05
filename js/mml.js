@@ -755,7 +755,6 @@ function MMLEditor(opts, dialect) {
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
             $("#"+this.opts.target).html(this.toHTML(text));
-            this.loadImages();
             this.changed = false;
             $(".page").css("display","inline");
             var base = 0;
@@ -868,8 +867,10 @@ function MMLEditor(opts, dialect) {
                 return lines[index].ref+","+pageFraction;
             }
         }
-        else
+        else if (lines !=undefined&&lines.length>0)
             return lines[0].ref+",0.0";
+        else 
+            return ",0.0";
     };
     /**
      * Get the source page number currently in view in the textarea, 
@@ -891,7 +892,7 @@ function MMLEditor(opts, dialect) {
                 maximum = scrollHt - src.outerHeight(true);
             if ( scrollPos == 0 )
                 return this.text_lines[0].ref+",0.0";
-            else if ( scrollPos == maximum )
+            else if ( scrollPos >= maximum )
                 return this.text_lines[this.text_lines.length-1].ref+",1.0";
             else
             {
@@ -930,28 +931,47 @@ function MMLEditor(opts, dialect) {
         var currHt = 0;
         if ( !this.imagesLoaded )
         {
-            var num_pages = (opts.data.desc != undefined)?opts.data.desc.length:0;
-            for ( var i=0;i<num_pages;i++ )
-            {
-                var ref = this.opts.data.desc[i].ref;
-                var src = this.opts.data.url+"/"+opts.data.prefix
-                    +ref+opts.data.suffix;
-                var image = '<div class="image"><img src="'+src+'" id="image_'+ref
-                    +'" style="width: 100%; max-width: '
-                    +opts.data.desc[i].width+'px"></div>';
-                div.append(image);
+            var editor = this;
+            $(".image").each( function(index) {
+                var img = $(this).children().first();
+                var ref = img.attr("data-ref");
+                // precompute image heights to get something working
+                // but we'll need to recompute when the page is fully loaded
                 var divWidth = div.width();
-                var scale = divWidth/opts.data.desc[i].width;
-                var scaledHeight = Math.floor(opts.data.desc[i].height*(scale));
-                var imgHeight = $("#image_"+ref).height();
-                if ( scaledHeight == 0 && imgHeight > 0 )
+                var imgWidth = parseInt(img.attr("data-width"));
+                var imgHeight = parseInt(img.attr("data-height"));
+                var scale = divWidth/imgWidth;
+                var imgHeight = img.height();
+                var scaledHeight;
+                if ( imgHeight == 0 )
+                    scaledHeight = Math.floor(imgHeight*(scale));
+                else
                     scaledHeight = imgHeight;
-                this.image_lines.push( new RefLoc(ref,currHt) );    
+                editor.image_lines.push( new RefLoc(ref,currHt) );    
                 currHt += scaledHeight;
-            }
+            });
             this.imagesLoaded = true;
         }
         //console.log("currHt="+currHt);
+    };
+    /**
+     * Recompute the height of the images after the window is fully loaded
+     */
+    this.recomputeImageHeights = function()
+    {
+        var currHt = 0;
+        //console.log("recomputing page image heights!");
+        this.image_lines = new Array();
+        var editor = this;
+        $(".image").each( function(index) {
+            var img = $(this).children().first();
+            var ref = img.attr("data-ref");
+            var imgHeight = img.height();
+            //console.log("imgHt for "+ref+" is "+imgHeight+" currHt="+currHt);
+            editor.image_lines.push( new RefLoc(ref,currHt) );    
+            currHt += imgHeight;
+        });
+        console.log("scrollHeight="+$("#images")[0].scrollHeight+" currHt="+currHt);
     };
     /**
      * Scroll to the specified location
@@ -980,7 +1000,17 @@ function MMLEditor(opts, dialect) {
         // scrolldown one half-page
         pos -= Math.round(elemToScroll.height()/2);
         if ( pos < 0 )
+        {
+            console.log("pos="+pos);
             pos = 0;
+        }
+        if ( elemToScroll[0].scrollTopMax !=undefined && pos > elemToScroll[0].scrollTopMax )
+            pos = elemToScroll[0].scrollTopMax;
+        else if ( pos > elemToScroll[0].scrollHeight-elemToScroll[0].clientHeight )
+        {
+            pos = elemToScroll[0].scrollHeight-elemToScroll[0].clientHeight;
+            console.log(pos);
+        }
         elemToScroll[0].scrollTop = pos; 
     };
     /**
@@ -1325,7 +1355,7 @@ function MMLEditor(opts, dialect) {
                     var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
                     var loc = self.getPixelPage($(this),self.image_lines);
                     self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
-                        self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
                 }
             }
         })(this)

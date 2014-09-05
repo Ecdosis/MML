@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import mml.Utils;
 import mml.URLEncoder;
 import mml.constants.Params;
+import org.json.simple.JSONObject;
 
 /**
  * Test interface for editor
@@ -45,15 +46,15 @@ public class Editor extends Test
     static String EDITOR_START_JS = 
         "$( document ).ready(function() {";
     static String EDITOR_END_JS =
-    "var editor = new MMLEditor(opts, dialect);\n$(\"#info\").clic"
-    +"k( function() {\n\t\teditor.toggleHelp();\n});\n$(\"#save\")"
-    +".click( function() {\n\t\teditor.save();\n});\n$(\"#dropdown"
-    +"\").change( function() {\n\t\tvar parts = $(\"#dropdown\").v"
-    +"al().split(\"&\");\n\t\tfor ( var i=0;i<parts.length;i++ ) "
-    +"{\n\t\t\tvar value = parts["
-    +"i].split(\"=\");\n\t\t\tif ( value.length== 2 )\n\t\t\t\t$(\""
-    +"#\"+value[0]).val(value[1]);\n\t\t}\n\t\t$(\"form\").submit"
-    +"();\n});\n}); \n";
+    "var editor = new MMLEditor(opts, dialect);\n$(window).load(fu"
+    +"nction() {\n\t\teditor.recomputeImageHeights()\n}); \n$(\"#i"
+    +"nfo\").click( function() {\n\t\teditor.toggleHelp();\n});\n$"
+    +"(\"#save\").click( function() {\n\t\teditor.save();\n});\n$("
+    +"\"#dropdown\").change( function() {\n\t\tvar parts = $(\"#dr"
+    +"opdown\").val().split(\"&\");\n\t\tfor ( var i=0;i<parts.len"
+    +"gth;i++ ) {\n\t\t\tvar value = parts[i].split(\"=\");\n\t\t\t"
+    +"if ( value.length== 2 )\n\t\t\t\t$(\"#\"+value[0]).val(valu"
+    +"e[1]);\n\t\t}\n\t\t$(\"form\").submit();\n});\n}); \n";
     static String DEROBERTO_1920 = "docid=italian/deroberto/ivicere/cap1&version1="
         +"/Base/1920&title=I Vicerè&author=De Roberto";
     static String DEROBERTO_1894 = "docid=italian/deroberto/ivicere/cap1&version1="
@@ -241,15 +242,12 @@ public class Editor extends Test
      */
     private String getOpts( String docid, String version1 ) throws MMLTestException
     {
-        try
-        {
-            String url = "http://localhost:8083/mml/opts?docid="+docid+"&version1="+version1;
-            return URLEncoder.getResponseForUrl(url).trim();
-        }
-        catch ( Exception e )
-        {
-            throw new MMLTestException(e);
-        }
+        JSONObject opts = new JSONObject();
+        opts.put("source","source");
+        opts.put("target","target");
+        opts.put("images","images");
+        opts.put("formid","tostil");
+        return opts.toJSONString();
     }
     /**
      * Get the opts for this editor
@@ -276,6 +274,23 @@ public class Editor extends Test
         try
         {
             String url = "http://localhost:8083/mml/corform/"+shortID()+"/default";
+            return URLEncoder.getResponseForUrl(url).trim();
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+     /**
+     * Get the css for this document
+     * @return an Element (div) containing the content
+     */
+    private String getImages() throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost:8083/mml/images?docid="+docid
+                +"&version1="+version1;
             return URLEncoder.getResponseForUrl(url).trim();
         }
         catch ( Exception e )
@@ -348,9 +363,7 @@ public class Editor extends Test
         doc.addElement( toolbar );
         Element wrapper = new Element("div");
         wrapper.addAttribute("id","wrapper");
-        Element images = new Element("div");
-        images.addAttribute("id", "images");
-        wrapper.addElement( images );
+        wrapper.addText( getImages() );
         Element help = new Element("div");
         help.addAttribute("id", "help");
         wrapper.addElement( help );

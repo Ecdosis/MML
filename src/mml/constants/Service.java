@@ -33,7 +33,7 @@ public class Service
     /** posting and getting of html */
     public static final String HTML = "html";
     /** options for editor */
-    public static final String OPTS = "opts";
+    public static final String IMAGES = "images";
     public static final String IMPORT = "import";
     public static final String LITERAL = "literal";
 }
