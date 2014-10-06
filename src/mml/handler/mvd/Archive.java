@@ -19,10 +19,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import mml.handler.json.JSONDocument;
-import mml.constants.JSONKeys;
+import mml.handler.AeseResource;
+import calliope.core.constants.JSONKeys;
 import mml.constants.Formats;
 import mml.exception.MMLException;
 import edu.luc.nmerge.mvd.MVD;
+import edu.luc.nmerge.mvd.MVDFile;
 import edu.luc.nmerge.mvd.Version;
 
 /**
@@ -123,7 +125,7 @@ public class Archive extends HashMap<String,byte[]>
      * Convert this archive to a resource, wrapped in JSON for storage
      * @param mvdName name of the MVD
      * @return a string representation of the MVD as a JSON document
-     * @throws AeseException 
+     * @throws MMLException 
      */
     public String toResource( String mvdName ) throws MMLException
     {
@@ -163,8 +165,10 @@ public class Archive extends HashMap<String,byte[]>
                     if ( version1 == null )
                         version1 = "/"+groups+"/"+shortKey;
                     byte[] data = get( key );
-                    String longName = (groups.length()>0)?shortKey+" of "
-                        +groups:shortKey;
+                    String longName = nameMap.get(key);
+                    if ( longName == null )
+                        longName = (groups.length()>0)?shortKey+" of "
+                            +groups:shortKey;
                     vId = (short)mvd.newVersion( shortKey, "Version "+longName, 
                         groups, Version.NO_BACKUP, false );
                     // tepmorary hack
@@ -182,7 +186,8 @@ public class Archive extends HashMap<String,byte[]>
                 body = mvd.toString();
                 if ( body.length() == 0 )
                     throw new MMLException("failed to create MVD");
-                //format = Formats.MVD;
+                if ( format.equals(Formats.TEXT)||format.equals(Formats.STIL) )
+                format = "MVD/"+format;
             }
             doc.add( JSONKeys.TITLE, title, false );
             doc.add( JSONKeys.VERSION1, version1, false );
@@ -197,5 +202,41 @@ public class Archive extends HashMap<String,byte[]>
         {
             throw new MMLException( e );
         }
+    }
+    /**
+     * Convert a resource to an Archive, for updating
+     * @param resource a string representation of the MVD as a JSON document
+     */
+    public void fromResource( AeseResource resource ) throws MMLException
+    {
+        if ( resource.getFormat().startsWith("MVD") )
+        {
+            MVD mvd = MVDFile.internalise( resource.getContent() );
+            int nVersions = mvd.numVersions();
+            this.nameMap = new HashMap<>();
+            for ( int vId=1;vId<=nVersions;vId++ )
+            {
+                byte[] data = mvd.getVersion(vId);
+                String groupName = mvd.getGroupPath((short)vId);
+                String shortName = mvd.getVersionShortName( vId );
+                String versionID = groupName+"/"+shortName;
+                nameMap.put(versionID,mvd.getVersionLongName(vId));
+                put( versionID, data );
+            }
+            this.version1 = resource.getVersion1();
+        }
+        else
+        {
+            version1 = resource.getVersion1();
+            try
+            {
+                put( version1, resource.getContent().getBytes(encoding) );
+            }
+            catch ( Exception e )
+            {
+                throw new MMLException(e);
+            }
+        }
+        this.format = resource.getFormat();
     }
 }

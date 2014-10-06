@@ -3,7 +3,7 @@
         "language": "en",
         "section": {"prop": "section"},
         "paragraph": {"prop": ""},
-        "codeblocks": [{"tag":"pre","prop": "level1"},{"tag":"pre","prop":"level2"},{"tag":"pre","prop":"level3"},{"tag":"pre","prop":"level3"}],
+        "codeblocks": [{"tag":"pre","prop": "level1"},{"tag":"pre","prop":"level2"},{"tag":"pre","prop":"level3"},{"tag":"pre","prop":"level4"}],
         "quotations": {"prop": ""},
         "smartquotes": true,
         "softhyphens": true,

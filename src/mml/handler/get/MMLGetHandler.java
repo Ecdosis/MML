@@ -18,17 +18,20 @@
 
 package mml.handler.get;
 
+import calliope.core.constants.Database;
+import calliope.core.constants.JSONKeys;
 import edu.luc.nmerge.mvd.MVD;
 import edu.luc.nmerge.mvd.MVDFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.simple.*;
-import mml.database.*;
-import mml.Utils;
+import calliope.core.database.*;
+import calliope.core.Utils;
 import mml.URLEncoder;
 import mml.exception.*;
 import mml.constants.*;
 import mml.handler.AeseVersion;
+import mml.handler.AeseResource;
 import mml.handler.MMLHandler;
 
 /**
@@ -41,8 +44,12 @@ public class MMLGetHandler extends MMLHandler {
         try {
             String service = Utils.first(urn);
             urn = Utils.pop(urn);
-            if ( service.equals(Database.CORPIX) )
+            if ( service.equals(Service.METADATA) )
+                new MMLMetadataHandler(Database.CORTEX).handle( request, response, urn );
+            else if ( service.equals(Database.CORPIX) )
                 new MMLCorpixHandler().handle( request, response, urn );
+            else if (service.equals(Service.VERSIONS))
+                new MMLGetVersionsHandler().handle(request,response,urn);
             else if ( service.equals(Database.CORFORM) )
                 new MMLResourceHandler(Database.CORFORM).handle( request, response, urn );
             else if ( service.equals(Database.DIALECTS) )
@@ -51,7 +58,7 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLResourceHandler(Database.CORTEX).handle( request, response, urn );
             else if ( service.equals(Database.CORCODE) )
                 new MMLResourceHandler(Database.CORCODE).handle( request, response, urn );
-            else if (service.equals(Service.TEST.toString()))
+            else if (service.equals(Service.TEST))
                 new MMLGetTestHandler().handle(request,response,urn);
             else if ( service.equals(Service.MML) )
                 new MMLGetMMLHandler().handle( request, response, urn );
@@ -70,21 +77,18 @@ public class MMLGetHandler extends MMLHandler {
         }
     }
     /**
-     * Try to retrieve the CorTex/CorCode version specified by the path
-     * @param db the database to fetch from
-     * @param docID the document ID
-     * @param vPath the groups/version path to get
-     * @return the CorTex/CorCode version contents or null if not found
-     * @throws MMLException if the resource couldn't be found for some reason
+     * Get a resource from the database if it already exists
+     * @param db the collection name
+     * @param docID the resource docID
+     * @return the rerouce or null
+     * @throws MMLException 
      */
-    protected AeseVersion doGetResourceVersion( String db, String docID, 
-        String vPath ) throws MMLException
+    public static AeseResource doGetResource( String db, String docID ) 
+        throws MMLException
     {
-        AeseVersion version = new AeseVersion();
-        JSONObject doc = null;
-        byte[] data = null;
         String res = null;
-        //System.out.println("fetching version "+vPath );
+        JSONObject doc = null;
+        AeseResource resource = null;
         try
         {
             res = Connector.getConnection().getFromDb(db,docID);
@@ -100,15 +104,68 @@ public class MMLGetHandler extends MMLHandler {
             String format = (String)doc.get(JSONKeys.FORMAT);
             if ( format == null )
                 throw new MMLException("doc missing format");
+            String version1 = (String)doc.get(JSONKeys.VERSION1);
+            resource = new AeseResource();
+            if ( version1 != null )
+                resource.setVersion1( version1 );
+            resource.setFormat( format );
+            resource.setContent( (String)doc.get(JSONKeys.BODY) );
+        }
+        return resource;
+    }
+    String getBestString( String key, JSONObject o1, JSONObject o2 )
+    {
+        String ans = null;
+        if ( o1 != null )
+            ans = (String)o1.get( key );
+        if ( ans == null )
+            ans = (String)o2.get( key );
+        return ans;
+    }
+    /**
+     * Try to retrieve the CorTex/CorCode version specified by the path
+     * @param db the database to fetch from
+     * @param docID the document ID
+     * @param vPath the groups/version path to get
+     * @return the CorTex/CorCode version contents or null if not found
+     * @throws MMLException if the resource couldn't be found for some reason
+     */
+    protected AeseVersion doGetResourceVersion( String db, String docID, 
+        String vPath ) throws MMLException
+    {
+        AeseVersion version = new AeseVersion();
+        JSONObject doc = null;
+        JSONObject md = null;
+        byte[] data = null;
+        String res = null;
+        String metadata;
+        //System.out.println("fetching version "+vPath );
+        try
+        {
+            res = Connector.getConnection().getFromDb(db,docID);
+            metadata = Connector.getConnection().getFromDb(Database.METADATA,docID);
+        }
+        catch ( Exception e )
+        {
+            throw new MMLException( e );
+        }
+        if ( res != null )
+            doc = (JSONObject)JSONValue.parse( res );
+        if ( metadata != null )
+            md = (JSONObject)JSONValue.parse(metadata);
+        if ( doc != null )
+        {
+            String format = (String)doc.get(JSONKeys.FORMAT);
+            if ( format == null )
+                throw new MMLException("doc missing format");
             version.setFormat( format );
             // first resolve the link, if any
             if ( version.getFormat().equals(Formats.MVD) )
             {
                 MVD mvd = MVDFile.internalise( (String)doc.get(
                     JSONKeys.BODY) );
-                if ( vPath == null )
-                    vPath = (String)doc.get( JSONKeys.VERSION1 );
-                version.setStyle((String)doc.get(JSONKeys.STYLE));
+                vPath = getBestString(JSONKeys.VERSION1,md,doc);
+                version.setStyle(getBestString(JSONKeys.STYLE,md,doc));
                 String sName = Utils.getShortName(vPath);
                 String gName = Utils.getGroupName(vPath);
                 int vId = mvd.getVersionByNameAndGroup(sName, gName );
@@ -132,7 +189,10 @@ public class MMLGetHandler extends MMLHandler {
             else
             {
                 String body = (String)doc.get( JSONKeys.BODY );
-                version.setStyle((String)doc.get(JSONKeys.STYLE));
+                version.setStyle(getBestString(JSONKeys.STYLE,md,doc));
+                version.setDescription(getBestString(JSONKeys.TITLE,md,doc)+" "
+                    +getBestString(JSONKeys.SECTION,md,doc));
+                version.setVersion1(getBestString(JSONKeys.VERSION1,md,doc));
                 if ( body == null )
                     throw new MMLException("empty body");
                 try

@@ -20,20 +20,22 @@ package mml.handler.post;
 
 import calliope.AeseSpeller;
 import java.util.List;
-import mml.Utils;
+import calliope.core.Utils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.constants.Database;
+import calliope.core.constants.Database;
 import mml.constants.Formats;
 import mml.constants.Params;
-import mml.database.Connector;
+import calliope.core.database.Connector;
 import mml.exception.JSONException;
 import mml.exception.MMLException;
 import mml.exception.MMLSaveException;
+import mml.handler.AeseResource;
 import mml.handler.json.Dialect;
 import mml.handler.json.Range;
 import mml.handler.mvd.Archive;
+import mml.handler.get.MMLGetHandler;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -44,7 +46,7 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 
 /**
- *
+ * Handle POST events. Mostly saves.
  * @author desmond
  */
 public class MMLPostHTMLHandler extends MMLPostHandler
@@ -267,7 +269,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 if ( milestone instanceof JSONObject )
                 {
                     JSONObject m = (JSONObject)milestone;
-                    if ( m.containsKey("prop") && ((String)m.get("prop")).equals(name) )
+                    if ( m.containsKey("prop") 
+                        && ((String)m.get("prop")).equals(name) )
                         return true;
                 }
             }
@@ -467,18 +470,25 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     protected void addToDBase( Archive archive, String db, StringBuilder log ) 
         throws MMLException
     {
-        // now get the json docs and add them at the right docid
-        if ( !archive.isEmpty() )
+        try
         {
-            String path = new String(docid);
-            if ( db.equals("corcode") )
-                path += "/default";
-            Connector.getConnection().putToDb( db, path, 
-                archive.toResource(db) );
-            log.append( archive.getLog() );
+            // now get the json docs and add them at the right docid
+            if ( !archive.isEmpty() )
+            {
+                String path = new String(docid);
+                if ( db.equals(Database.CORCODE) )
+                    path += "/default";
+                Connector.getConnection().putToDb( db, path, 
+                    archive.toResource(db) );
+                log.append( archive.getLog() );
+            }
+            else
+                log.append("No "+db+" created (empty)\n");
         }
-        else
-            log.append("No "+db+" created (empty)\n");
+        catch ( Exception e )
+        {
+            throw new MMLException( e );
+        }
     }
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
@@ -493,25 +503,40 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             // send the text,STIL and dialect to the database
             Archive cortex = new Archive(title, 
                 this.author,Formats.MVD_TEXT,encoding);
+            // check if this docid already exists
+            AeseResource res1 = MMLGetHandler.doGetResource( 
+                Database.CORTEX, docid );
+            if ( res1 != null )
+                cortex.fromResource(res1);
+            else if ( title != null )
+                cortex.addLongName( version1, title );
+            // add new version
+            cortex.setStyle( style );
             cortex.put( version1, sb.toString().getBytes(encoding) );
+            // repeat for corcode
             Archive corcode = new Archive(title, 
                 this.author,Formats.MVD_STIL,encoding);
-            cortex.setStyle( style );
+            AeseResource res2 = MMLGetHandler.doGetResource( 
+                Database.CORCODE, docid+"/default" );
+            if ( res2 != null )
+                corcode.fromResource(res2);
+            else if ( title != null )
+                corcode.addLongName( version1, title );
             corcode.setStyle( style );
             corcode.put( version1, stil.toString().getBytes(encoding) );
             StringBuilder log = new StringBuilder();
             addToDBase( cortex, Database.CORTEX, log );
             addToDBase( corcode, Database.CORCODE, log );
-            String baseid = Utils.baseDocID(docid);
-            String oldDialect = Connector.getConnection().getFromDb(
-                Database.DIALECTS, baseid );
-            if ( oldDialect == null || !Dialect.compare(dialect,
-                (JSONObject)JSONValue.parse(oldDialect)) )
-            {
-                JSONObject jDoc = Dialect.wrap(dialect,baseid);
-                log.append( Connector.getConnection().putToDb(Database.DIALECTS, 
-                    baseid, jDoc.toJSONString()));
-            }
+//            String baseid = Utils.baseDocID(docid);
+//            String oldDialect = Connector.getConnection().getFromDb(
+//                Database.DIALECTS, baseid );
+//            if ( oldDialect == null || !Dialect.compare(dialect,
+//                (JSONObject)JSONValue.parse(oldDialect)) )
+//            {
+//                JSONObject jDoc = Dialect.wrap(dialect,baseid);
+//                log.append( Connector.getConnection().putToDb(Database.DIALECTS, 
+//                    baseid, jDoc.toJSONString()));
+//            }
             System.out.println(log.toString() );
         }
         catch ( Exception e )

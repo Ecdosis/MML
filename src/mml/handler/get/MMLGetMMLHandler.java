@@ -18,19 +18,20 @@
 
 package mml.handler.get;
 
+import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.constants.Database;
+import calliope.core.constants.Database;
 import mml.constants.Params;
-import mml.constants.JSONKeys;
-import mml.database.Connection;
-import mml.database.Connector;
+import calliope.core.constants.JSONKeys;
+import calliope.core.database.Connection;
+import calliope.core.database.Connector;
 import mml.exception.*;
-import mml.Utils;
+import calliope.core.Utils;
 import mml.handler.AeseVersion;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
@@ -409,6 +410,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
         {
             Connection conn = Connector.getConnection();
             docid = request.getParameter(Params.DOCID);
+            if ( docid == null )
+                throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
             AeseVersion cortex = doGetResourceVersion( Database.CORTEX, 
                 docid, version1 );
@@ -418,6 +421,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             this.dialect = getDialect( shortID );
             invertDialect();
             createMML(cortex,corcode);
+            response.setContentType("text/plain");
             response.setCharacterEncoding(encoding);
             response.getWriter().println(mml.toString());
         }
@@ -460,7 +464,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 return body;
             }
             else
-                throw new MMLDbException("couldn't find dialect "+originalDocID );
+                throw new DbException("couldn't find dialect "+originalDocID );
         }
         catch ( Exception e )
         {

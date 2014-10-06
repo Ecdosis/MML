@@ -15,7 +15,7 @@
  */
 package mml.handler.json;
 
-import mml.constants.JSONKeys;
+import calliope.core.constants.JSONKeys;
 import mml.constants.Formats;
 import mml.exception.JSONException;
 import java.io.File;

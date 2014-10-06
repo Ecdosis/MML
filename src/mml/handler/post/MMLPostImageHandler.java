@@ -20,9 +20,9 @@ package mml.handler.post;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import mml.Utils;
+import calliope.core.Utils;
 import mml.exception.*;
-import mml.database.*;
+import calliope.core.database.*;
 /**
  * Handle uploads of images
  * @author desmond

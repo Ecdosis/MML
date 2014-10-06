@@ -25,12 +25,13 @@ import java.util.Comparator;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.constants.Database;
+import calliope.core.constants.Database;
 import mml.constants.Params;
-import mml.database.Connection;
-import mml.database.Connector;
-import mml.database.MimeType;
-import mml.database.ImgInfo;
+import calliope.core.database.Connection;
+import calliope.core.database.Connector;
+import calliope.core.database.MimeType;
+import calliope.core.database.ImgInfo;
+import calliope.core.constants.JSONKeys;
 import mml.exception.MMLException;
 import html.*;
 
@@ -127,7 +128,7 @@ public class MMLGetImgHandler extends MMLGetHandler
             docid = request.getParameter(Params.DOCID);
             version1 = request.getParameter(Params.VERSION1);
             String[] imgs = conn.listDocuments( Database.CORPIX, 
-                "^"+docid+version1 );
+                "^"+docid+version1, JSONKeys.FILENAME );
             HashMap<String,ImgInfo> imageMap = new HashMap<>();
             for ( String img: imgs )
             {

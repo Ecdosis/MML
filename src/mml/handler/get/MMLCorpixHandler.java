@@ -14,11 +14,11 @@
  *  along with MML.  If not, see <http://www.gnu.org/licenses/>.
  */
 package mml.handler.get;
-import mml.database.MimeType;
+import calliope.core.database.MimeType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.database.Connector;
-import mml.constants.Database;
+import calliope.core.database.Connector;
+import calliope.core.constants.Database;
 import mml.exception.MMLException;
 import javax.servlet.ServletOutputStream;
 

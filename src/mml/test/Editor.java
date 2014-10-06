@@ -24,7 +24,7 @@ import mml.exception.*;
 import html.*;
 import java.io.File;
 import java.io.FileInputStream;
-import mml.Utils;
+import calliope.core.Utils;
 import mml.URLEncoder;
 import mml.constants.Params;
 import org.json.simple.JSONObject;

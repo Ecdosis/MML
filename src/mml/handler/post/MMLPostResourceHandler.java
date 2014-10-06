@@ -18,11 +18,11 @@ package mml.handler.post;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.database.Connector;
+import calliope.core.database.Connector;
 import mml.exception.MMLException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONObject;
-import mml.constants.JSONKeys;
+import calliope.core.constants.JSONKeys;
 
 /**
  *Handle uploads of CSS files

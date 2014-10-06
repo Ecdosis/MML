@@ -36,4 +36,6 @@ public class Service
     public static final String IMAGES = "images";
     public static final String IMPORT = "import";
     public static final String LITERAL = "literal";
+    public static final String METADATA = "metadata";
+    public static final String VERSIONS = "versions";
 }

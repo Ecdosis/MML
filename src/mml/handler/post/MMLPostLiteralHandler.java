@@ -19,8 +19,8 @@ package mml.handler.post;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.exception.MMLException;
-import mml.Utils;
-import mml.constants.Database;
+import calliope.core.Utils;
+import calliope.core.constants.Database;
 /**
  * Handle some kind of import
  * @author desmond

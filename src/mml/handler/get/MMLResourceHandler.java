@@ -8,13 +8,13 @@ package mml.handler.get;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import mml.Utils;
-import mml.constants.JSONKeys;
-import mml.constants.Database;
+import calliope.core.Utils;
+import calliope.core.constants.JSONKeys;
+import calliope.core.constants.Database;
 import mml.constants.Params;
-import mml.database.Connection;
-import mml.database.Connector;
-import mml.exception.MMLDbException;
+import calliope.core.database.Connection;
+import calliope.core.database.Connector;
+import calliope.core.exception.DbException;
 import mml.exception.MMLException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -63,7 +63,7 @@ public class MMLResourceHandler extends MMLGetHandler
                                 break;
                         }
                         else
-                            urn = Utils.chomp(urn);
+                            urn += "/"+"default";
                     }
                     else
                         break;
@@ -71,7 +71,7 @@ public class MMLResourceHandler extends MMLGetHandler
             }
             while ( jStr == null );
             if ( jStr == null )
-                throw new MMLDbException("Failed to find "+original);
+                throw new DbException("Failed to find "+original);
             String newEncoding = request.getParameter(Params.ENCODING);
             if ( newEncoding != null && newEncoding.length()>0 )
                 this.encoding = encoding;
@@ -82,7 +82,8 @@ public class MMLResourceHandler extends MMLGetHandler
                 bodyStr = (String)jDoc.get(JSONKeys.BODY);
             }
             else
-                throw new MMLDbException("body key not found");
+                throw new DbException("body key not found");
+            response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
             response.getWriter().println(bodyStr);
         }

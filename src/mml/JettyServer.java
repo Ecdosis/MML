@@ -27,8 +27,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import mml.constants.Service;
-import mml.database.Repository;
-import mml.database.Connector;
+import calliope.core.database.Repository;
+import calliope.core.database.Connector;
+import calliope.core.Utils;
 import mml.handler.*;
 import mml.exception.*;
 

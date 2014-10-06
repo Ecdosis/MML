@@ -21,7 +21,7 @@ package mml.handler.json;
 import org.json.simple.*;
 import java.util.Set;
 import java.util.Iterator;
-import mml.constants.JSONKeys;
+import calliope.core.constants.JSONKeys;
 
 /**
  * Dialect class just exists to compare two dialect files

@@ -30,6 +30,10 @@ public class AeseVersion
     byte[] version;
     /** if CorCode the default style */
     String defaultStyle;
+    /** description if only one version */
+    String description;
+    /** default first version */
+    String version1;
     /** the original mvd data or null */
     MVD mvd;
     /**
@@ -46,6 +50,14 @@ public class AeseVersion
         }
         else
             this.content = this.format = format;
+    }
+    public void setDescription( String description )
+    {
+        this.description = description;
+    }
+    public void setVersion1( String version1 )
+    {
+        this.version1 = version1;
     }
     /**
      * Set the default style of this version
@@ -136,5 +148,41 @@ public class AeseVersion
     public int getVersionLength()
     {
         return version.length;
+    }
+    /**
+     * Get the full versionIDs of all the versions
+     * @return an array of versionIDs
+     */
+    public String[] listVersions()
+    {
+        if ( mvd != null )
+        {
+            int nversions = mvd.numVersions();
+            String[] array = new String[nversions];
+            for ( int i=0;i<nversions;i++ )
+            {
+                short id = (short)(i+1);
+                array[i] = mvd.getGroupPath(id)+"/"+mvd.getVersionShortName(id);
+            }
+            return array;
+        }
+        else
+        {
+            String[] array = new String[1];
+            array[0] = this.version1;
+            return array;
+        }
+    }
+    /**
+     * Get the long name for the given version int id
+     * @param id the identifier as an index+1 into the version table
+     * @return a String
+     */
+    public String getVersionLongName( int id )
+    {
+        if ( mvd != null )
+            return mvd.getVersionLongName(id);
+        else
+            return this.description;
     }
 }

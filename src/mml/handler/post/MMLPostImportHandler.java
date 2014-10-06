@@ -9,7 +9,7 @@ package mml.handler.post;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.exception.MMLException;
-import mml.Utils;
+import calliope.core.Utils;
 import mml.constants.Service;
 /**
  * Handle some kind of import
