@@ -34,4 +34,5 @@ public class Params
     public static String FORMAT = "format";
     public static String SECTION = "section";
     public static String VERSION1 = "version1";
+    public static String DESCRIPTION = "description";
 }

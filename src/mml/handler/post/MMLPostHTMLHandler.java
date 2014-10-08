@@ -20,11 +20,12 @@ package mml.handler.post;
 
 import calliope.AeseSpeller;
 import java.util.List;
-import calliope.core.Utils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
+import calliope.core.constants.JSONKeys;
+import calliope.core.database.Connection;
 import mml.constants.Formats;
 import mml.constants.Params;
 import calliope.core.database.Connector;
@@ -98,6 +99,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         this.format = checkParam( request, Params.FORMAT, "MVD/TEXT",null);
         this.section = checkParam( request, Params.SECTION, "", null);
         this.version1 = checkParam( request, Params.VERSION1, "/Base/first", null);
+        this.description = checkParam( request, Params.DESCRIPTION, "Version "+version1, null);
     }
     /**
      * Parse a paragraph. These are always "p" elements, often with classes
@@ -490,6 +492,30 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             throw new MMLException( e );
         }
     }
+    /**
+     * Add the archive to the database
+     * @param metadata the metadata
+     * @param log the log to record errors to
+     * @throws MMLException 
+     */
+    protected void writeMetadata( JSONObject metadata, StringBuilder log ) 
+        throws MMLException
+    {
+        try
+        {
+            Connection conn = Connector.getConnection();
+            String md = conn.getFromDb(Database.METADATA, this.docid );
+            if ( md == null )
+            {
+                md = metadata.toJSONString();
+                log.append(conn.putToDb(Database.METADATA,this.docid,md));
+            }
+        }
+        catch ( Exception e )
+        {
+            throw new MMLException( e );
+        }
+    }
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
     {
@@ -524,7 +550,16 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 corcode.addLongName( version1, title );
             corcode.setStyle( style );
             corcode.put( version1, stil.toString().getBytes(encoding) );
+            // write metadata if not already there
+            JSONObject metadata = new JSONObject();
+            metadata.put(JSONKeys.AUTHOR,this.author);
+            metadata.put(JSONKeys.DOCID,this.docid);
+            metadata.put(JSONKeys.ENCODING,this.encoding);
+            metadata.put(JSONKeys.SECTION,this.section);
+            metadata.put(JSONKeys.TITLE,this.title);
+            metadata.put(JSONKeys.VERSION1,this.version1);
             StringBuilder log = new StringBuilder();
+            writeMetadata(metadata,log);
             addToDBase( cortex, Database.CORTEX, log );
             addToDBase( corcode, Database.CORCODE, log );
 //            String baseid = Utils.baseDocID(docid);

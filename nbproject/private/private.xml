@@ -5,13 +5,16 @@
         <group>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Params.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/STILDocument.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/AeseVersion.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/mvd/Archive.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersionsHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/Annotation.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostImportHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Formats.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/calliope/AeseSpeller.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/Range.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/AeseResource.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/ImageFile.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostHTMLHandler.java</file>
@@ -36,6 +39,7 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/test/Test.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/JSONValue.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/exception/MMLImageException.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/nbproject/build-impl.xml</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/test/Editor.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostImageHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostLiteralHandler.java</file>

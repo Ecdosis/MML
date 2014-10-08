@@ -12,21 +12,12 @@ function RefLoc( ref, loc) {
  * In the first panel there is a succession of page-images.
  * In the second an editable text in a minimal markup language (MML).
  * In the third a HTML preview generated from the editable text.
- * The MML dialect is defined via a JSON object.
- * To use it just create one:
- * var editor = new MMLEditor(opts,dialect);
- * @param opts the options neede to run MMLEditor:
- * source: the ID of a textarea on the page (no leading "#")
- * target: the ID of an empty div element (ditto)
- * images: the ID of the div to receive the images (ditto)
- * data: contains the keys 
- *      prefix - the prefix before each image name
- *      suffix: the suffix for each image name e.g. ".png"
- *      url: the url to fetch the images from
-        desc: an array of ref, width and height keys for each image
- * @param dialect an MML dialect description in JSON format, see README.md
+ * @param target the id of the element to append the editor to
+ * @param docid the docid of the document to edit
+ * @param modpath the path to the module from web_root
  */
-function MMLEditor(opts, dialect) {
+function MMLEditor(target, docid,modpath ) {
+    this.target = target;
     /** set to true when source altered, controls updating */
     this.changed = true;
     /** set to false whenever use edits and does not save*/
@@ -47,10 +38,41 @@ function MMLEditor(opts, dialect) {
     this.html_lines = new Array();
     /** page-breaks for images */
     this.image_lines = new Array();
-    /** copy of options for MMLEditor */
-    this.opts = opts;
     /** dialect file of MML */
-    this.dialect = dialect;
+    this.dialect = undefined;
+    /** docid of the current document */
+    this.docid = docid;
+    /** human readable name of the author */
+    this.author = undefined;
+    /** the human readable title of the work */
+    this.title = undefined;
+    /** the first version in the document to display */
+    this.version1 = undefined;
+    /** The section name */
+    this.section = undefined;
+    /** the web-path to the module */
+    this.modpath = modpath;
+    /** specify supported languges */
+    this.languages = {italiano:'it',italian:'it',espagñol:'es',spanish:'es',english:'en'};
+    /** refer to ourself in dependent functions */
+    var self = this;
+    /**
+     * Get a shortened version of the docid 
+     * @return the server's corform ID for this document
+     */
+    this.styleID = function() {
+        var parts = docid.split("/");
+        if ( parts.length>= 2 )
+        {
+            var sb = "";
+            sb += parts[0];
+            sb += "/";
+            sb += parts[1];
+            return sb;
+        }
+        else
+            return this.docid;
+    };
     /**
      * This should be a function of Array
      * @param the Array to test
@@ -753,19 +775,19 @@ function MMLEditor(opts, dialect) {
         {
             this.text_lines = new Array();
             this.html_lines = new Array();
-            var text = $("#"+this.opts.source).val();
-            $("#"+this.opts.target).html(this.toHTML(text));
+            var text = jQuery("#source").val();
+            jQuery("#target").html(this.toHTML(text));
             this.changed = false;
-            $(".page").css("display","inline");
+            jQuery(".page").css("display","inline");
             var base = 0;
             var self = this;
-            $(".page").each( function(i) {
-                var pos = $(this).position().top;
+            jQuery(".page").each( function(i) {
+                var pos = jQuery(this).position().top;
                 if ( base==0 && pos < 0 )
                     base = Math.abs(pos);
-                self.html_lines.push(new RefLoc($(this).text(),pos+base));
+                self.html_lines.push(new RefLoc(jQuery(this).text(),pos+base));
                 // inefficient but the only way
-                $(this).css("display","none");
+                jQuery(this).css("display","none");
             });
             this.recomputeImageHeights();
         }
@@ -928,8 +950,8 @@ function MMLEditor(opts, dialect) {
         var currHt = 0;
         this.image_lines = [];
         var editor = this;
-        $(".image").each( function(index) {
-            var img = $(this).children().first();
+        jQuery(".image").each( function(index) {
+            var img = jQuery(this).children().first();
             var ref = img.attr("data-ref");
             var imgHeight = img.height();
             editor.image_lines.push( new RefLoc(ref,currHt) );    
@@ -1033,7 +1055,7 @@ function MMLEditor(opts, dialect) {
      * Build the info about the dialect from the dialect description
      */
     this.makeInfo = function() {
-        var help = $("#help");
+        var help = jQuery("#help");
         var i;
         var info = "";
         info += "<h2>Novel markup for De Roberto</h2>";
@@ -1141,19 +1163,19 @@ function MMLEditor(opts, dialect) {
                     info += "</p>";
             }
         }
-        help = $("#help");
+        help = jQuery("#help");
         help.html(info);
     };
     /**
      * Resize manually to parent element width, height to bottom of screen. 
      */
     this.resize = function() {
-        var imgObj = $("#"+this.opts.images);
-        var srcObj = $("#"+this.opts.source);
-        var helpObj = $("#help");
-        var tgtObj = $("#"+this.opts.target);
-        var topOffset = imgObj.parent().position().top;
-        var wHeight = $(window).height()-topOffset;
+        var imgObj = jQuery("#images");
+        var srcObj = jQuery("#source");
+        var helpObj = jQuery("#help");
+        var tgtObj = jQuery("#target");
+        var topOffset = imgObj.parent().offset().top;
+        var wHeight = jQuery(window).height()-topOffset;
         var wWidth = imgObj.parent().outerWidth();
         // compute width
         imgObj.width(Math.floor(wWidth/3));
@@ -1173,20 +1195,18 @@ function MMLEditor(opts, dialect) {
         if ( !this.infoDisplayed )
         {
             this.infoDisplayed = true;
-            $("#"+this.opts.source).css("display","none");
-            $("#help").css("display","inline-block");
-            $("#info").val("edit");
-            $("#info").attr("title","back to editing");
-            this.toggleInfo();
+            jQuery("#source").css("display","none");
+            jQuery("#help").css("display","inline-block");
+            jQuery("#info").attr("title",self.strs.backToEditing);
+            jQuery("#info").html('<i class="fa fa-edit fa-lg"></i>');
         }
         else
         {
             this.infoDisplayed = false;
-            $("#help").css("display","none");
-            $("#"+this.opts.source).css("display","inline-block");
-            $("#info").val("info");
-            $("#info").attr("title","about the markup");
-            this.toggleInfo();
+            jQuery("#help").css("display","none");
+            jQuery("#source").css("display","inline-block");
+            jQuery("#info").attr("title",self.strs.aboutTheMarkup);
+            jQuery("#info").html('<i class="fa fa-info-circle fa-lg"></i>');
         }
         this.resize();
     };
@@ -1195,25 +1215,25 @@ function MMLEditor(opts, dialect) {
      */
     this.save = function() {
         var jsonStr = JSON.stringify(this.dialect);
-        var html = $("#"+this.opts.target).html();
+        var html = jQuery("#target").html();
         var obj = {
             dialect: jsonStr,
             html: html, 
         };
-        $("form").children().each( (function(obj) {
+        jQuery("form").children().each( (function(obj) {
             return function() {
-                obj[this.name] = $(this).val();
+                obj[this.name] = jQuery(this).val();
             }
         })(obj));
         var url = window.location.protocol
             +"//"+window.location.host
             +"/"+window.location.pathname.split("/")[1]
             +"/html";
-        $.ajax( url, 
+        jQuery.ajax( url, 
             {
                 type: "POST",
                 data: obj,
-                success: $.proxy(function(data, textStatus, jqXHR) {
+                success: jQuery.proxy(function(data, textStatus, jqXHR) {
                         this.saved = true;
                         this.toggleSave();
                     },this),
@@ -1227,110 +1247,444 @@ function MMLEditor(opts, dialect) {
      * Do whatever is needed to indicate that the document has/has not been saved
      */
     this.toggleSave = function() {
+        var save = jQuery("#save");
         if ( !this.saved  )
         {
-            $("#save").removeAttr("disabled");
-            $("#save").attr("title","save");
-            $("#save").attr("class","save-button");
+            save.removeAttr("disabled");
+            save.attr("title",self.strs.saveTitle);
+            save.html('<i class="fa fa-save fa-lg"></i>');  
         }
         else
         {
-            $("#save").attr("disabled","disabled");
-            $("#save").attr("title","saved");
-            $("#save").attr("class","saved-button");
-            
+            save.attr("disabled","disabled");
+            save.attr("title",self.strs.savedTitle);
+            save.html('<i class="fa fa-check-square-o fa-lg"></i>');  
         }
     };
-    /**
-     * Do whatever is needed to indicate the information status
+    /** 
+     * Get the document's metadata 
+     * @param after what to do when you've got it
      */
-    this.toggleInfo = function() {
-        if ( !this.infoDisplayed  )
-            $("#info").attr("class","info-button");
-        else
-            $("#info").attr("class","edit-button");
+    this.getMetadata = function(after) {
+        jQuery.get("http://"+window.location.hostname+"/mml/metadata/"+docid, function(data)
+        {
+            var md = data;
+            // these mostly have no sensible defaults
+            self.author = md.author;
+            self.version1 = md.version1;
+            self.section = md.section;
+            self.title = md.title;
+            self.encoding = (md.encoding==null)?"utf-8":md.encoding;
+            after();
+        });
     };
-    // this sets up the timer for updating
-    window.setInterval(
-        (function(self) {
-            return function() {
-                self.updateHTML();
+    /**
+     * Add the css from the server to this document
+     */
+    this.addCss = function() {
+        var url = "http://"+window.location.hostname+"/mml/corform/"+this.docid;
+        jQuery.get(url, function(data)
+        {
+            //console.log("loaded "+url+" successfully");
+            jQuery("head").append('<style type="text/css">\n'+data+'\n</style>\n');
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+           console.log("failed to load css from "+url+" "+errorThrown);
+       });
+    };
+    /**
+     * Set the encoding from the metadata into the page header
+     * @param charset the new charset
+     */
+    this.setPageEncoding = function(charset) {
+        var ct = jQuery("meta[http-equiv='Content-Type']");
+        if ( ct != undefined )
+            ct.remove();
+        jQuery("head").add(
+            '<meta http-equiv="Content-Type" content="text/html; charset='
+            +charset+'">');
+    };
+    /**
+     * Get the basic ID from docid (just language/author)
+     * @return a String
+     */
+    this.baseID = function()
+    {
+        var parts = this.docid.split("/");
+        if ( parts.length>= 2 )
+        {
+            var sb = "";
+            sb += parts[0];
+            sb += "/";
+            sb += parts[1];
+            return sb;
+        }
+        else
+            return this.docid;
+    }
+    /**
+     * Get the short version of the docid (language/author/work)
+     * @return a shortened docid for dialect etc
+     */
+    this.shortID = function() {
+        var parts = this.docid.split("/");
+        if ( parts.length>= 3 )
+        {
+            var sb = "";
+            sb += parts[0];
+            sb += "/";
+            sb += parts[1];
+            sb += "/";
+            sb += parts[2];
+            return sb;
+        }
+        else
+            return this.docid;
+    };
+    /**
+     * Get the dialect for this document
+     * @param docid the short docid for the dialect
+     * @param after the function to call on success
+     * @return a JSON document
+     */
+    this.getDialect = function( docid, after )
+    {
+        var url = "http://"+window.location.hostname+"/mml/dialects/"+docid;
+        //console.log(url);
+        jQuery.get(url, function(data) {
+            self.dialect = JSON.parse(data);
+            after();
+        })
+        .fail( function() {
+            console.log("failed to load dialect");
+        });
+    }
+    /**
+     * Get the version list from the server and install it
+     */
+    this.loadVersions = function() {
+        var url = "http://"+window.location.hostname+"/mml/versions?docid="
+            +self.docid+"&version1="+this.version1;
+        //console.log(url);
+        jQuery.get(url, function(data) {
+            //console.log(data);
+            var json = data;
+            var list = json.versions;
+            var options = '';
+            for ( var i=0;i<list.length;i++ )
+            {
+                options += '<option ';
+                if ( list[i].vid == self.version1 )
+                    options += ' selected';
+                options += ' value="'+list[i].vid+'">';
+                options += list[i].desc;
+                options += '</option>';
             }
-        // this should really reset the interval based on how long it took
-        })(this),300
-    );
-    // force update when user modifies the source
-    $("#"+opts.source).keyup( 
-        (function(self) {
-            return function() {
-                self.changed = true;
-                if ( self.saved )
-                {
-                    self.saved = false;
-                    self.toggleSave();
+            jQuery("#dropdown").html(options);
+        });
+    };
+    /**
+     * Create a temporary toolbar at the top.
+     * @return a div element with some buttons
+     */
+    this.createToolbar = function()
+    {
+        var wrapper = jQuery('<div id="toolbar-wrapper"></div>');
+        var toolbar = jQuery('<div id="toolbar"></div>');
+        var dropdown = jQuery('<select class="versions" title="'
+            +self.strs.versionMenu+'" id="dropdown"></select>');
+        // list the versions of the current docid
+        wrapper.append(dropdown);
+        var save = jQuery('<div title="'+self.strs.savedTitle
+            +'" class="toolbar-button" disabled id="save"><i class="fa fa-check-square-o fa-lg"></div>');
+        wrapper.append(save);
+        var info = jQuery('<div title="'
+            +self.strs.aboutTheMarkup
+            +'" class="toolbar-button" id="info"><i class="fa fa-info-circle fa-lg"></div>');
+        wrapper.append(info);
+        toolbar.append( wrapper );
+        jQuery("#info").click( function() {
+            self.toggleHelp();
+        });
+        jQuery("#save").click( function() {
+            self.save();
+        });
+        jQuery("#dropdown").change( function() {
+            var parts = jQuery("#dropdown").val().split("&");
+            for ( var i=0;i<parts.length;i++ ) {
+                var value = parts[i].split("=");
+                if ( value.length== 2 )
+                    jQuery("#"+value[0]).val(value[1]);
+            }
+            jQuery("form").submit();
+        });
+        if ( jQuery("#wrapper").is() )
+            toolbar.insertBefore("#wrapper");
+        else
+            jQuery("#"+self.target).append(toolbar);
+    }
+    /**
+     * Extract the docid's language key to an ISO 2-letter key
+     * @return a two-letter code for supported languages or 'en' as default
+     */
+    this.language = function() {
+        var parts = self.docid.split("/");
+        if ( parts.length>0&&self.languages[parts[0]]!=undefined )
+            return self.languages[parts[0]];
+        else
+            return 'en';
+    };
+    /**
+     * Define all language strings for later
+     * @param after the function to call on completion
+     */
+    this.readLanguageStrings = function(after) {
+        var script_name = window.location.pathname;
+        var lastIndex = script_name.lastIndexOf("/");
+        if ( lastIndex !=-1 )
+           script_name = script_name.substr(0,lastIndex);
+        script_name += '/'+this.modpath+'/js/strings.'+this.language(docid)+'.js';
+        jQuery.getScript(script_name)
+        .done(function( script, textStatus ) {
+            self.strs = load_strings();
+            //console.log("loaded "+script_name+" successfully");
+            after();
+        })
+        .fail(function( jqxhr, settings, exception ) {
+            console.log("Failed to load language strings. status=",jqxhr.status );
+        });
+    };
+    /**
+     * Get the images for this document/version
+     * @param after function to cal on completion
+     */
+    this.getImages = function(after)
+    {
+        jQuery.get("http://"+window.location.hostname+"/mml/images?docid="
+            +this.docid+"&version1="+this.version1, function(data) {
+            //console.log(data);
+            jQuery("#wrapper").prepend(data);
+            after();
+        });
+    }
+    /**
+     * Get the MML text and put it in the middle
+     * @param after execute this after the function succeeds
+     */
+    this.getMml = function(after) {
+        jQuery.get("http://"+window.location.hostname+"/mml/mml?docid="
+            +this.docid+"&version1="+this.version1, function(data) {
+            var textarea = jQuery('<textarea id="source"></textarea>');
+            textarea.append( data );
+            if ( jQuery("#help").is() )
+                textarea.insertAfter(jQuery("#help"));
+            else if ( jQuery("#target").is() )
+                textarea.insertBefore(jQuery("#target"));
+            else
+                jQuery("#wrapper").append(textarea);
+            after();
+       });
+    };
+    /**
+     * Create a single hidden input tag
+     * @return a string being the hidden input tag text
+     */
+    this.hiddenInput = function( name, value ) {
+        return '<input type="hidden" name="'+name+'" id="'
+            +name+'" value="'+value+'"></input>';
+    };
+    /**
+     * Write the hidden metadata needed back by the server
+     */
+    this.writeHiddenTags = function()
+    {
+        var form = jQuery('<form style="display:none" action="'
+            +window.location.href+'"></form>');
+        form.append(this.hiddenInput("docid",docid));
+        form.append(this.hiddenInput("encoding","UTF-8"));
+        form.append(this.hiddenInput("style", this.baseID()) ); 
+        form.append(this.hiddenInput("format", "MVD/TEXT") );
+        form.append(this.hiddenInput("section", this.section) );
+        form.append(this.hiddenInput("author", this.author) );
+        form.append(this.hiddenInput("title", this.title) );
+        form.append(this.hiddenInput("version1", this.version1) );
+        jQuery("#"+this.target).append( form );
+    }
+    /**
+     * Load callback handlers for updating the display
+     */
+    this.loadHandlers = function() {
+        // this sets up the timer for updating
+        window.setInterval(
+            (function(self) {
+                return function() {
+                    self.updateHTML();
                 }
-            }
-        })(this)
-    );
-    // scroll the textarea
-    $("#"+opts.source).scroll( 
-        (function(self) {
-            return function(e) {
-                // prevent feedback
-                if ( e.originalEvent )
-                {
-                    var loc = self.getSourcePage($(this));
-                    // console.log("loc sent to other scrollbars:"+loc);
-                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
-                    self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
-                    //console.log($("#images")[0].scrollHeight);
-                    //var height = 0;
-                    //var images = $(".image");
-                    //for ( var i=0;i<images.length;i++ )
-                    //    height += images[i].clientHeight;
-                    //console.log("overall height="+height);
+            // this should really reset the interval based on how long it took
+            })(this),300
+        );
+        // force update when user modifies the source
+        jQuery("#source").keyup( 
+            (function(self) {
+                return function() {
+                    self.changed = true;
+                    if ( self.saved )
+                    {
+                        self.saved = false;
+                        self.toggleSave();
+                    }
                 }
-            }
-        })(this)
-    );
-    // scroll the preview
-    $("#"+opts.target).scroll(
-        (function(self) {
-            return function(e) {
-                if ( e.originalEvent )
-                {
-                    var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
-                    var loc = self.getPixelPage($(this),self.html_lines);
-                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
-                    // for some reason this causes feedback, but it works without!!
-                    if ( self.infoDisplayed )
-                        self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
+            })(this)
+        );
+        // scroll the textarea
+        jQuery("#source").scroll( 
+            (function(self) {
+                return function(e) {
+                    // prevent feedback
+                    if ( e.originalEvent )
+                    {
+                        var loc = self.getSourcePage(jQuery(this));
+                        // console.log("loc sent to other scrollbars:"+loc);
+                        self.scrollTo(loc,self.html_lines,jQuery("#target"),1.0);
+                        self.scrollTo(loc,self.image_lines,jQuery("#images"),1.0);
+                        //console.log(jQuery("#images")[0].scrollHeight);
+                        //var height = 0;
+                        //var images = jQuery(".image");
+                        //for ( var i=0;i<images.length;i++ )
+                        //    height += images[i].clientHeight;
+                        //console.log("overall height="+height);
+                    }
                 }
-            }
-        })(this)
-    );
-    // scroll the images
-    $("#"+opts.images).scroll(
-        (function(self) {
-            return function(e) {
-                if ( e.originalEvent )
-                {
-                    var lineHeight = $("#"+self.opts.source).prop("scrollHeight")/self.num_lines;
-                    var loc = self.getPixelPage($(this),self.image_lines);
-                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
-                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+            })(this)
+        );
+        // scroll the preview
+        jQuery("#target").scroll(
+            (function(self) {
+                return function(e) {
+                    if ( e.originalEvent )
+                    {
+                        var lineHeight = jQuery("#source").prop("scrollHeight")/self.num_lines;
+                        var loc = self.getPixelPage(jQuery(this),self.html_lines);
+                        self.scrollTo(loc,self.text_lines,jQuery("#source"),lineHeight);
+                        // for some reason this causes feedback, but it works without!!
+                        if ( self.infoDisplayed )
+                            self.scrollTo(loc,self.image_lines,jQuery("#images"),1.0);
+                    }
                 }
-            }
-        })(this)
-    );
-    // This will execute whenever the window is resized
-    $(window).resize(
-        (function(self) {
-            self.resize();
-        })(this)
-    );
-    // generate help but keep it hidden for now
-    this.makeInfo();
-    /* setup window */
-    this.resize();
+            })(this)
+        );
+        // scroll the images
+        jQuery("#images").scroll(
+            (function(self) {
+                return function(e) {
+                    if ( e.originalEvent )
+                    {
+                        var lineHeight = jQuery("#source").prop("scrollHeight")/self.num_lines;
+                        var loc = self.getPixelPage(jQuery(this),self.image_lines);
+                        self.scrollTo(loc,self.text_lines,jQuery("#source"),lineHeight);
+                        self.scrollTo(loc,self.html_lines,jQuery("#target"),1.0);
+                    }
+                }
+            })(this)
+        );
+        // This will execute whenever the window is resized
+        jQuery(window).resize(
+            (function(self) {
+                self.resize();
+            })(this)
+        );
+    };
+    /**
+     * Build up the actual page
+     * @param after call this if we succeed
+     */
+    this.composePage = function(after)
+    {
+        this.setPageEncoding( this.encoding );
+        this.addCss();
+        this.getDialect(this.shortID(),function() {
+            var toolbar = self.createToolbar();
+            jQuery("#target").append( toolbar );
+            var wrapper = jQuery('<div id="wrapper"></div>');
+            jQuery("#"+self.target).append( wrapper );
+            self.getImages(function() {
+                wrapper.append( '<div id="help"></div>' );
+                self.getMml(function() {
+                    wrapper.append('<div id="target"></div>');
+                    jQuery('#'+self.target).append( wrapper );
+                    self.writeHiddenTags();
+                    after();
+                });
+           });
+       });
+    }
+    /**
+     * Post a changed event to the server
+     * @param url the url to post to
+     * @param service type of change: append this to the url
+     * @param obj an ordinary object with name value pairs to upload
+     */
+    this.post_obj = function( url, service, obj, succ, fail ) {
+        //console.log("posting to"+url+service+JSON.stringify(obj));
+        var jqxhr = jQuery.ajax(url+service,{
+            type:"POST",
+            data: obj,
+            success: succ,
+            error: fail
+        });
+    };
+    // build up the display
+    this.readLanguageStrings(function() {
+        self.getMetadata(function(){
+            self.style = self.styleID();
+            self.composePage(function() {
+                self.loadHandlers();
+                self.loadVersions();
+                self.makeInfo();
+                self.recomputeImageHeights();
+                /* setup window */
+                self.resize();
+            });
+        });
+    });
 }
+/**
+ * This reads the "arguments" to the javascript file
+ * @param scrName the name of the script file minus ".js"
+ */
+function getArgs( scrName )
+{
+    var scripts = jQuery("script");
+    var params = new Object ();
+    scripts.each( function(i) {
+        var src = jQuery(this).attr("src");
+        if ( src != undefined && src.indexOf(scrName) != -1 )
+        {
+            var qStr = src.replace(/^[^\?]+\??/,'');
+            if ( qStr )
+            {
+                var pairs = qStr.split(/[;&]/);
+                for ( var i = 0; i < pairs.length; i++ )
+                {
+                    var keyVal = pairs[i].split('=');
+                    if ( ! keyVal || keyVal.length != 2 )
+                        continue;
+                    var key = unescape( keyVal[0] );
+                    var val = unescape( keyVal[1] );
+                    val = val.replace(/\+/g, ' ');
+                    params[key] = val;
+                }
+            }
+            return params;
+        }
+    });
+    return params;
+}
+/* main entry point - gets executed when the page is loaded */
+jQuery(document).ready(
+    function(){
+        var params = getArgs('mml.js');
+        //console.log("target="+params['target']+" docid="+params['docid']+" modpath="+params['modpath']);
+        var editor = new MMLEditor(params['target'],params['docid'],params['modpath']);
+        //console.log("created editor");
+    }
+);

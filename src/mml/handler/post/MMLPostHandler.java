@@ -56,6 +56,7 @@ public class MMLPostHandler extends MMLHandler
     String format;
     String section;
     String version1;
+    String description;
     protected String docid;
     ArrayList<ImageFile> images;
     ArrayList<String> files;

@@ -83,7 +83,7 @@ public class MMLResourceHandler extends MMLGetHandler
             }
             else
                 throw new DbException("body key not found");
-            response.setContentType("application/json");
+            response.setContentType("text/plain");
             response.setCharacterEncoding(encoding);
             response.getWriter().println(bodyStr);
         }
