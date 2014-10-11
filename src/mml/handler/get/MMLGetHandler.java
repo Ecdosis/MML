@@ -67,7 +67,8 @@ public class MMLGetHandler extends MMLHandler {
         } catch (Exception e) {
             try
             {
-                response.setCharacterEncoding(encoding);
+                if ( encoding != null )
+                    response.setCharacterEncoding(encoding);
                 response.getWriter().println(e.getMessage());
             }
             catch ( Exception ex )
@@ -80,7 +81,7 @@ public class MMLGetHandler extends MMLHandler {
      * Get a resource from the database if it already exists
      * @param db the collection name
      * @param docID the resource docID
-     * @return the rerouce or null
+     * @return the resource or null
      * @throws MMLException 
      */
     public static AeseResource doGetResource( String db, String docID ) 
@@ -108,6 +109,8 @@ public class MMLGetHandler extends MMLHandler {
             resource = new AeseResource();
             if ( version1 != null )
                 resource.setVersion1( version1 );
+            if ( doc.containsKey(JSONKeys.DESCRIPTION)&&format.equals(Formats.TEXT) )
+                resource.setDescription((String)doc.get(JSONKeys.DESCRIPTION) );
             resource.setFormat( format );
             resource.setContent( (String)doc.get(JSONKeys.BODY) );
         }
@@ -164,7 +167,7 @@ public class MMLGetHandler extends MMLHandler {
             {
                 MVD mvd = MVDFile.internalise( (String)doc.get(
                     JSONKeys.BODY) );
-                vPath = getBestString(JSONKeys.VERSION1,md,doc);
+                //vPath = getBestString(JSONKeys.VERSION1,md,doc);
                 version.setStyle(getBestString(JSONKeys.STYLE,md,doc));
                 String sName = Utils.getShortName(vPath);
                 String gName = Utils.getGroupName(vPath);

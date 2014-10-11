@@ -14,6 +14,7 @@ public class AeseResource
 {
     String format;
     String content;
+    String description;
     String version1;
     public void setFormat( String format )
     {
@@ -22,6 +23,10 @@ public class AeseResource
     public void setContent( String content )
     {
         this.content = content;
+    }
+    public void setDescription( String description )
+    {
+        this.description = description;
     }
     public void setVersion1( String version1 )
     {
@@ -38,5 +43,9 @@ public class AeseResource
     public String getContent( )
     {
         return this.content;
+    }
+    public String getDescription( )
+    {
+        return this.description;
     }
 }

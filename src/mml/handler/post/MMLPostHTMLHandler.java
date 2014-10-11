@@ -162,25 +162,14 @@ public class MMLPostHTMLHandler extends MMLPostHandler
      */
     private void ensure( int nNLs )
     {
-        int current = 0;
-        int end = sb.length()-1;
-        while ( end > 0 )
+        char c = sb.charAt(sb.length()-1);
+        while ( sb.length()>0 && (c == 10 || c == 13) ) 
         {
-            if ( sb.charAt(end--)=='\n')
-                current++;
-            else
-                break;
+            sb.setLength(sb.length()-1);
+            c = sb.charAt(sb.length()-1);
         }
-        int toadd = nNLs-current;
-        if ( toadd < 0 )
-        {
-            sb.setLength(sb.length()+toadd);
-        }
-        else
-        {
-            for ( int i=0;i<toadd;i++ )
-                sb.append("\n");
-        }
+        for ( int i=0;i<nNLs;i++ )
+            sb.append("\n");
     }
     /**
      * Parse a div (section)
@@ -534,8 +523,11 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 Database.CORTEX, docid );
             if ( res1 != null )
                 cortex.fromResource(res1);
-            else if ( title != null )
-                cortex.addLongName( version1, title );
+            if ( description == null )
+                description = res1.getDescription();
+            if ( description == null )
+                description = "Version "+this.version1+" of "+docid;
+            cortex.addLongName( version1, description );
             // add new version
             cortex.setStyle( style );
             cortex.put( version1, sb.toString().getBytes(encoding) );
@@ -546,8 +538,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 Database.CORCODE, docid+"/default" );
             if ( res2 != null )
                 corcode.fromResource(res2);
-            else if ( title != null )
-                corcode.addLongName( version1, title );
+            if ( description != null )
+                corcode.addLongName( version1, description );
             corcode.setStyle( style );
             corcode.put( version1, stil.toString().getBytes(encoding) );
             // write metadata if not already there

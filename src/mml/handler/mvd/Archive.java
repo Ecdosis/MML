@@ -76,6 +76,7 @@ public class Archive extends HashMap<String,byte[]>
     public void addLongName( String key, String longName )
     {
         nameMap.put( key, longName );
+        System.out.println("Setting long name for "+key+" to "+longName);
     }
     public void setStyle( String style )
     {
@@ -146,6 +147,8 @@ public class Archive extends HashMap<String,byte[]>
                 body = new String( data, encoding );
                 if ( version1 == null )
                     version1 = key;
+                if ( nameMap.containsKey(version1) )
+                    description = nameMap.get(version1);
             }
             else
             {
@@ -167,9 +170,12 @@ public class Archive extends HashMap<String,byte[]>
                     byte[] data = get( key );
                     String longName = nameMap.get(key);
                     if ( longName == null )
-                        longName = (groups.length()>0)?shortKey+" of "
+                    {
+                        longName = "Version ";
+                        longName += (groups.length()>0)?shortKey+" of "
                             +groups:shortKey;
-                    vId = (short)mvd.newVersion( shortKey, "Version "+longName, 
+                    }
+                    vId = (short)mvd.newVersion( shortKey, longName, 
                         groups, Version.NO_BACKUP, false );
                     // tepmorary hack
                     mvd.setDirectAlign( true );
@@ -231,6 +237,7 @@ public class Archive extends HashMap<String,byte[]>
             try
             {
                 put( version1, resource.getContent().getBytes(encoding) );
+                nameMap.put( version1, resource.getDescription() );
             }
             catch ( Exception e )
             {
