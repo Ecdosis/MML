@@ -528,6 +528,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             if ( description == null )
                 description = "Version "+this.version1+" of "+docid;
             cortex.addLongName( version1, description );
+            System.out.println("version1="+version1+" description="+description);
             // add new version
             cortex.setStyle( style );
             cortex.put( version1, sb.toString().getBytes(encoding) );
