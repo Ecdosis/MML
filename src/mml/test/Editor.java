@@ -228,7 +228,7 @@ public class Editor extends Test
     {
         try
         {
-            String url = "http://localhost:8083/mml/dialects/"+shortID();
+            String url = "http://localhost/mml/dialects/"+shortID();
             return URLEncoder.getResponseForUrl(url).trim();
         }
         catch ( Exception e )
@@ -257,7 +257,7 @@ public class Editor extends Test
     {
         try
         {
-            String url = "http://localhost:8083/mml/mml?docid="+docid+"&version1="+version1;
+            String url = "http://localhost/mml/mml?docid="+docid+"&version1="+version1;
             return URLEncoder.getResponseForUrl(url);
         }
         catch ( Exception e )
@@ -273,7 +273,7 @@ public class Editor extends Test
     {
         try
         {
-            String url = "http://localhost:8083/mml/corform/"+shortID()+"/default";
+            String url = "http://localhost/mml/corform/"+shortID()+"/default";
             return URLEncoder.getResponseForUrl(url).trim();
         }
         catch ( Exception e )
@@ -289,7 +289,7 @@ public class Editor extends Test
     {
         try
         {
-            String url = "http://localhost:8083/mml/images?docid="+docid
+            String url = "http://localhost/mml/images?docid="+docid
                 +"&version1="+version1;
             return URLEncoder.getResponseForUrl(url).trim();
         }
@@ -345,8 +345,8 @@ public class Editor extends Test
         doc.getHead().addEncoding( encoding );
         String css = getCss();
         doc.getHead().addCss(css);
-        doc.getHead().addScriptFile( "js/jquery-1.11.1.js" );
-        doc.getHead().addScriptFile( "js/mml.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/jquery-1.11.1.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
         String dialect = getDialect(shortID());
         String opts = getOpts(docid,version1);
         StringBuilder js = new StringBuilder();
