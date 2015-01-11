@@ -40,8 +40,8 @@ public class AeseSpeller
     {  
         System.loadLibrary("AeseSpeller");
         System.loadLibrary("aspell");
-        compounds = new HashMap<>();
-        HashSet<String> italian = new HashSet<>();
+        compounds = new HashMap<String,HashSet>();
+        HashSet<String> italian = new HashSet<String>();
         for ( String comp: it_exceptions )
             italian.add(comp);
         compounds.put( "it", italian );

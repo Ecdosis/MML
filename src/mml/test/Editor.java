@@ -44,17 +44,17 @@ public class Editor extends Test
     String title;
     String author;
     static String EDITOR_START_JS = 
-        "$( document ).ready(function() {";
+        "jQuery( document ).ready(function() {";
     static String EDITOR_END_JS =
-    "var editor = new MMLEditor(opts, dialect);\n$(window).load(fu"
-    +"nction() {\n\t\teditor.recomputeImageHeights()\n}); \n$(\"#i"
-    +"nfo\").click( function() {\n\t\teditor.toggleHelp();\n});\n$"
-    +"(\"#save\").click( function() {\n\t\teditor.save();\n});\n$("
-    +"\"#dropdown\").change( function() {\n\t\tvar parts = $(\"#dr"
+    "var editor = new MMLEditor(opts, dialect);\njQuery(window).load(fu"
+    +"nction() {\n\t\teditor.recomputeImageHeights()\n}); \njQuery(\"#i"
+    +"nfo\").click( function() {\n\t\teditor.toggleHelp();\n});\njQuery"
+    +"(\"#save\").click( function() {\n\t\teditor.save();\n});\njQuery("
+    +"\"#dropdown\").change( function() {\n\t\tvar parts = jQuery(\"#dr"
     +"opdown\").val().split(\"&\");\n\t\tfor ( var i=0;i<parts.len"
     +"gth;i++ ) {\n\t\t\tvar value = parts[i].split(\"=\");\n\t\t\t"
-    +"if ( value.length== 2 )\n\t\t\t\t$(\"#\"+value[0]).val(valu"
-    +"e[1]);\n\t\t}\n\t\t$(\"form\").submit();\n});\n}); \n";
+    +"if ( value.length== 2 )\n\t\t\t\tjQuery(\"#\"+value[0]).val(valu"
+    +"e[1]);\n\t\t}\n\t\tjQuery(\"form\").submit();\n});\n}); \n";
     static String DEROBERTO_1920 = "docid=italian/deroberto/ivicere/cap1&version1="
         +"/Base/1920&title=I Vicerè&author=De Roberto";
     static String DEROBERTO_1894 = "docid=italian/deroberto/ivicere/cap1&version1="

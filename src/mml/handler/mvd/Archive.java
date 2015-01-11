@@ -219,7 +219,7 @@ public class Archive extends HashMap<String,byte[]>
         {
             MVD mvd = MVDFile.internalise( resource.getContent() );
             int nVersions = mvd.numVersions();
-            this.nameMap = new HashMap<>();
+            this.nameMap = new HashMap<String,String>();
             for ( int vId=1;vId<=nVersions;vId++ )
             {
                 byte[] data = mvd.getVersion(vId);

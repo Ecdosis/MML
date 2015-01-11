@@ -42,7 +42,7 @@ public class STILDocument extends JSONDocument
         put( JSONKeys.RANGES, ranges );
         put( JSONKeys.FORMAT, Formats.STIL );
         lastOffset = 0;
-        map = new HashMap<>();
+        map = new HashMap<Range,JSONDocument>();
     }
     /**
      * Add a range to the STIL Document. Must be added in sequence

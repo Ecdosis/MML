@@ -165,7 +165,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
      */
     private void invertDialect()
     {
-        this.invertIndex = new HashMap<>();
+        this.invertIndex = new HashMap<String,JSONObject>();
         JSONArray array;
         Set<String> keys = this.dialect.keySet();
         Iterator<String> iter = keys.iterator();
@@ -307,7 +307,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
         String stil = corcode.getVersionString();
         JSONObject markup = (JSONObject)JSONValue.parse(stil);
         JSONArray ranges = (JSONArray)markup.get("ranges");
-        Stack<EndTag> stack = new Stack<>();
+        Stack<EndTag> stack = new Stack<EndTag>();
         int offset = 0;
         for ( int i=0;i<ranges.size();i++ )
         {

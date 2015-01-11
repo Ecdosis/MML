@@ -14,11 +14,10 @@
  *  along with MML.  If not, see <http://www.gnu.org/licenses/>.
  */
 package mml.handler.get;
-import calliope.core.database.MimeType;
+import calliope.core.image.MimeType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import calliope.core.database.Connector;
-import calliope.core.constants.Database;
+import calliope.core.image.Corpix;
 import mml.exception.MMLException;
 import javax.servlet.ServletOutputStream;
 
@@ -36,8 +35,7 @@ public class MMLCorpixHandler extends MMLGetHandler
         try
         {
             MimeType type = new MimeType();
-            byte[] data = Connector.getConnection().getImageFromDb( 
-                Database.CORPIX, urn, type );
+            byte[] data = Corpix.getImage( urn, type );
             if ( data != null)
             {
                 response.setContentType(type.mimeType);

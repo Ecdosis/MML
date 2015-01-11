@@ -27,13 +27,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import mml.constants.Params;
-import calliope.core.database.Connection;
-import calliope.core.database.Connector;
-import calliope.core.database.MimeType;
-import calliope.core.database.ImgInfo;
-import calliope.core.constants.JSONKeys;
+import calliope.core.image.Corpix;
 import mml.exception.MMLException;
 import html.*;
+import org.json.simple.*;
 
 /**
  * Handle a request for editor options
@@ -69,11 +66,11 @@ public class MMLGetImgHandler extends MMLGetHandler
      * @param map the page reference to dimensions map
      * @return the images as a sequence of IMGs inside divs
      */
-    String createImgs( HttpServletRequest req, HashMap<String,ImgInfo> map )
+    String createImgs( HttpServletRequest req, HashMap<String,String> map )
     { 
         Element images = new Element("div");
         images.addAttribute("id","images");
-        String url = "/mml/"+Database.CORPIX+"/"+docid+version1;
+        String url = "/"+Database.CORPIX+"/"+docid+version1;
         Set<String> keys = map.keySet();
         String[] names = new String[keys.size()];
         keys.toArray(names);
@@ -81,17 +78,21 @@ public class MMLGetImgHandler extends MMLGetHandler
         Arrays.sort(names,comp);
         for ( String name: names )
         {
-            ImgInfo info = map.get(name);
+            String jDoc = map.get(name);
+            JSONObject info = (JSONObject)JSONValue.parse( jDoc );
             Element wrap = new Element("div");
             wrap.addAttribute("class","image");
             Element img = new Element("img");
-            String src = url+"/p"+name;
+            String src = url+"/"+name;
             img.addAttribute("src",src);
             img.addAttribute("id","image_"+name);
+            //String mimetype = (String)info.get("mimetype");
+            int width = ((Number)info.get("width")).intValue();
+            int height = ((Number)info.get("height")).intValue();
             img.addAttribute("style","width: 100%; max-width: "
-                +map.get(name).width+"px");
-            img.addAttribute("data-width",Integer.toString(info.width));
-            img.addAttribute("data-height",Integer.toString(info.height));
+                +width+"px");
+            img.addAttribute("data-width",Integer.toString(width));
+            img.addAttribute("data-height",Integer.toString(height));
             img.addAttribute("data-ref",name);
             wrap.addElement( img );
             images.addElement( wrap );
@@ -105,7 +106,7 @@ public class MMLGetImgHandler extends MMLGetHandler
      */
     String pageRef( String fullID )
     {
-        int index = fullID.lastIndexOf("p");
+        int index = fullID.lastIndexOf("/");
         if ( index != -1 )
             return fullID.substring(index+1);
         else
@@ -124,22 +125,17 @@ public class MMLGetImgHandler extends MMLGetHandler
     {
         try
         {
-            Connection conn = Connector.getConnection();
             docid = request.getParameter(Params.DOCID);
             version1 = request.getParameter(Params.VERSION1);
-            String[] imgs = conn.listDocuments( Database.CORPIX, 
-                "^"+docid+version1, JSONKeys.FILENAME );
-            HashMap<String,ImgInfo> imageMap = new HashMap<>();
+            String longDocID = docid+version1;
+            String[] imgs = Corpix.listImages( longDocID );
+            HashMap<String,String> imageMap = new HashMap<String,String>();
             for ( String img: imgs )
             {
-                MimeType mType = new MimeType();
-                Rectangle r = conn.getImageDimensions(Database.CORPIX, 
-                    img, mType);
-                if ( r != null )
+                String jDoc = Corpix.getMetaData( img );
+                if ( jDoc != null )
                 {
-                    ImgInfo iInfo = new ImgInfo( r.width, r.height, 
-                        mType.mimeType );
-                    imageMap.put( pageRef(img), iInfo );
+                    imageMap.put( pageRef(img), jDoc );
                 }
             }
             // write out html

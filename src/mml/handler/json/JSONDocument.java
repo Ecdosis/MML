@@ -170,7 +170,7 @@ public class JSONDocument extends HashMap<String,Object>
         throws JSONException
     {
         int start = offset;
-        ArrayList<Object> array = new ArrayList<>();
+        ArrayList<Object> array = new ArrayList<Object>();
         JSONValue obj = new JSONValue( array );
         while ( offset<data.length() && data.charAt(offset) != ']' )
         {

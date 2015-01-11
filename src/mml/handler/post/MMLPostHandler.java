@@ -138,7 +138,7 @@ public class MMLPostHandler extends MMLHandler
                                     item.getContentType(), 
                                     bh.getData() );
                                 if ( images == null )
-                                    images = new ArrayList<>();
+                                    images = new ArrayList<ImageFile>();
                                 images.add( iFile );
                             }
                             else if ( type.equals("text/plain") )
@@ -153,7 +153,7 @@ public class MMLPostHandler extends MMLHandler
                                 }
                                 String style = new String( bh.getData(), encoding );
                                 if ( files == null )
-                                    files = new ArrayList<>();
+                                    files = new ArrayList<String>();
                                 files.add( style );
                             }
                         }
