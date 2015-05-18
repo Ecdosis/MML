@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.simple.*;
 import calliope.core.database.*;
 import calliope.core.Utils;
-import mml.URLEncoder;
+import calliope.core.URLEncoder;
 import mml.exception.*;
 import mml.constants.*;
 import mml.handler.AeseVersion;

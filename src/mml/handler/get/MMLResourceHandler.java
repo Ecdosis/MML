@@ -47,8 +47,7 @@ public class MMLResourceHandler extends MMLGetHandler
             String jStr = null;
             do
             {
-                jStr = Connector.getConnection().getFromDb(
-                    database,urn);
+                jStr = conn.getFromDb(database,urn);
                 if ( jStr == null )
                 {
                     if ( this.database.equals(Database.CORFORM) )

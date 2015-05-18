@@ -18,6 +18,7 @@
 
 package mml.handler.get;
 
+import calliope.core.URLEncoder;
 import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -388,7 +389,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
      * Get the short form of the full docid
      * @return language/author/work only
      */
-    String shortenDocID()
+    String shortenDocID(String longDocId)
     {
         String[] parts = docid.split("/");
         if ( parts.length <= 3 )
@@ -417,8 +418,9 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 docid, version1 );
             AeseVersion corcode = doGetResourceVersion( Database.CORCODE, 
                 docid+"/default", version1 );
-            String shortID = shortenDocID();
-            this.dialect = getDialect( shortID );
+            String shortID = shortenDocID(docid);
+            String dialectStr = getDialect( shortID, version1 );
+            this.dialect = (JSONObject)JSONValue.parse(dialectStr);
             invertDialect();
             createMML(cortex,corcode);
             response.setContentType("text/plain");
@@ -430,45 +432,49 @@ public class MMLGetMMLHandler extends MMLGetHandler
             throw new MMLException( e );
         }
     }
-    /**
-     * Get a dialect file direct from the database
-     * @param docID the dialect's short docid
-     * @return a JSONObject already parsed 
-     * @throws MMLException if it wasn't retrievable
-     */
-    JSONObject getDialect( String docID ) throws MMLException
+    private static boolean isJSON( String text )
     {
         try
         {
-            String originalDocID = new String(docID);
-            String jStr = null;
-            do
-            {
-                jStr = Connector.getConnection().getFromDb(
-                    Database.DIALECTS,docID);
-                if ( jStr == null )
-                {
-                    if ( docID.length()>0 && docID.indexOf("/")!= -1 )
-                        docID = Utils.chomp(docid);
-                    else
-                        break;
-                }
-            } while ( jStr == null );
-            if ( jStr != null )
-            {
-                JSONObject jDoc = (JSONObject)JSONValue.parse( jStr );
-                String bodyStr = (String)jDoc.get(JSONKeys.BODY);
-                JSONObject body = (JSONObject)JSONValue.parse(bodyStr);
-                if ( body == null )
-                    throw new JSONException("body key not found");
-                return body;
-            }
-            else
-                throw new DbException("couldn't find dialect "+originalDocID );
+            Object res = JSONValue.parse(text);
+            if ( res==null )
+                return false;
         }
         catch ( Exception e )
         {
-            throw new MMLException(e);
+            return false;
+        }
+        return true;
+    }
+    /**
+     * Get a dialect
+     * @param docid the docid of the dialect
+     * @param version1 the version id that may specify a dialect variant
+     * @return an Element (div) containing the content
+     */
+    public static String getDialect( String docid, String version1 ) 
+        throws MMLTestException
+    {
+        try
+        {
+            String suffix = docid+version1;
+            String prefix = "http://localhost/mml/dialects/";
+            String url = prefix+suffix;
+            String dialect = URLEncoder.getResponseForUrl(url).trim();
+            while ( dialect == null||!isJSON(dialect) )
+            {
+                suffix = Utils.chomp( suffix );
+                url = prefix+suffix;
+                dialect = URLEncoder.getResponseForUrl(url).trim();
+            }
+            if ( dialect == null )
+                throw new MMLException("No dialect for "+docid+" found");
+            else
+                return dialect;
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
         }
     }
 }

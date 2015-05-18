@@ -35,7 +35,7 @@
     padding-left: 15px;
     margin-top: 10px;
 }
-#toolbar-wrapper { text-align: center; display: block }
+#toolbar-wrapper { text-align: center; display: block; padding-bottom:3px }
 #toolbar { background: lightgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
 #save,#info,#toolbar-wrapper,#annotate { margin-left: 5px; margin-right:5px }
 /* box to receive text */

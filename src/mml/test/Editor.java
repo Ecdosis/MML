@@ -21,13 +21,16 @@ package mml.test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.exception.*;
+import mml.handler.get.MMLGetMMLHandler;
 import html.*;
 import java.io.File;
 import java.io.FileInputStream;
 import calliope.core.Utils;
-import mml.URLEncoder;
+import calliope.core.URLEncoder;
 import mml.constants.Params;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.JSONArray;
 
 /**
  * Test interface for editor
@@ -59,7 +62,7 @@ public class Editor extends Test
         +"/Base/1920&title=I Vicerè&author=De Roberto";
     static String DEROBERTO_1894 = "docid=italian/deroberto/ivicere/cap1&version1="
         +"/Base/1894&title=I Vicerè&author=De Roberto";
-    static String HARPUR_1883 = "docid=english/_harpur/h642j&version1=/Base/1883"
+    static String HARPUR_1883 = "docid=english/harpur/h642&version1=/h642j"
         +"&title=Poems&author=Harpur";
     public Editor()
     {
@@ -125,10 +128,63 @@ public class Editor extends Test
         }
     }
     /**
+     * Add a single option-group to the styles menu
+     * @param select the selct element
+     * @param dObj the dialect JSON object
+     * @param name the name of the format collection in dObj
+     * @param label the name of the optgroup to appear in menu
+     */
+    private void addOptGroup( Element select, JSONObject dObj, String name, 
+        String label )
+    {
+        JSONArray items = (JSONArray)dObj.get(name);
+        if ( items != null )
+        {
+            Element group = new Element("optgroup");
+            group.addAttribute("label",label);
+            for ( int i=0;i<items.size();i++ )
+            {
+                JSONObject item = (JSONObject)items.get(i);
+                Element option = new Element("option");
+                item.put("type",name);
+                String value = item.toJSONString();
+                value = value.replaceAll(">","&gt;");
+                value = value.replaceAll("<","&lt;");
+                option.addAttribute("value", value);
+                String text = (String)item.get("prop");
+                //System.out.println(text);
+                option.addText(text);
+                group.addElement(option);
+            }
+            select.addElement( group );
+        }
+    }
+    /**
+     * Create a select dropdown with the dialect's styles
+     * @param dialect the dialect file
+     * @return a select list with groups for para headings and charfmts
+     */
+    private Element getStyles( String dialect )
+    {
+        JSONObject dObj = (JSONObject)JSONValue.parse(dialect);
+        Element select = new Element("select");
+        select.addAttribute("id","styles");
+        addOptGroup(select,dObj,"headings","headings");
+        addOptGroup(select,dObj,"paraformats","paragraph formats");
+        addOptGroup(select,dObj,"charformats","character formats");
+        addOptGroup(select,dObj,"dividers","dividers");
+        addOptGroup(select,dObj,"milestones","milestones");
+        addOptGroup(select,dObj,"codeblocks","verbatim");
+        Element quotation = new Element("option");
+        quotation.addAttribute("value","quotation");
+        return select;
+    }
+    /**
      * Create a temporary toolbar at the top.
+     * @param dialect the dialect describing the formats
      * @return a div element with some buttons
      */
-    Element createToolbar()
+    Element createToolbar( String dialect )
     {
         Element wrapper = new Element("div");
         wrapper.addAttribute("id","toolbar-wrapper");
@@ -173,6 +229,8 @@ public class Editor extends Test
         annotate.addAttribute("class","annotate-button");
         annotate.addAttribute("id","annotate");
         wrapper.addElement(annotate);
+        Element styles = getStyles(dialect);
+        wrapper.addElement(styles);
         toolbar.addElement( wrapper );
         return toolbar;
     }
@@ -224,22 +282,6 @@ public class Editor extends Test
         writeHiddenTag( form, Params.TITLE, title );
         writeHiddenTag( form, Params.VERSION1, version1 );
         doc.addElement( form );
-    }
-    /**
-     * Get a dialect
-     * @return an Element (div) containing the content
-     */
-    private String getDialect( String docid ) throws MMLTestException
-    {
-        try
-        {
-            String url = "http://localhost/mml/dialects/"+shortID();
-            return URLEncoder.getResponseForUrl(url).trim();
-        }
-        catch ( Exception e )
-        {
-            throw new MMLTestException(e);
-        }
     }
     /**
      * Get the opts for this editor
@@ -338,7 +380,7 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
         doc.getHead().addScriptFile( "/mml/static/js/info.js" );
         doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
-        String dialect = getDialect(shortID());
+        String dialect = MMLGetMMLHandler.getDialect(shortID(),version1);
         String opts = getOpts(docid,version1);
         StringBuilder js = new StringBuilder();
         js.append(EDITOR_START_JS);
@@ -350,7 +392,7 @@ public class Editor extends Test
         js.append(";\n");
         js.append(EDITOR_END_JS);
         doc.getHead().addScript( js.toString() );
-        Element toolbar = createToolbar();
+        Element toolbar = createToolbar(dialect);
         doc.addElement( toolbar );
         Element wrapper = new Element("div");
         wrapper.addAttribute("id","wrapper");
