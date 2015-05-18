@@ -18,7 +18,6 @@
 
 package mml.handler.get;
 
-import java.awt.Rectangle;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Comparator;
@@ -27,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import mml.constants.Params;
+import mml.MMLWebApp;
 import calliope.core.image.Corpix;
 import mml.exception.MMLException;
 import html.*;
@@ -128,11 +128,11 @@ public class MMLGetImgHandler extends MMLGetHandler
             docid = request.getParameter(Params.DOCID);
             version1 = request.getParameter(Params.VERSION1);
             String longDocID = docid+version1;
-            String[] imgs = Corpix.listImages( longDocID );
+            String[] imgs = Corpix.listImages( MMLWebApp.webRoot, longDocID );
             HashMap<String,String> imageMap = new HashMap<String,String>();
             for ( String img: imgs )
             {
-                String jDoc = Corpix.getMetaData( img );
+                String jDoc = Corpix.getMetaData( MMLWebApp.webRoot, img );
                 if ( jDoc != null )
                 {
                     imageMap.put( pageRef(img), jDoc );

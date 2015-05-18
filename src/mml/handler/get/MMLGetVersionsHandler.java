@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.constants.Params;
 import mml.exception.MMLException;
-import mml.handler.AeseResource;
 import mml.handler.AeseVersion;
 
 /**

@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import calliope.core.image.Corpix;
 import mml.exception.MMLException;
 import javax.servlet.ServletOutputStream;
+import mml.MMLWebApp;
 
 /**
  * Fetch an image from the corpix collection
@@ -35,7 +36,7 @@ public class MMLCorpixHandler extends MMLGetHandler
         try
         {
             MimeType type = new MimeType();
-            byte[] data = Corpix.getImage( urn, type );
+            byte[] data = Corpix.getImage( MMLWebApp.webRoot, urn, type );
             if ( data != null)
             {
                 response.setContentType(type.mimeType);

@@ -2,15 +2,6 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/STILDocument.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/JSONDocument.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/mvd/Archive.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetImgHandler.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetMMLHandler.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/calliope/AeseSpeller.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostHandler.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetHandler.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>

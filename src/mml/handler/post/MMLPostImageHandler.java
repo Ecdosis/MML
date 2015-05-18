@@ -22,7 +22,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import calliope.core.Utils;
 import mml.exception.*;
-import calliope.core.database.*;
+import calliope.core.image.Corpix;
+import mml.MMLWebApp;
 /**
  * Handle uploads of images
  * @author desmond
@@ -42,9 +43,8 @@ public class MMLPostImageHandler extends MMLPostHandler
                 for ( int i=0;i<images.size();i++ )
                 {
                     ImageFile iFile = images.get(i);
-                    Connector.getConnection().putImageToDb( 
-                        database, docid, iFile.getData(), iFile.getWidth(), 
-                        iFile.getHeight(), iFile.type );
+                    Corpix.addImage( MMLWebApp.webRoot, docid, 
+                        iFile.type,iFile.getData() );
                 }
                 response.setContentType("text/html;charset=UTF-8");
             } 

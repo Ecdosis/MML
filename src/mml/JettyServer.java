@@ -39,11 +39,13 @@ import mml.exception.*;
  */
 public class JettyServer extends AbstractHandler
 {
-    static String host;
-    static String user;
-    static String password;
-    static int dbPort;
-    public static int wsPort;
+    /*static String host = "localhost";
+    static String user ="admin";
+    static String password = "jabberw0cky";
+    static int dbPort = 27017;
+    public static int wsPort = 8080;
+    static String webRoot = "/var/www";
+    */
     /**
      * Main entry point
      * @param target the URN part of the URI
@@ -103,8 +105,8 @@ public class JettyServer extends AbstractHandler
         boolean sane = true;
         try
         {
-            wsPort = 8081;
-            host = "localhost";
+            MMLWebApp.wsPort = 8081;
+            MMLWebApp.host = "localhost";
             Repository repository = Repository.MONGO;
             for ( int i=0;i<args.length;i++ )
             {
@@ -113,17 +115,19 @@ public class JettyServer extends AbstractHandler
                     if ( args.length>i+1 )
                     {
                         if ( args[i].charAt(1) == 'u' )
-                            user = args[i+1];
+                            MMLWebApp.user = args[i+1];
                         else if ( args[i].charAt(1) == 'p' )
-                            password = args[i+1];
+                            MMLWebApp.password = args[i+1];
                         else if ( args[i].charAt(1) == 'h' )
-                            host = args[i+1];
+                            MMLWebApp.host = args[i+1];
                         else if ( args[i].charAt(1) == 'd' )
-                            dbPort = Integer.parseInt(args[i+1]);
+                            MMLWebApp.dbPort = Integer.parseInt(args[i+1]);
                         else if ( args[i].charAt(1) == 'w' )
-                            wsPort = Integer.parseInt(args[i+1]);
+                            MMLWebApp.wsPort = Integer.parseInt(args[i+1]);
                         else if ( args[i].charAt(1) == 'r' )
-                            repository = Repository.valueOf(args[i+1]);
+                            MMLWebApp.repository = Repository.valueOf(args[i+1]);
+                        else if ( args[i].charAt(1) == 'W' )
+                            MMLWebApp.webRoot = args[i+1];
                         else
                             sane = false;
                     } 
@@ -133,8 +137,12 @@ public class JettyServer extends AbstractHandler
                 if ( !sane )
                     break;
             }
-            Connector.init( repository, user, 
-                password, host, dbPort, wsPort, "/var/www" );
+            /*Repository repository, String user, 
+        String password, String host, String dbName, int dbPort, 
+        int wsPort, String webRoot */
+            Connector.init( repository, MMLWebApp.user, 
+                MMLWebApp.password, MMLWebApp.host, "calliope", 
+                MMLWebApp.dbPort, MMLWebApp.wsPort, MMLWebApp.webRoot );
         }
         catch ( Exception e )
         {

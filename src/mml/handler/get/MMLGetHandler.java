@@ -64,6 +64,10 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLGetMMLHandler().handle( request, response, urn );
             else if ( service.equals(Service.IMAGES))
                 new MMLGetImgHandler().handle( request, response, urn );
+            else if ( service.equals(Service.STATIC) )
+                new MMLFileHandler().handle(request,response, "mml/static/"+urn );
+            else
+                new MMLFileHandler().handle(request,response, urn );
         } catch (Exception e) {
             try
             {

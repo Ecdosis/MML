@@ -168,6 +168,11 @@ public class Editor extends Test
         info.addAttribute("class","info-button");
         info.addAttribute("id","info");
         wrapper.addElement(info);
+        Element annotate = new Element("button");
+        annotate.addAttribute("title","add a note");
+        annotate.addAttribute("class","annotate-button");
+        annotate.addAttribute("id","annotate");
+        wrapper.addElement(annotate);
         toolbar.addElement( wrapper );
         return toolbar;
     }
@@ -265,24 +270,8 @@ public class Editor extends Test
             throw new MMLTestException(e);
         }
     }
-    /**
-     * Get the css for this document
-     * @return an Element (div) containing the content
-     */
-    private String getCss() throws MMLTestException
-    {
-        try
-        {
-            String url = "http://localhost/mml/corform/"+shortID()+"/default";
-            return URLEncoder.getResponseForUrl(url).trim();
-        }
-        catch ( Exception e )
-        {
-            throw new MMLTestException(e);
-        }
-    }
      /**
-     * Get the css for this document
+     * Get the images for this document
      * @return an Element (div) containing the content
      */
     private String getImages() throws MMLTestException
@@ -343,9 +332,11 @@ public class Editor extends Test
     void composePage()throws MMLTestException
     {
         doc.getHead().addEncoding( encoding );
-        String css = getCss();
-        doc.getHead().addCss(css);
+        doc.getHead().addCssFile("/mml/static/css/deroberto.css");
         doc.getHead().addScriptFile( "/mml/static/js/jquery-1.11.1.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/refloc.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/info.js" );
         doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
         String dialect = getDialect(shortID());
         String opts = getOpts(docid,version1);

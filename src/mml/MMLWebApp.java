@@ -47,8 +47,8 @@ public class MMLWebApp extends HttpServlet
     static String password = "jabberw0cky";
     static int dbPort = 27017;
     public static int wsPort = 8080;
-    static String webRoot = "/var/www";
-    Repository repository = Repository.MONGO;
+    public static String webRoot = "/var/www/";
+    static Repository repository = Repository.MONGO;
     /**
      * Safely convert a string to an integer
      * @param value the value probably an integer
@@ -118,7 +118,7 @@ public class MMLWebApp extends HttpServlet
                         host = value;
                 }
                 Connector.init( repository, user, 
-                    password, host, dbPort, wsPort, webRoot );
+                    password, host, "calliope", dbPort, wsPort, webRoot );
             }
             target = Utils.pop( target );
             MMLHandler handler;
