@@ -127,6 +127,23 @@ public class Editor extends Test
             throw new MMLTestException(e);
         }
     }
+    private String escape( String value )
+    {
+        StringBuilder sb = new StringBuilder();
+        for ( int i=0;i<value.length();i++ )
+        {
+            char c = value.charAt(i);
+            if ( c == '"' )
+                sb.append("<q>");
+            else if ( c == '<' )
+                sb.append("&lt;");
+            else if ( c == '>')
+                sb.append("&gt;");
+            else
+                sb.append(c);
+        }
+        return sb.toString();
+    }
     /**
      * Add a single option-group to the styles menu
      * @param select the selct element
@@ -148,8 +165,8 @@ public class Editor extends Test
                 Element option = new Element("option");
                 item.put("type",name);
                 String value = item.toJSONString();
-                value = value.replaceAll(">","&gt;");
-                value = value.replaceAll("<","&lt;");
+                value = escape(value);
+                System.out.println(value);
                 option.addAttribute("value", value);
                 String text = (String)item.get("prop");
                 //System.out.println(text);
@@ -379,6 +396,7 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "/mml/static/js/refloc.js" );
         doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
         doc.getHead().addScriptFile( "/mml/static/js/info.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/rangyinputs-jquery.js");
         doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
         String dialect = MMLGetMMLHandler.getDialect(shortID(),version1);
         String opts = getOpts(docid,version1);

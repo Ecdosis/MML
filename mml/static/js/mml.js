@@ -447,12 +447,12 @@ function MMLEditor(opts, dialect) {
                     // console.log("loc sent to other scrollbars:"+loc);
                     self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
                     self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
-                    console.log($("#images")[0].scrollHeight);
+                    //console.log($("#images")[0].scrollHeight);
                     //var height = 0;
                     //var images = $(".image");
                     //for ( var i=0;i<images.length;i++ )
                     //    height += images[i].clientHeight;
-                    console.log("overall height="+height);
+                    //console.log("overall height="+height);
                 }
             }
         })(this)
@@ -489,6 +489,142 @@ function MMLEditor(opts, dialect) {
             }
         })(this)
     );
+    /**
+     * Find the correct number of LFs to prepend at the position given 
+     * @param ta the textarea to examine
+     * @param pos the start position within the textarea
+     * @param nLFs number of line-feeds to prepend
+     * @return a string containing the correct number of line-feeds to insert
+     */
+    this.ensureStart = function( ta, pos, nLFs ) {
+        var text = ta.val();
+        var n = 0;
+        // subtract the number of existing LFs from nLFs
+        for ( var i=pos-1;i>0;i-- )
+            if ( text[i] == '\n' )
+                n++;
+            else if ( text[i] != '\t' && text[i] != ' ' )
+                break;
+        var str = "";
+        for ( var i=0;i<nLFs-n;i++ )
+            str += '\n';
+        return str;
+    };
+    /**
+     * Find the correct number of LFs to append to the position given 
+     * @param ta the textarea to examine
+     * @param pos the end position within the textarea
+     * @param nLFs number of line-feeds to append
+     * @return a string containing the correct number of line-feeds to add
+     */
+    this.ensureEnd = function( ta, pos, nLFs ) {
+        var text = ta.val();
+        var n = 0;
+        // subtract the number of existing LFs from nLFs
+        for ( var i=pos;i<text.length;i++ )
+            if ( text[i] == '\n' )
+                n++;
+            else if ( text[i] != '\t' && text[i] != ' ' )
+                break;
+        var str = "";
+        for ( var i=0;i<nLFs-n;i++ )
+            str += '\n';
+        return str;
+    };
+    this.leadingWSnotLF = function( ta, pos ) {
+        var text = ta.val();
+        var n = 0;
+        for ( var i=pos-1;i>0;i-- )
+        {
+            if ( text[i] != ' ' && text[i] != '\t' )
+                break;
+            else
+                n++;
+        }
+        return n;
+    };
+    this.trailingWSnotLF = function( ta, pos ) {
+        var text = ta.val();
+        var n = 0;
+        for ( var i=pos;i<text.length;i++ )
+        {
+            if ( text[i] != ' ' && text[i] != '\t' )
+                break;
+            else
+                n++;
+        }
+        return n;
+    };
+    /**
+     * Wrap a block with prefixes and suffix, preserving correct WS
+     * @param ta the textarea object
+     * @param before the string to prepend to the selected text
+     * @param after the string to append after the selected text
+     * @param startLFs number of LFs to ensure precede
+     * @param endLFs number of end LFs to ensure follow
+     */
+    this.wrapBlock = function( ta, before, after, startLFs, endLFs ) {
+        var sel = ta.getSelection();
+        var selText = sel.text.trim();
+        var startLFs = this.ensureStart(ta,sel.start,startLFs);
+        var endLFs = this.ensureEnd(ta,sel.end,endLFs);
+        var leadingWS = this.leadingWSnotLF(ta,sel.start);
+        var trailingWS = this.trailingWSnotLF(ta,sel.end);
+        ta.setSelection(sel.start-leadingWS,sel.end+trailingWS);
+        var prefix = "";
+        sel = ta.getSelection();
+        for ( var i=0;i<sel.text.length;i++ )
+            if ( sel.text[i]==' '||sel.text[i]=='\t' )
+                prefix += sel.text[i];
+            else
+                break;
+        ta.replaceSelectedText(startLFs+before+selText+after+endLFs+prefix, 
+            "collapseToEnd");
+    };
+    // handle formatting menu actions
+    var editor = this;
+    $("#styles").mouseup(function(){
+        var json = $("#styles").val().replace(/<q>/g,'"');
+        var jobj = JSON.parse(json);
+        var leftTag = "";
+        var rightTag = "";
+        var $ta = $("#"+opts.source);
+        if ( jobj.tag != undefined )
+            leftTag = rightTag = jobj.tag;
+        else if ( jobj.leftTag != undefined && jobj.rightTag != undefined )
+        {
+            leftTag = jobj.leftTag;
+            rightTag = jobj.rightTag;
+        }
+        if ( jobj.type == 'charformats' )
+        {
+            $ta.surroundSelectedText(leftTag, rightTag);
+            editor.changed = true;
+        }
+        else if ( jobj.type == 'paraformats' )
+        {
+            editor.wrapBlock($ta,leftTag,rightTag,2,2);
+            editor.changed = true;
+        }
+        else if ( jobj.type == 'headings' )
+        {
+            var sel = $ta.getSelection();
+            var len = sel.end-sel.start;
+            var underlining = "";
+            for ( var i=0;i<len;i++ )
+                underlining += jobj.tag;
+            editor.wrapBlock($ta,"\n\n", "\n"+underlining,2,2);
+            editor.changed = true;
+        }
+        if ( editor.changed )
+        {
+            if ( editor.saved )
+            {
+                editor.saved = false;
+                editor.toggleSave();
+            }
+        }
+    });
     // This will execute whenever the window is resized
     $(window).resize(
         (function(self) {
