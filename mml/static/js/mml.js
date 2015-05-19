@@ -641,7 +641,13 @@ function MMLEditor(opts, dialect) {
                 $ta.deleteSelectedText();
             editor.wrapBlock($ta, "", jobj.tag,2,2);
             editor.changed = true;
-        }       
+        }  
+        else if ( jobj.type == 'milestones' )
+        {
+            var sel = $ta.getSelection();
+            editor.wrapBlock($ta, leftTag, rightTag,1,1);
+            editor.changed = true;
+        }     
         if ( editor.changed )
         {
             if ( editor.saved )
