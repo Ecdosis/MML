@@ -591,6 +591,45 @@ function MMLEditor(opts, dialect) {
         ta.replaceSelectedText(startLFs+before+selText+after+endLFs+prefix, 
             "collapseToEnd");
     };
+    /**
+     * Indent a block of text as a quotation or verbatim section
+     * @param ta the textare containing the text
+     * @param prefix prefix each line with this
+     * @param level the number of times to apply the prefix
+     * @param beforeLFs the number of LFs to ensure before
+     * @param afterLFs the nmber of LFs to ensure after
+     * @return the formatted text previously selected for replacement
+     */
+    this.indentBlock = function( ta, prefix, level, beforeLFs, afterLFs ) {
+        var sel = ta.getSelection();
+        var lines = sel.text.split("\n");
+        if ( lines.length > 0 )
+        {
+            for ( var i=0;i<lines.length;i++ )
+            {
+                for ( var j=0;j<level;j++ )
+                    lines[i] = prefix+lines[i];
+            }
+            var startLFs = this.ensureStart(ta,sel.start,beforeLFs);
+            var endLFs = this.ensureEnd(ta,sel.end,afterLFs);
+            lines[0] = startLFs+lines[0];
+            lines[lines.length-1] = lines[lines.length-1]+endLFs;
+        }
+        return lines.join("\n");
+    };
+    this.getLevel = function( levelStr ) {
+        levelStr = (levelStr!=undefined)?levelStr:"level1";
+        var level = 0;
+        for ( var i=0;i<levelStr.length;i++ )
+        {
+            if ( levelStr[i] >='0'&&levelStr[i]<='9' )
+            {
+                level *= 10;
+                level += levelStr[i]-'0';
+            }
+        }
+        return level;
+    };
     // handle formatting menu actions
     var editor = this;
     $("#styles").mouseup(function(){
@@ -644,10 +683,33 @@ function MMLEditor(opts, dialect) {
         }  
         else if ( jobj.type == 'milestones' )
         {
-            var sel = $ta.getSelection();
             editor.wrapBlock($ta, leftTag, rightTag,1,1);
             editor.changed = true;
-        }     
+        }  
+        else if ( jobj.type == 'codeblocks' )
+        {
+            var sel = $ta.getSelection();
+            var len = sel.end-sel.start;
+            if ( len > 0 )
+            {
+                var level = editor.getLevel(jobj.prop);
+                var verbatim = editor.indentBlock($ta, "    ", level, 1, 2);
+                $ta.replaceSelectedText(verbatim, "collapseToEnd");
+                editor.changed = true;
+            }
+        }
+        else if ( jobj.type == 'quotations' )
+        {
+            var sel = $ta.getSelection();
+            var len = sel.end-sel.start;
+            if ( len > 0 )
+            {
+                var level = editor.getLevel(jobj.prop);
+                var quoted = editor.indentBlock($ta,">",level,1,2);
+                $ta.replaceSelectedText(quoted, "collapseToEnd");
+                editor.changed = true;
+            }
+        }
         if ( editor.changed )
         {
             if ( editor.saved )

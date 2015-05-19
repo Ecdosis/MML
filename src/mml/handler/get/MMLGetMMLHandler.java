@@ -209,7 +209,14 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     }
                     break;
                 case quotations:
-                    enterProp(value,keyword,"quote");
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject obj = (JSONObject)array.get(i);
+                        enterProp(obj,keyword,(String)obj.get("prop"));
+                        // remember level
+                        obj.put("level",i+1);
+                    }
                     break;
                 case headings: case dividers: case charformats:
                     array = (JSONArray)value;

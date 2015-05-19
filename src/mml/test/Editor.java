@@ -127,6 +127,11 @@ public class Editor extends Test
             throw new MMLTestException(e);
         }
     }
+    /**
+     * Escape characters if the string was set to the value of an option
+     * @param value the value of a select option
+     * @return the value with <, >, " escaped (<=&lt;,>=&gt;,"=<q>)
+     */
     private String escape( String value )
     {
         StringBuilder sb = new StringBuilder();
@@ -166,7 +171,6 @@ public class Editor extends Test
                 item.put("type",name);
                 String value = item.toJSONString();
                 value = escape(value);
-                System.out.println(value);
                 option.addAttribute("value", value);
                 String text = (String)item.get("prop");
                 //System.out.println(text);
@@ -192,8 +196,7 @@ public class Editor extends Test
         addOptGroup(select,dObj,"dividers","dividers");
         addOptGroup(select,dObj,"milestones","milestones");
         addOptGroup(select,dObj,"codeblocks","verbatim");
-        Element quotation = new Element("option");
-        quotation.addAttribute("value","quotation");
+        addOptGroup(select,dObj,"quotations","quotations");
         return select;
     }
     /**
