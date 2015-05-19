@@ -607,6 +607,7 @@ function MMLEditor(opts, dialect) {
         {
             for ( var i=0;i<lines.length;i++ )
             {
+                lines[i] = lines[i].trim();
                 for ( var j=0;j<level;j++ )
                     lines[i] = prefix+lines[i];
             }
@@ -629,6 +630,24 @@ function MMLEditor(opts, dialect) {
             }
         }
         return level;
+    };
+    /**
+     * Adjust the start of the selection back to line-start
+     * @param ta the textarea
+     */
+    this.adjustSelection = function( ta ) {
+        var sel = ta.getSelection();
+        var text = ta.val();
+        var n = 0;
+        for ( var i=sel.start-1;i>0;i-- )
+        {
+            if ( text[i] != ' ' && text[i] != '\t' )
+                break;
+            else if ( text[i] == '\n' )
+                break;
+            n++;
+        }
+        ta.setSelection(sel.start-n,sel.end);
     };
     // handle formatting menu actions
     var editor = this;
@@ -688,18 +707,20 @@ function MMLEditor(opts, dialect) {
         }  
         else if ( jobj.type == 'codeblocks' )
         {
+            editor.adjustSelection($ta);
             var sel = $ta.getSelection();
             var len = sel.end-sel.start;
             if ( len > 0 )
             {
                 var level = editor.getLevel(jobj.prop);
-                var verbatim = editor.indentBlock($ta, "    ", level, 2, 2);
+                var verbatim = editor.indentBlock($ta, "    ", level, 1, 1);
                 $ta.replaceSelectedText(verbatim, "collapseToEnd");
                 editor.changed = true;
             }
         }
         else if ( jobj.type == 'quotations' )
         {
+            editor.adjustSelection($ta);
             var sel = $ta.getSelection();
             var len = sel.end-sel.start;
             if ( len > 0 )

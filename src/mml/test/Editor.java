@@ -350,6 +350,22 @@ public class Editor extends Test
         }
     }
     /**
+     * Get the css for this document
+     * @return an Element (div) containing the content
+     */
+    private String getCss() throws MMLTestException
+    {
+        try
+        {
+            String url = "http://localhost/mml/corform/"+shortID()+"/default";
+            return URLEncoder.getResponseForUrl(url).trim();
+        }
+        catch ( Exception e )
+        {
+            throw new MMLTestException(e);
+        }
+    }
+    /**
      * Get the short version of the docid (language/author/work)
      * @return a shortened docid for dialect etc
      */
@@ -394,7 +410,9 @@ public class Editor extends Test
     void composePage()throws MMLTestException
     {
         doc.getHead().addEncoding( encoding );
-        doc.getHead().addCssFile("/mml/static/css/deroberto.css");
+        doc.getHead().addCssFile("/mml/static/css/mml.css");
+        String css = getCss();
+        doc.getHead().addCss(css);
         doc.getHead().addScriptFile( "/mml/static/js/jquery-1.11.1.js" );
         doc.getHead().addScriptFile( "/mml/static/js/refloc.js" );
         doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
