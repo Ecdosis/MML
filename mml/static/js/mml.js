@@ -630,10 +630,18 @@ function MMLEditor(opts, dialect) {
                 var underlining = "";
                 for ( var i=0;i<len;i++ )
                     underlining += jobj.tag;
-                editor.wrapBlock($ta,"\n\n", "\n"+underlining,2,2);
+                editor.wrapBlock($ta,"", "\n"+underlining,2,2);
                 editor.changed = true;
             }
         }
+        else if ( jobj.type == 'dividers' )
+        {
+            var sel = $ta.getSelection();
+            if ( sel.end>sel.start )
+                $ta.deleteSelectedText();
+            editor.wrapBlock($ta, "", jobj.tag,2,2);
+            editor.changed = true;
+        }       
         if ( editor.changed )
         {
             if ( editor.saved )
