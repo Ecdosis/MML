@@ -531,6 +531,11 @@ function MMLEditor(opts, dialect) {
             str += '\n';
         return str;
     };
+    /**
+     * Find the number of non-LF whitespeaces preceding the selection
+     * @param ta the textarea object
+     * @param pos the start-position of the selection
+     */
     this.leadingWSnotLF = function( ta, pos ) {
         var text = ta.val();
         var n = 0;
@@ -543,6 +548,11 @@ function MMLEditor(opts, dialect) {
         }
         return n;
     };
+    /**
+     * Find the number of non-LF whitespeaces following the selection
+     * @param ta the textarea object
+     * @param pos the end-position of the selection (1 after end)
+     */
     this.trailingWSnotLF = function( ta, pos ) {
         var text = ta.val();
         var n = 0;
@@ -603,18 +613,26 @@ function MMLEditor(opts, dialect) {
         }
         else if ( jobj.type == 'paraformats' )
         {
-            editor.wrapBlock($ta,leftTag,rightTag,2,2);
-            editor.changed = true;
+            var sel = $ta.getSelection();
+            var len = sel.end-sel.start;
+            if ( len > 0 )
+            {
+                editor.wrapBlock($ta,leftTag,rightTag,2,2);
+                editor.changed = true;
+            }
         }
         else if ( jobj.type == 'headings' )
         {
             var sel = $ta.getSelection();
             var len = sel.end-sel.start;
-            var underlining = "";
-            for ( var i=0;i<len;i++ )
-                underlining += jobj.tag;
-            editor.wrapBlock($ta,"\n\n", "\n"+underlining,2,2);
-            editor.changed = true;
+            if ( len > 0 )
+            {
+                var underlining = "";
+                for ( var i=0;i<len;i++ )
+                    underlining += jobj.tag;
+                editor.wrapBlock($ta,"\n\n", "\n"+underlining,2,2);
+                editor.changed = true;
+            }
         }
         if ( editor.changed )
         {
