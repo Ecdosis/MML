@@ -693,7 +693,7 @@ function MMLEditor(opts, dialect) {
             if ( len > 0 )
             {
                 var level = editor.getLevel(jobj.prop);
-                var verbatim = editor.indentBlock($ta, "    ", level, 1, 2);
+                var verbatim = editor.indentBlock($ta, "    ", level, 2, 2);
                 $ta.replaceSelectedText(verbatim, "collapseToEnd");
                 editor.changed = true;
             }
@@ -705,7 +705,7 @@ function MMLEditor(opts, dialect) {
             if ( len > 0 )
             {
                 var level = editor.getLevel(jobj.prop);
-                var quoted = editor.indentBlock($ta,">",level,1,2);
+                var quoted = editor.indentBlock($ta,">",level,2,2);
                 $ta.replaceSelectedText(quoted, "collapseToEnd");
                 editor.changed = true;
             }

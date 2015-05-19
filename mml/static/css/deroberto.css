@@ -55,6 +55,8 @@ h1,h2 {text-align:center }
 .italics { font-style: italic}
 .small-caps { font-variant: small-caps}
 .soft-hyphen { display:none }
+pre .soft-hyphen {display:inline }
+pre .soft-hyphen::after {content: "\A"}
 .hard-hyphen { display:inline }
 /* dividers */
 /* centered plus divider */
