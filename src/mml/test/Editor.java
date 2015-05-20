@@ -418,6 +418,7 @@ public class Editor extends Test
         doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
         doc.getHead().addScriptFile( "/mml/static/js/info.js" );
         doc.getHead().addScriptFile( "/mml/static/js/rangyinputs-jquery.js");
+        doc.getHead().addScriptFile( "/mml/static/js/styles.js");
         doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
         String dialect = MMLGetMMLHandler.getDialect(shortID(),version1);
         String opts = getOpts(docid,version1);

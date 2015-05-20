@@ -30,7 +30,6 @@ fi
 rm -f mml/WEB-INF/lib/*.jar
 cp dist/MML.jar mml/WEB-INF/lib/
 cp lib/*.jar mml/WEB-INF/lib/
-cp -r js mml/static/
 cp web.xml mml/WEB-INF/
 jar cf mml.war -C mml WEB-INF -C mml static
 echo "NB: you MUST copy the contents of tomcat-bin to \$tomcat_home/bin"
