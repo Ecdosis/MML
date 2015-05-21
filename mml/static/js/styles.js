@@ -135,6 +135,11 @@ function Styles(editor,target)
         }
         return lines.join("\n");
     };
+    /** 
+     * Extract the level number from the end of a level name
+     * @param levelStr like "level3"
+     * @return the level number as an integer
+     */
     this.getLevel = function( levelStr ) {
         levelStr = (levelStr!=undefined)?levelStr:"level1";
         var level = 0;

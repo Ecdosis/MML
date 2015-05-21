@@ -86,7 +86,6 @@ public class MMLContextListener implements ServletContextListener
                 if ( param.equals("webRoot") )
                 {
                     webRoot = value;
-                    System.out.println("Setting webRoot to "+value);
                 }
                 else if ( param.equals("dbPort") )
                     dbPort = getInteger(value,27017);

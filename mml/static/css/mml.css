@@ -12,23 +12,23 @@
     vertical-align: middle;
 }
 .edit-button {
-    background: url('/mml/corpix/editor/icons/edit') center no-repeat;
+    background: url('/corpix/editor/icons/edit') center no-repeat;
     cursor: pointer;
 }
 .info-button {
-    background: url('/mml/corpix/editor/icons/info') center no-repeat;
+    background: url('/corpix/editor/icons/info') center no-repeat;
     cursor: pointer;
 }
 .save-button {
-    background: url('/mml/corpix/editor/icons/save') center no-repeat;
+    background: url('/corpix/editor/icons/save') center no-repeat;
     cursor: pointer;
 }
 .saved-button {
-    background: url('/mml/corpix/editor/icons/saved') center no-repeat;
+    background: url('/corpix/editor/icons/saved') center no-repeat;
     cursor: pointer;
 }
 .annotate-button {
-    background: url('/mml/corpix/editor/icons/comment') center no-repeat;
+    background: url('/corpix/editor/icons/comment') center no-repeat;
     cursor: pointer;
 }
 .dropdown {

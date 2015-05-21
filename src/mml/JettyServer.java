@@ -105,7 +105,7 @@ public class JettyServer extends AbstractHandler
         boolean sane = true;
         try
         {
-            MMLWebApp.wsPort = 8081;
+            MMLWebApp.wsPort = 8086;
             MMLWebApp.host = "localhost";
             Repository repository = Repository.MONGO;
             for ( int i=0;i<args.length;i++ )

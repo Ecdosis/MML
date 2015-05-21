@@ -404,6 +404,16 @@ public class MMLGetMMLHandler extends MMLGetHandler
         else
             return parts[0]+"/"+parts[1]+"/"+parts[2];
     }
+    private void printInvertIndex()
+    {
+        Set<String> keys = invertIndex.keySet();
+        Iterator<String> iter = keys.iterator();
+        while ( iter.hasNext() )
+        {
+            String key = iter.next();
+            System.out.println(key+","+invertIndex.get(key).toJSONString());
+        }
+    }
     /**
      * Handle the request
      * @param request the request
@@ -429,6 +439,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             String dialectStr = getDialect( shortID, version1 );
             this.dialect = (JSONObject)JSONValue.parse(dialectStr);
             invertDialect();
+            //printInvertIndex();
             createMML(cortex,corcode);
             response.setContentType("text/plain");
             response.setCharacterEncoding(encoding);

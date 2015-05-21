@@ -325,7 +325,9 @@ public class Editor extends Test
         try
         {
             String url = "http://localhost/mml/mml?docid="+docid+"&version1="+version1;
-            return URLEncoder.getResponseForUrl(url);
+            String res = URLEncoder.getResponseForUrl(url);
+            //System.out.println(url+res);
+            return res;
         }
         catch ( Exception e )
         {
