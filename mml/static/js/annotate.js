@@ -99,11 +99,9 @@ function Annotator( editor, button )
         var start = range0.startContainer;
         var end = range0.endContainer;
         //2. highlight text at that location
-        var first=null;
-        var last =null;
         if ( start == end )
         {
-            first = last = self.surroundTextNode(start,
+            self.surroundTextNode(start,
                 range0.startOffset,
                 range0.endOffset-range0.startOffset);
         }
@@ -111,36 +109,25 @@ function Annotator( editor, button )
         {
             var next = self.nextTextNode(start);
             // destroys start
-            var mid = self.surroundTextNode(start,range0.startOffset, 
+            self.surroundTextNode(start,range0.startOffset, 
                 start.nodeValue.length);
-            if ( first == null )
-                first = mid;
             while ( next != end && next != null )
             {
                 var nextLen = next.nodeValue.length;
                 var newNext = self.nextTextNode(next);
                 if ( next != end )  // destroys next
                 {
-                    mid = self.surroundTextNode(next,0,nextLen);
-                    if ( first == null )
-                        first = mid;
-                    else
-                        last = mid;
+                    self.surroundTextNode(next,0,nextLen);
                 }
                 next = newNext;    
             }
             if ( next != null )
             {
-                last = self.surroundTextNode(next,0,range0.endOffset);
+                self.surroundTextNode(next,0,range0.endOffset);
             }
         }
         //clean up selection
         sel.removeAllRanges();
-        var textStart = self.firstTextNode(first);
-        var textEnd = self.firstTextNode(last);
-        var newRange = rangy.createRange();
-        newRange.setStartAndEnd(textStart, 0, textEnd, textEnd.nodeValue.length);
-        sel.addRange(newRange);
         //3. create annotation object based on selection, current user
         //4. generate popup
     });
