@@ -1,5 +1,12 @@
 /* overall container div */
-#wrapper { width: 100%; border-width: 0; margin: 0; padding: 0 }
+#wrapper { 
+    width:100%;
+	border:1px solid black;
+    display: -webkit-flex; /* Safari */
+    -webkit-align-items: center; /* Safari 7.0+ */
+    display: flex;
+    align-items: center;
+}
 /* temporary toolbar */
 .edit-button, .info-button, .save-button, .saved-button, .annotate-button {
     padding: 0 0 0 0;
@@ -38,11 +45,12 @@
 #toolbar-wrapper { text-align: center; display: block; padding-bottom:3px }
 #toolbar { background: lightgrey; border-width: 0; margin: 0; padding: 0; width: 100% }
 #save,#info,#toolbar-wrapper,#annotate { margin-left: 5px; margin-right:5px }
+#target, #source, #images { -webkit-flex: 1; /* Safari 7.0+ */ flex: 1; }
 /* box to receive text */
-#target { width: 430px; height:480px; border: 1px solid; float: right; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
+#target { border: 1px solid; float: right; display: inline-block; overflow: auto; padding: 10px 10px 10px 10px; }
 /* the source textarea */
-#source { box-sizing: border-box; -moz-box-sizing: border-box; -ms-box-sizing: border-box; -webkit-box-sizing: border-box; font-size: 12px; width: 430px; height:502px; float:left; display: inline-block; padding: 10px 10px 0px 10px;overflow: auto}
-#help { font-size: 14px; width: 430px; height:480px; border: 1px solid white; float: left; display: none; overflow: auto; padding: 10px 10px 10px 10px;}
-#images { width: 430px; height: 502px; float: left; display: inline-block; overflow: auto}
+#source { box-sizing: border-box; -moz-box-sizing: border-box; -ms-box-sizing: border-box; -webkit-box-sizing: border-box; font-size: 12px; /*width: 430px; height:502px; float:left; display: inline-block;*/ padding: 10px 10px 0px 10px;overflow: auto}
+#help { font-size: 14px; /*width: 430px; height:480px; float: left; */border: 1px solid white; display: none; overflow: auto; padding: 10px 10px 10px 10px;}
+#images { /*width: 430px; height: 502px; float: left; display: inline-block; */overflow: auto}
 .image { border: 0; margin: 0; padding: 0; width: 100% }
 .annotation { background-color: yellow;}
