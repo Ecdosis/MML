@@ -38,6 +38,8 @@ function MMLEditor(opts, dialect) {
     this.formatter = new Formatter(dialect);
     /** help info for dialect */
     this.info = new Info( "#help", dialect );
+    /** annotator for notes */
+    this.annotator = new Annotator(this,"annotate");
     /**
      * Check if we need to update the HTML. Gets called repeatedly.
      */

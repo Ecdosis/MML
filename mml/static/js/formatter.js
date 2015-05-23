@@ -666,6 +666,11 @@ function Formatter( dialect )
         }
         return html;
     };
+    /** 
+     * Does this section only contains white space?
+     * @param section the text of the section
+     * @return true
+     */
     this.isEmptySection = function(section) {
         var empty = true;
         for ( var i=0;i<section.length;i++ )
