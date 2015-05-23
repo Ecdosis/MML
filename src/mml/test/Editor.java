@@ -314,6 +314,7 @@ public class Editor extends Test
         opts.put("target","target");
         opts.put("images","images");
         opts.put("formid","tostil");
+        opts.put("user",System.getProperty("user.name"));
         return opts.toJSONString();
     }
     /**

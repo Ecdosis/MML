@@ -407,6 +407,9 @@ function MMLEditor(opts, dialect) {
             
         }
     };
+    this.getTarget = function() {
+        return this.opts.target;
+    };
     /**
      * Do whatever is needed to indicate the information status
      */
@@ -415,6 +418,13 @@ function MMLEditor(opts, dialect) {
             $("#info").attr("class","info-button");
         else
             $("#info").attr("class","edit-button");
+    };
+    /**
+     * Get the logged-in user name
+     * @return a string being the current user on the server
+     */
+    this.getUserName = function() {
+        return this.opts.user;
     };
     // this sets up the timer for updating
     window.setInterval(
