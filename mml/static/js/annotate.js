@@ -1,17 +1,26 @@
 /**
  * Create an annotation object
- * @param target the ID of the generated HTML
+ * @param id the identifier (integer)
  * @param anchorPos the absolute offset for the annotation
  * @param anchorLen the length of the annotation's anchor
  * @param user the name of the current server-side user
  */
-function Annotation( target, anchorPos, anchorLen, user )
+function Annotation( id, anchorPos, anchorLen, user, content )
 {
-    this.target = target;
     this.offset = anchorPos;
     this.len = anchorLen;
+    this.content = "";
+    this.user = user;
+    this.id = id;
     this.toString = function() {
-        return "offset:"+this.offset+" len="+this.len;
+        return "offset:"+this.offset+" len="+this.len
+        +" user:"+this.user+" content: "+this.content;
+    };
+    this.setContent = function( content ) {
+        this.content = content;
+    };
+    this.setUser = function( user ) {
+        this.user = user;
     };
 }
 var annotations = new Array();
@@ -24,6 +33,7 @@ function Annotator( editor, button )
 {
     this.editor = editor;
     this.button = button;
+    this.nextId = 1;
     var self = this;
     this.getFirstRange = function() {
         var sel = rangy.getSelection();
@@ -32,11 +42,12 @@ function Annotator( editor, button )
     /**
      * Surround part of a single text element with <span> tags
      * @param elem the text element
+     * @param id the id of the comment
      * @param start the start offset into the text
      * @param len the length of the portion to surround
      * @return the span node
      */
-    this.surroundTextNode = function(elem,start,len){
+    this.surroundTextNode = function(elem,id,start,len){
         var text = elem.nodeValue;
         var pre = (start==0)?"":text.slice(0,start);
         var mid = text.slice(start,start+len);
@@ -51,7 +62,8 @@ function Annotator( editor, button )
         if ( mid.length > 0 )
         {
             midNode = document.createElement("span");
-            midNode.setAttribute("class","annotation");
+            midNode.setAttribute("class","anchor");
+            midNode.setAttribute("data-id",id);
             midNode.textContent = mid;
         }
         if ( preNode != null )
@@ -61,6 +73,13 @@ function Annotator( editor, button )
         if ( postNode != null )
             elem.parentNode.insertBefore(postNode,elem);
         elem.parentNode.removeChild(elem);
+        $(midNode).click( function() {
+            var id = this.getAttribute("data-id");
+            var commentId = "#comment-"+id;
+            if ( $(commentId).length == 0 )
+                self.initDialog(commentId);
+            $("#comment-"+id).dialog("open");
+        });
         return midNode;
     };
     /**
@@ -185,9 +204,79 @@ function Annotator( editor, button )
             console.log(annotations[i].toString());
     };
     /**
+     * Get a simple unique id for the next annotation
+     * @return an int starting at 1
+     */
+    this.id = function() {
+        var id = this.nextId;
+        this.nextId++;
+        return id;
+    };
+    /**
+     * Get the last used user name
+     * @return the annotator's name last entered OR the server user's name
+     */
+    this.getUserName = function() {
+        if ( this.userName == undefined )
+            this.userName = "Anonymous";
+        return this.userName;
+    };
+    /**
+     * Build the body of the comment
+     * @param ann the annotation object
+     * @return the HTML of the comment body
+     */
+    this.composeContent = function(ann) {
+        this.user = ann.user;
+        var text = '<div id="comment-'+ann.id+'" class="annotation">';
+        text += '<p>Name: <input class="user-name" type="text" value="'
+            +ann.user+'"></input></p>';
+        text += '<textarea class="comment" '
+            +'placeholder="Enter comment here..."></textarea>';
+        text += '</div>';
+        return text;
+    }
+    /**
+     * Find an annotation by brute-force.
+     * @param id the numeric id to look for
+     * @return an Annotation object
+     */
+    this.findAnnotation = function(id) {
+        for ( var i=0;i<annotations.length;i++ )
+            if ( annotations[i].id == id )
+                return annotations[i];
+        return null;
+    };
+    /**
+     * Initialise a jquery ui dialog widget
+     * @param commentId the id of the comment div
+     */
+    this.initDialog = function(commentId) {
+        var parts = commentId.split("-");
+        var id = parts[1];
+        var ann = this.findAnnotation(id);
+        if ( ann != null )
+        {
+            var annDiv = self.composeContent(ann);
+            if ( $("#annotations").length == 0 )
+                $("body").append('<div id="annotations"></div>');
+            $("#annotations").append(annDiv);
+            $(commentId).dialog({ autoOpen: false, title: "Annotation", 
+                position: { my: "bottom center", of:"[data-id='"+id+"']"}, 
+                close: function closeComment( event, ui ) {
+                    ann.setContent($(this).find(".comment").first().val());
+                    ann.setUser($(this).find(".user-name").first().val());
+                    self.userName = ann.user; 
+                }  
+            });
+        }
+    };
+    /**
      * Execute this when you click on the comment button
      */
     $("#"+this.button).click( function() {
+        // the id of the new comment
+        var id = self.id();
         //1. find selection
         var sel = rangy.getSelection();
         var range0 = sel.getRangeAt(0);
@@ -198,7 +287,7 @@ function Annotator( editor, button )
         var last =null;
         if ( start == end )
         {
-            first = last = self.surroundTextNode(start,
+            first = last = self.surroundTextNode(start,id,
                 range0.startOffset,
                 range0.endOffset-range0.startOffset);
         }
@@ -206,7 +295,7 @@ function Annotator( editor, button )
         {
             var next = self.nextTextNode(start);
             // destroys start
-            var mid = self.surroundTextNode(start,range0.startOffset, 
+            var mid = self.surroundTextNode(start,id,range0.startOffset, 
                 start.nodeValue.length);
             if ( first == null )
                 first = mid;
@@ -216,7 +305,7 @@ function Annotator( editor, button )
                 var newNext = self.nextTextNode(next);
                 if ( next != end )  // destroys next
                 {
-                    mid = self.surroundTextNode(next,0,nextLen);
+                    mid = self.surroundTextNode(next,id,0,nextLen);
                     if ( first == null )
                         first = mid;
                     else
@@ -226,7 +315,7 @@ function Annotator( editor, button )
             }
             if ( next != null )
             {
-                last = self.surroundTextNode(next,0,range0.endOffset);
+                last = self.surroundTextNode(next,id,0,range0.endOffset);
             }
         }
         //clean up selection
@@ -236,11 +325,15 @@ function Annotator( editor, button )
         var newRange = rangy.createRange();
         newRange.setStartAndEnd(textStart, 0, textEnd, textEnd.nodeValue.length);
         //3. create annotation object based on selection, current user
-        var ann = new Annotation(editor.getTarget(),
-            self.rangeOffset(newRange),self.rangeLength(newRange),
-            editor.getUserName());
+        var rangeOffset = self.rangeOffset(newRange);
+        var rangeLen = self.rangeLength(newRange);
+        var ann = new Annotation( id, self.rangeOffset(newRange),
+            self.rangeLength(newRange), self.getUserName());
         self.installAnnotation( ann );
         //4. generate popup containing annotation
+        var commentId = "#comment-"+id;
+        self.initDialog(commentId);
         // centre it near/over annotated text
+        $(commentId).dialog("open");
     });
 }

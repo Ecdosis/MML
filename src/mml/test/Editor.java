@@ -314,7 +314,6 @@ public class Editor extends Test
         opts.put("target","target");
         opts.put("images","images");
         opts.put("formid","tostil");
-        opts.put("user",System.getProperty("user.name"));
         return opts.toJSONString();
     }
     /**
@@ -414,9 +413,11 @@ public class Editor extends Test
     {
         doc.getHead().addEncoding( encoding );
         doc.getHead().addCssFile("/mml/static/css/mml.css");
+        doc.getHead().addCssFile("/mml/static/css/custom/jquery-ui.min.css");
         String css = getCss();
         doc.getHead().addCss(css);
         doc.getHead().addScriptFile( "/mml/static/js/jquery-1.11.1.js" );
+        doc.getHead().addScriptFile( "/mml/static/js/jquery-ui.js" );
         doc.getHead().addScriptFile( "/mml/static/js/refloc.js" );
         doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
         doc.getHead().addScriptFile( "/mml/static/js/info.js" );

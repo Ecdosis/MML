@@ -419,13 +419,6 @@ function MMLEditor(opts, dialect) {
         else
             $("#info").attr("class","edit-button");
     };
-    /**
-     * Get the logged-in user name
-     * @return a string being the current user on the server
-     */
-    this.getUserName = function() {
-        return this.opts.user;
-    };
     // this sets up the timer for updating
     window.setInterval(
         (function(self) {

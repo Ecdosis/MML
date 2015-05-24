@@ -53,4 +53,6 @@
 #help { font-size: 14px; /*width: 430px; height:480px; float: left; */border: 1px solid white; display: none; overflow: auto; padding: 10px 10px 10px 10px;}
 #images { /*width: 430px; height: 502px; float: left; display: inline-block; */overflow: auto}
 .image { border: 0; margin: 0; padding: 0; width: 100% }
-.annotation { background-color: yellow;}
+.anchor { border-bottom: 1px dotted grey; background-color: #FFFF66; cursor: pointer}
+#annotations {display: none }
+.comment { width:100%; height: 100%; }
