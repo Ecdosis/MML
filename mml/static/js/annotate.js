@@ -78,13 +78,25 @@ function Annotator( editor, button )
             midNode.setAttribute("data-id",id);
             midNode.textContent = mid;
         }
-        if ( preNode != null )
-            elem.parentNode.insertBefore(preNode,elem);
+        var parent = elem.parentNode;
         if ( midNode != null )
-            elem.parentNode.insertBefore(midNode,elem);
+            parent.replaceChild(midNode,elem);
+        if ( preNode != null )
+            parent.insertBefore(preNode,midNode);
         if ( postNode != null )
-            elem.parentNode.insertBefore(postNode,elem);
-        elem.parentNode.removeChild(elem);
+        {
+            if ( midNode.nextSibling != null )
+                parent.insertBefore(postNode,midNode.nextSibling);
+            else
+                parent.appendChild(postNode);
+        }
+        // verify
+        if ( midNode.parentNode != parent )
+            console.log("midNode.parentNode != parent");
+        if ( postNode != null && postNode.parentNode != parent )
+            console.log("postNode.parentNode != parent");
+        if ( preNode != null && preNode.parentNode != parent )
+            console.log("preNode.parentNode != parent");
         $(midNode).click( function() {
             var id = this.getAttribute("data-id");
             var commentId = "#comment-"+id;
@@ -112,10 +124,12 @@ function Annotator( editor, button )
     }
     /**
      * Find the next text element
-     * @param elem the current text element
+     * @param elem the current text node
      * @return another text element or null
      */
     this.nextTextNode = function(elem) {
+        if ( elem.nodeType != 3 )
+            console.log("nodeType="+elem.nodeType);
         if ( elem.nextSibling != null 
             && this.firstTextNode(elem.nextSibling) != null )
             return this.firstTextNode(elem.nextSibling);
@@ -136,6 +150,7 @@ function Annotator( editor, button )
                 parent = parent.parentNode;
             }
         }
+        console.log("no next text node for "+elem.nodeValue);
         return null;
     }
     /**
@@ -383,6 +398,8 @@ function Annotator( editor, button )
                     tnode = this.textNodeAt( offset, tnode, pos );
                     var len = Math.min(tnode.nodeValue.length-pos.getPos(),annLen);
                     var span = this.surroundTextNode(tnode,ann.id,pos.getPos(),len);
+                    // the old tnode is now detached
+                    tnode = this.firstTextNode(span);
                     if ( first == null )
                         first = span;
                     annLen -= len;

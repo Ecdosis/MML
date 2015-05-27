@@ -8,8 +8,8 @@ function Buffer(sourceId)
     this.start = 0;
     this.numDelLeftChars = 0;
     this.numDelRightChars = 0;
-    this.sourceId = sourceId;
     this.numAddChars = 0;
+    this.sourceId = sourceId;
     /** 
      * Clone this object 
      * @return an exact copy of this
@@ -17,7 +17,7 @@ function Buffer(sourceId)
     this.clone = function() {
         var clone = new Buffer(sourceId);
         clone.start = this.start;
-        clone.nemDelLeftChars = this.numDelLeftChars;
+        clone.numDelLeftChars = this.numDelLeftChars;
         clone.numDelRightChars = this.numDelRightChars;
         clone.numAddChars = this.numAddChars;
         return clone;
@@ -48,6 +48,11 @@ function Buffer(sourceId)
      */
     this.clear = function() {
         this.numDelLeftChars = this.numDelRightChars = this.numAddChars = 0;
+        this.shiftDown = false;
+        this.start -= (this.numDelLeftChars+this.numDelRightChars);
+        this.start += this.numAddChars;
+        this.selection = undefined;
+        this.selectionPending = false;
     };
     /**
      * Set the start point after a mouse click, cursor movement or paste
@@ -70,9 +75,17 @@ function Buffer(sourceId)
     this.empty = function() {
         return this.numDelLeftChars == 0 && this.numDelRightChars==0 && this.numAddChars==0;
     };
+    /**
+     * Get the leftmost delete position
+     * @return the left-margin of the deleted range
+     */
     this.minDelPos = function() {
         return this.start-this.numDelLeftChars;
     };
+    /**
+     * Get the rightmost delete position
+     * @return the right-margin of the deleted range
+     */
     this.maxDelPos = function() {
         return this.start+this.numDelRightChars;
     };
@@ -87,10 +100,11 @@ function Buffer(sourceId)
      * Set the selectionPending flag. When a selection is requested it will be computed
      */
     this.setSelectionPending = function() {
+        this.shiftDown = false;
         this.selectionPending = true;
     };
     /**
-     * Clear the current selection (user pressed a key etc
+     * Clear the current selection (user pressed a key etc)
      */
     this.clearSelection = function() {
         this.selection = undefined;
@@ -116,9 +130,16 @@ function Buffer(sourceId)
         this.numDelRightChars = this.selection.end-this.selection.start;
         this.selection = undefined;
     };
+    /**
+     * The user pressed shift
+     */
     this.setShiftDown = function(down) {
         this.shiftDown = down;
     };
+    /**
+     * Is the shift key being held down?
+     * @return true if it was held down
+     */
     this.shiftIsDown = function() {
         return this.shiftDown;
     };

@@ -476,9 +476,6 @@ function MMLEditor(opts, dialect) {
                 self.buffer.setStart(sel.start);
             }
         }
-        // shift-key
-        else if ( event.which==16 )
-            self.buffer.setShiftDown(false);
         /*else
             console.log(event.which);*/
     });
@@ -500,8 +497,10 @@ function MMLEditor(opts, dialect) {
                 self.saved = false;
                 self.toggleSave();
             }
+            /*console.log("left:"+self.buffer.numDelLeftChars
+                +" right:"+self.buffer.numDelRightChars);*/
         }
-        else if (event.which == 46)
+        else if (event.which == 46)// forward del
         {
             if ( self.buffer.hasSelection() )
                 self.buffer.deleteSelection();
@@ -513,6 +512,8 @@ function MMLEditor(opts, dialect) {
                 self.saved = false;
                 self.toggleSave();
             }
+            /*console.log("left:"+self.buffer.numDelLeftChars
+                +" right:"+self.buffer.numDelRightChars);*/
         }
         return true;
     });
