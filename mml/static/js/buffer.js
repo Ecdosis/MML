@@ -62,5 +62,26 @@ function Buffer()
     this.maxDelPos = function() {
         return this.start+this.numDelRightChars;
     };
+    this.setSelection = function( sel ) {
+        this.selection = sel;
+    };
+    this.clearSelection = function() {
+        this.selection = undefined;
+    };
+    /**
+     * Test if this buffer is holding a selection
+     * @return true if text is currently selected else false
+     */
+    this.hasSelection = function() {
+        return this.selection != undefined;
+    };
+    /**
+     * The user pressed a delete key or another character when text was selected
+     */
+    this.deleteSelection = function() {
+        this.start = this.selection.start;
+        this.numDelRightChars = this.selection.end-this.selection.start;
+        this.selection = undefined;
+    };
 }
 

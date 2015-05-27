@@ -483,7 +483,10 @@ function MMLEditor(opts, dialect) {
         }
         else if ( event.which == 8 ) //DEL
         {
-            self.buffer.delLeftChars(1);
+            if ( self.buffer.hasSelection() )
+                self.buffer.deleteSelection();
+            else
+                self.buffer.delLeftChars(1);
             self.changed = true;
             if ( self.saved )
             {
@@ -491,16 +494,37 @@ function MMLEditor(opts, dialect) {
                 self.toggleSave();
             }
         }
+        else if (event.which == 46)
+        {
+            if ( self.buffer.hasSelection() )
+                self.buffer.deleteSelection();
+            else
+                self.buffer.delRightChars(1);
+            self.changed = true;
+            if ( self.saved )
+            {
+                self.saved = false;
+                self.toggleSave();
+            }
+        }
+        else
+            console.log(event.which);
     });
     $("#"+opts.source).mouseup(function(event) {
         $ta = $("#"+opts.source);
         var sel = $ta.getSelection();
-        if ( !self.buffer.setStart(sel.start) )
-            console.log("start reset but chars pending!");
+        if ( sel.end-sel.start > 0 )
+            self.buffer.setSelection(sel);
+        else
+        {
+            self.buffer.clearSelection();
+            if ( !self.buffer.setStart(sel.start) )
+                console.log("buffer not empty when new selection made");
+        }
     });
     $("#"+opts.source).bind('paste', function(e) {
         var pastedData = e.originalEvent.clipboardData.getData('text');
-        console.log(pastedData);
+        self.buffer.addChars(pastedData.length);
         self.changed = true;
         if ( self.saved )
         {
@@ -552,7 +576,7 @@ function MMLEditor(opts, dialect) {
             self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
         }
     });
-    $(window).on('beforeunload',function(){
+    /*$(window).on('beforeunload',function(){
         console.log("beforeunload");
         if ( !self.saved )
             return 'You have unsaved data';
@@ -561,7 +585,7 @@ function MMLEditor(opts, dialect) {
         console.log("jQuery unload handler");
         if ( !self.saved )
             return 'You have unsaved data';
-    });
+    });*/
     this.styles = new Styles(this,"styles");
     // This will execute whenever the window is resized
     $(window).resize(
