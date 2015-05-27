@@ -1,4 +1,19 @@
 /**
+ * Time the update to the HTML
+ * @param time default time interval
+ */
+function Timer( time )
+{
+    this.time = time;
+    this.setTimeValue = function(time) {
+        // wait some additional time before triggering the update
+        this.time = time+50;
+    };
+    this.getTimeValue = function() {
+        return this.time;
+    }
+}
+/**
  * An MML Editor provides 3 panels which are sync-scrolled.
  * In the first panel there is a succession of page-images.
  * In the second an editable text in a minimal markup language (MML).
@@ -47,11 +62,14 @@ function MMLEditor(opts, dialect) {
             
     /**
      * Check if we need to update the HTML. Gets called repeatedly.
+     * @param time the Timer object: update on exit
      */
-    this.updateHTML = function()
+    this.updateHTML = function( time )
     {
         if ( this.changed )
         {
+            var d = new Date();
+            var startTime = d.getMilliseconds();
             this.annotator.update(this.buffer);
             this.buffer.clear();
             this.text_lines = new Array();
@@ -71,6 +89,8 @@ function MMLEditor(opts, dialect) {
             });
             this.recomputeImageHeights();
             this.annotator.redraw();
+            var endTime = d.getMilliseconds();
+            time.setTimeValue(endTime-startTime);
         }
     };
     /**
@@ -444,11 +464,12 @@ function MMLEditor(opts, dialect) {
             $("#info").attr("class","edit-button");
     };
     // this sets up the timer for updating
-    window.setInterval(
-        function() { self.updateHTML(); }, 300
-    );
     // this should really reset the interval based on how long it took
     // force update when user modifies the source
+    var timer = new Timer(300);
+    window.setInterval(
+        function() { self.updateHTML(timer); }, timer.getTimeValue()
+    );
     $("#"+opts.source).keyup(function(event) {
         if ( event.which >= 65 && event.which <=90 )
         {
