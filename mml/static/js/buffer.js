@@ -27,6 +27,17 @@ function Buffer(sourceId)
      * @param num the number of chars to add
      */
     this.addChars = function(num) {
+        if ( this.selectionPending )
+        {
+            this.selection = $(this.sourceId).getSelection();
+            this.selectionPending = false;
+        }
+        if ( this.selection != undefined )
+        {
+            this.start = this.selection.start;
+            this.numDelRightChars = this.selection.end-this.selection.start;
+            this.selection = undefined;
+        }
         this.numAddChars += num;
     };
     /** 

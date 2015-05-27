@@ -300,57 +300,100 @@ function Annotator( editor, button )
         }
     };
     /**
+     * Delete a range and update the annotations
+     * @param delLeft the position of the first char to be deleted
+     * @param delRight the position after the last char to be deleted
+     */
+    this.updateDeletion = function(delLeft,delRight) {
+        var i = 0;
+        var offset = 0;
+        var lastOffset = 0;
+        while ( i<annotations.length )
+        {
+            lastOffset = offset;
+            offset += annotations[i].offset;
+            var end = offset + annotations[i].len;
+            // 1. deletion before annotation
+            if ( delLeft >= lastOffset && delRight < offset )
+            {
+                annotations[i].offset -= (delRight-delLeft);
+                break;
+            }
+            // 2. annotation-range inside deletion
+            else if ( delLeft <= offset && delRight >= end )
+            {
+                annotations.splice(i,1);
+                offset = lastOffset;  // reset offset
+                i--;// balance out i++ at end
+            }
+            // 3. deletion inside annotation-range
+            else if ( delLeft >=offset && delRight <= end )
+            {
+                annotations[i].len -= (delRight-delLeft);
+            }
+            // 4. deletion overlaps on left of annotation
+            else if ( delLeft < offset && delRight > offset )
+            {
+                annotation[i].len -= (delRight-offset);
+                annotation[i].offset -= (offset-delLeft);
+                break;
+            }
+            // 5. deletion overlaps on right of annotation
+            else if ( delRight >= end && delLeft < end )
+            {
+                annotation[i].len -= end-delLeft;
+            }
+            i++;
+        }
+    };
+    /**
+     * Update the annotations when some new text is added
+     * @param pos the position of the addition
+     * @param numChars the numer of new characters at pos
+     */
+    this.updateAddition = function(pos,numChars) {
+        var i = 0;
+        var offset = 0;
+        var lastOffset = 0;
+        while ( i<annotations.length )
+        {
+            lastOffset = offset;
+            offset += annotations[i].offset;
+            var end = offset + annotations[i].len;
+            // 1. addition before annotation
+            if ( pos >= lastOffset && pos < offset )
+            {
+                annotations[i].offset += numChars;
+                break;
+            }
+            // 2. addition inside annotation-range
+            else if ( pos >=offset && pos <= end )
+            {
+                annotations[i].len += numChars;
+                break;
+            }
+            i++;
+        }
+    };
+    /**
      * Update the relevant annotations' offsets
      * @param buffer the Buffer object 
      */
     this.update = function( buffer ) {
         if ( !buffer.empty() && annotations != undefined )
         {
-            var offset = 0;
-            var lastOffset = 0;
             var delLeft = buffer.minDelPos();
             var delRight = buffer.maxDelPos();
-            // currently we only handle deletions
+            delRight -= buffer.numAddChars;
             if ( delLeft < delRight )
+                this.updateDeletion(delLeft,delRight);
+            else if ( buffer.numAddChars > 0 )
             {
-                var i = 0;
-                while ( i<annotations.length )
-                {
-                    lastOffset = offset;
-                    offset += annotations[i].offset;
-                    var end = offset + annotations[i].len;
-                    // 1. deletion before annotation
-                    if ( delLeft >= lastOffset && delRight < offset )
-                    {
-                        annotations[i].offset -= (delRight-delLeft);
-                        break;
-                    }
-                    // 2. annotation-range inside deletion
-                    else if ( delLeft <= offset && delRight >= end )
-                    {
-                        annotations.splice(i,1);
-                        offset = lastOffset;  // reset offset
-                        i--;// balance out i++ at end
-                    }
-                    // 3. deletion inside annotation-range
-                    else if ( delLeft >=offset && delRight <= end )
-                    {
-                        annotations[i].len -= (delRight-delLeft);
-                    }
-                    // 4. deletion overlaps on left of annotation
-                    else if ( delLeft < offset && delRight > offset )
-                    {
-                        annotation[i].len -= (delRight-offset);
-                        annotation[i].offset -= (offset-delLeft);
-                        break;
-                    }
-                    // 5. deletion overlaps on right of annotation
-                    else if ( delRight >= end && delLeft < end )
-                    {
-                        annotation[i].len -= end-delLeft;
-                    }
-                    i++;
-                }
+                var pos = buffer.start;
+                var numChars = buffer.numAddChars;
+                numChars -= (buffer.maxDelPos()-delLeft);
+                if ( numChars > 0 )
+                    this.updateAddition(pos,numChars);
             }
             /*for ( var i=0;i<annotations.length;i++ )
                 console.log(annotations[i].toString());*/

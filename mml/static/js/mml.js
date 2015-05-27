@@ -453,7 +453,11 @@ function MMLEditor(opts, dialect) {
     window.setInterval(
         function() { self.updateHTML(); }, 200
     );
-    $("#"+opts.source).keyup(function(event) {
+    /**
+     * On keydown we test to see if shift or crtl etc was pressed
+     */
+    $("#"+opts.source).keydown(function(event) {
+        // ordinary keys
         if ( event.which >= 65 && event.which <=90 )
         {
             self.buffer.addChars(1);
@@ -476,14 +480,7 @@ function MMLEditor(opts, dialect) {
                 self.buffer.setStart(sel.start);
             }
         }
-        /*else
-            console.log(event.which);*/
-    });
-    /**
-     * On keydown we test to see if shift or crtl etc was pressed
-     */
-    $("#"+opts.source).keydown(function(event) {
-        if ( event.which==16 )  // shift
+        else if ( event.which==16 )  // shift
             self.buffer.setShiftDown(true);
         else if ( event.which == 8 ) //DEL
         {
