@@ -378,6 +378,8 @@ function Annotator( editor, button )
                 var first = null;
                 while ( annLen > 0 )
                 {
+                    var old_tnode = tnode;
+                    var old_pos = pos.getPos();
                     tnode = this.textNodeAt( offset, tnode, pos );
                     var len = Math.min(tnode.nodeValue.length-pos.getPos(),annLen);
                     var span = this.surroundTextNode(tnode,ann.id,pos.getPos(),len);

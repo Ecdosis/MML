@@ -1,19 +1,4 @@
 /**
- * Time the update to the HTML
- * @param time default time interval
- */
-function Timer( time )
-{
-    this.time = time;
-    this.setTimeValue = function(time) {
-        // wait some additional time before triggering the update
-        this.time = time+50;
-    };
-    this.getTimeValue = function() {
-        return this.time;
-    }
-}
-/**
  * An MML Editor provides 3 panels which are sync-scrolled.
  * In the first panel there is a succession of page-images.
  * In the second an editable text in a minimal markup language (MML).
@@ -56,7 +41,7 @@ function MMLEditor(opts, dialect) {
     /** annotator for notes */
     this.annotator = new Annotator(this,"annotate");
     /** buffer to hold added or deleted chars */
-    this.buffer = new Buffer();
+    this.buffer = new Buffer("#"+this.opts.source);
     /* reference to ourselves when this is redefined */
     var self = this;
             
@@ -68,15 +53,13 @@ function MMLEditor(opts, dialect) {
     {
         if ( this.changed )
         {
-            var d = new Date();
-            var startTime = d.getMilliseconds();
+            this.changed = false;
             this.annotator.update(this.buffer);
             this.buffer.clear();
             this.text_lines = new Array();
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
             $("#"+this.opts.target).html(this.formatter.toHTML(text,this.text_lines));
-            this.changed = false;
             $(".page").css("display","inline");
             var base = 0;
             $(".page").each( function(i) {
@@ -89,8 +72,6 @@ function MMLEditor(opts, dialect) {
             });
             this.recomputeImageHeights();
             this.annotator.redraw();
-            var endTime = d.getMilliseconds();
-            time.setTimeValue(endTime-startTime);
         }
     };
     /**
@@ -466,9 +447,8 @@ function MMLEditor(opts, dialect) {
     // this sets up the timer for updating
     // this should really reset the interval based on how long it took
     // force update when user modifies the source
-    var timer = new Timer(300);
     window.setInterval(
-        function() { self.updateHTML(timer); }, timer.getTimeValue()
+        function() { self.updateHTML(); }, 300
     );
     $("#"+opts.source).keyup(function(event) {
         if ( event.which >= 65 && event.which <=90 )
@@ -481,6 +461,30 @@ function MMLEditor(opts, dialect) {
                 self.toggleSave();
             } 
         }
+        // cursor keys
+        else if ( event.which >= 37 && event.which <= 40 )
+        {
+            if ( self.buffer.shiftIsDown() )
+                self.buffer.setSelectionPending();
+            else
+            {
+                $ta=$("#"+opts.source);
+                var sel = $ta.getSelection();
+                self.buffer.setStart(sel.start);
+            }
+        }
+        // shift-key
+        else if ( event.which==16 )
+            self.buffer.setShiftDown(false);
+        else
+            console.log(event.which);
+    });
+    /**
+     * On keydown we test to see if shift or crtl etc was pressed
+     */
+    $("#"+opts.source).keydown(function(event) {
+        if ( event.which==16 )  // shift
+            self.buffer.setShiftDown(true);
         else if ( event.which == 8 ) //DEL
         {
             if ( self.buffer.hasSelection() )
@@ -507,8 +511,7 @@ function MMLEditor(opts, dialect) {
                 self.toggleSave();
             }
         }
-        else
-            console.log(event.which);
+        return true;
     });
     $("#"+opts.source).mouseup(function(event) {
         $ta = $("#"+opts.source);

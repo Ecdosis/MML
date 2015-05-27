@@ -1,12 +1,14 @@
 /**
  * Hold the number of additional and/or deleted characters
  * and the position they start from
+ * @param sourceId the #+id of the source textarea
  */
-function Buffer()
+function Buffer(sourceId)
 {
     this.start = 0;
     this.numDelLeftChars = 0;
     this.numDelRightChars = 0;
+    this.sourceId = sourceId;
     this.numAddChars = 0;
     /** 
      * Add chars to the right of start
@@ -62,17 +64,36 @@ function Buffer()
     this.maxDelPos = function() {
         return this.start+this.numDelRightChars;
     };
+    /**
+     * A selection has just been made (say) on mouse-up
+     * @param sel the rangy selection
+     */
     this.setSelection = function( sel ) {
         this.selection = sel;
     };
+    /**
+     * Set the selectionPending flag. When a selection is requested it will be computed
+     */
+    this.setSelectionPending = function() {
+        this.selectionPending = true;
+    };
+    /**
+     * Clear the current selection (user pressed a key etc
+     */
     this.clearSelection = function() {
         this.selection = undefined;
+        this.selectionPending = undefined;
     };
     /**
      * Test if this buffer is holding a selection
      * @return true if text is currently selected else false
      */
     this.hasSelection = function() {
+        if ( this.selectionPending )
+        {
+            this.selection = $(this.sourceId).getSelection();
+            this.selectionPending = false;
+        }
         return this.selection != undefined;
     };
     /**
@@ -82,6 +103,12 @@ function Buffer()
         this.start = this.selection.start;
         this.numDelRightChars = this.selection.end-this.selection.start;
         this.selection = undefined;
+    };
+    this.setShiftDown = function(down) {
+        this.shiftDown = down;
+    };
+    this.shiftIsDown = function() {
+        return this.shiftDown;
     };
 }
 
