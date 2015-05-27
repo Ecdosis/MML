@@ -6,7 +6,8 @@ function Formatter( dialect )
     this.quotes = {"'":1,"‘":1,"’":1,'"':1,'”':1,'“':1};
     /** number of lines in textarea source */
     this.num_lines = 0;
-    
+    /** flag to indicate we are NOT busy */
+    this.ready = true;
     
     /**
      * This should be a function of Array

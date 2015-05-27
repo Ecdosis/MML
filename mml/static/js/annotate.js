@@ -212,8 +212,8 @@ function Annotator( editor, button )
             ann.offset = ann.offset-offset;
             annotations.push(ann);
         }
-        for ( var i=0;i<annotations.length;i++ )
-            console.log(annotations[i].toString());
+        /*for ( var i=0;i<annotations.length;i++ )
+            console.log(annotations[i].toString());*/
         this.editor.setSaved(false);
     };
     /**
@@ -337,8 +337,8 @@ function Annotator( editor, button )
                     i++;
                 }
             }
-            for ( var i=0;i<annotations.length;i++ )
-                console.log(annotations[i].toString());
+            /*for ( var i=0;i<annotations.length;i++ )
+                console.log(annotations[i].toString());*/
         }
     };
     /**

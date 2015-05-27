@@ -11,6 +11,18 @@ function Buffer(sourceId)
     this.sourceId = sourceId;
     this.numAddChars = 0;
     /** 
+     * Clone this object 
+     * @return an exact copy of this
+     */
+    this.clone = function() {
+        var clone = new Buffer(sourceId);
+        clone.start = this.start;
+        clone.nemDelLeftChars = this.numDelLeftChars;
+        clone.numDelRightChars = this.numDelRightChars;
+        clone.numAddChars = this.numAddChars;
+        return clone;
+    };
+    /** 
      * Add chars to the right of start
      * @param num the number of chars to add
      */

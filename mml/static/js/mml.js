@@ -51,11 +51,10 @@ function MMLEditor(opts, dialect) {
      */
     this.updateHTML = function( time )
     {
-        if ( this.changed )
+        if ( this.changed && this.formatter.ready )
         {
             this.changed = false;
-            this.annotator.update(this.buffer);
-            this.buffer.clear();
+            this.formatter.ready = false;
             this.text_lines = new Array();
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
@@ -71,7 +70,11 @@ function MMLEditor(opts, dialect) {
                 $(this).css("display","none");
             });
             this.recomputeImageHeights();
+            var clonedBuffer = this.buffer.clone();
+            this.buffer.clear();
+            this.annotator.update(clonedBuffer);
             this.annotator.redraw();
+            this.formatter.ready = true;
         }
     };
     /**
@@ -448,7 +451,7 @@ function MMLEditor(opts, dialect) {
     // this should really reset the interval based on how long it took
     // force update when user modifies the source
     window.setInterval(
-        function() { self.updateHTML(); }, 300
+        function() { self.updateHTML(); }, 200
     );
     $("#"+opts.source).keyup(function(event) {
         if ( event.which >= 65 && event.which <=90 )
@@ -476,8 +479,8 @@ function MMLEditor(opts, dialect) {
         // shift-key
         else if ( event.which==16 )
             self.buffer.setShiftDown(false);
-        else
-            console.log(event.which);
+        /*else
+            console.log(event.which);*/
     });
     /**
      * On keydown we test to see if shift or crtl etc was pressed
