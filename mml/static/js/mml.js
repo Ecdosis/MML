@@ -40,6 +40,11 @@ function MMLEditor(opts, dialect) {
     this.info = new Info( "#help", dialect );
     /** annotator for notes */
     this.annotator = new Annotator(this,"annotate");
+    /** buffer to hold added or deleted chars */
+    this.buffer = new Buffer();
+    /* reference to ourselves when this is redefined */
+    var self = this;
+            
     /**
      * Check if we need to update the HTML. Gets called repeatedly.
      */
@@ -47,6 +52,8 @@ function MMLEditor(opts, dialect) {
     {
         if ( this.changed )
         {
+            this.annotator.update(this.buffer);
+            this.buffer.clear();
             this.text_lines = new Array();
             this.html_lines = new Array();
             var text = $("#"+this.opts.source).val();
@@ -54,7 +61,6 @@ function MMLEditor(opts, dialect) {
             this.changed = false;
             $(".page").css("display","inline");
             var base = 0;
-            var self = this;
             $(".page").each( function(i) {
                 var pos = $(this).position().top;
                 if ( base==0 && pos < 0 )
@@ -64,6 +70,7 @@ function MMLEditor(opts, dialect) {
                 $(this).css("display","none");
             });
             this.recomputeImageHeights();
+            this.annotator.redraw();
         }
     };
     /**
@@ -331,6 +338,16 @@ function MMLEditor(opts, dialect) {
         tgtObj.height(wHeight-this.viAdjust(tgtObj));
         helpObj.height(wHeight-this.viAdjust(helpObj));
         srcObj.height(wHeight-this.viAdjust(srcObj,true));
+        // oh this is an ugly hack but Opera 
+        // ignores any kind of height on textarea
+        // except rows - what else can you do?
+        if ( navigator.appName=="Opera" )
+        {
+            var src = $("#source");
+            var parentHt = src.offsetParent().height();
+            var rows = Math.round(parentHt/16);// best guess
+            src.attr("rows",rows);
+        }
     };
     /**
      * Switch the display of help on or off. This replaces the textarea.
@@ -390,6 +407,13 @@ function MMLEditor(opts, dialect) {
         );
     };
     /**
+     * Explicitly set the svaed property to some value
+     * @param value
+     */
+    this.setSaved = function( value ) {
+        this.saved = value;
+    };
+    /**
      * Do whatever is needed to indicate that the document has/has not been saved
      */
     this.toggleSave = function() {
@@ -421,79 +445,102 @@ function MMLEditor(opts, dialect) {
     };
     // this sets up the timer for updating
     window.setInterval(
-        (function(self) {
-            return function() {
-                self.updateHTML();
-            }
-        // this should really reset the interval based on how long it took
-        })(this),300
+        function() { self.updateHTML(); }, 300
     );
+    // this should really reset the interval based on how long it took
     // force update when user modifies the source
-    $("#"+opts.source).keyup( 
-        (function(self) {
-            return function() {
-                self.changed = true;
-                if ( self.saved )
-                {
-                    self.saved = false;
-                    self.toggleSave();
-                }
+    $("#"+opts.source).keyup(function(event) {
+        if ( event.which >= 65 && event.which <=90 )
+        {
+            self.buffer.addChars(1);
+            self.changed = true;
+            if ( self.saved )
+            {
+                self.saved = false;
+                self.toggleSave();
+            } 
+        }
+        else if ( event.which == 8 ) //DEL
+        {
+            self.buffer.delLeftChars(1);
+            self.changed = true;
+            if ( self.saved )
+            {
+                self.saved = false;
+                self.toggleSave();
             }
-        })(this)
-    );
+        }
+    });
+    $("#"+opts.source).mouseup(function(event) {
+        $ta = $("#"+opts.source);
+        var sel = $ta.getSelection();
+        if ( !self.buffer.setStart(sel.start) )
+            console.log("start reset but chars pending!");
+    });
+    $("#"+opts.source).bind('paste', function(e) {
+        var pastedData = e.originalEvent.clipboardData.getData('text');
+        console.log(pastedData);
+        self.changed = true;
+        if ( self.saved )
+        {
+            self.saved = false;
+            self.toggleSave();
+        } 
+    });
     // scroll the textarea
-    $("#"+opts.source).scroll( 
-        (function(self) {
-            return function(e) {
-                // prevent feedback
-                if ( e.originalEvent )
-                {
-                    var loc = self.getSourcePage($(this));
-                    // console.log("loc sent to other scrollbars:"+loc);
-                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
-                    self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
-                    //console.log($("#images")[0].scrollHeight);
-                    //var height = 0;
-                    //var images = $(".image");
-                    //for ( var i=0;i<images.length;i++ )
-                    //    height += images[i].clientHeight;
-                    //console.log("overall height="+height);
-                }
-            }
-        })(this)
-    );
+    $("#"+opts.source).scroll(function(e) {
+        // prevent feedback
+        if ( e.originalEvent )
+        {
+            var loc = self.getSourcePage($(this));
+            // console.log("loc sent to other scrollbars:"+loc);
+            self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+            self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
+            //console.log($("#images")[0].scrollHeight);
+            //var height = 0;
+            //var images = $(".image");
+            //for ( var i=0;i<images.length;i++ )
+            //    height += images[i].clientHeight;
+            //console.log("overall height="+height);
+        }
+    });
     // scroll the preview
-    $("#"+opts.target).scroll(
-        (function(self) {
-            return function(e) {
-                if ( e.originalEvent )
-                {
-                    var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
-                        /self.formatter.num_lines;
-                    var loc = self.getPixelPage($(this),self.html_lines);
-                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
-                    // for some reason this causes feedback, but it works without!!
-                    if ( self.infoDisplayed )
-                        self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
-                }
-            }
-        })(this)
-    );
+    $("#"+opts.target).scroll(function(e) {
+        if ( e.originalEvent )
+        {
+            var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
+                /self.formatter.num_lines;
+            var loc = self.getPixelPage($(this),self.html_lines);
+            self.scrollTo(loc,self.text_lines,
+                $("#"+self.opts.source),lineHeight);
+            // for some reason this causes feedback, but it works without!!
+            if ( self.infoDisplayed )
+                self.scrollTo(loc,self.image_lines,
+                $("#"+self.opts.images),1.0);
+        }
+    });
     // scroll the images
-    $("#"+opts.images).scroll(
-        (function(self) {
-            return function(e) {
-                if ( e.originalEvent )
-                {
-                    var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
-                        /self.formatter.num_lines;
-                    var loc = self.getPixelPage($(this),self.image_lines);
-                    self.scrollTo(loc,self.text_lines,$("#"+self.opts.source),lineHeight);
-                    self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
-                }
-            }
-        })(this)
-    );
+    $("#"+opts.images).scroll(function(e) {
+        if ( e.originalEvent )
+        {
+            var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
+                /self.formatter.num_lines;
+            var loc = self.getPixelPage($(this),self.image_lines);
+            self.scrollTo(loc,self.text_lines,
+                $("#"+self.opts.source),lineHeight);
+            self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+        }
+    });
+    $(window).on('beforeunload',function(){
+        console.log("beforeunload");
+        if ( !self.saved )
+            return 'You have unsaved data';
+    });
+    $(window).unload(function(){
+        console.log("jQuery unload handler");
+        if ( !self.saved )
+            return 'You have unsaved data';
+    });
     this.styles = new Styles(this,"styles");
     // This will execute whenever the window is resized
     $(window).resize(

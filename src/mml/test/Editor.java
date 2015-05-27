@@ -411,21 +411,23 @@ public class Editor extends Test
      */
     void composePage()throws MMLTestException
     {
-        doc.getHead().addEncoding( encoding );
-        doc.getHead().addCssFile("/mml/static/css/mml.css");
-        doc.getHead().addCssFile("/mml/static/css/custom/jquery-ui.min.css");
+        Head head = doc.getHead();
+        head.addEncoding( encoding );
+        head.addCssFile("/mml/static/css/mml.css");
+        head.addCssFile("/mml/static/css/custom/jquery-ui.min.css");
         String css = getCss();
-        doc.getHead().addCss(css);
-        doc.getHead().addScriptFile( "/mml/static/js/jquery-1.11.1.js" );
-        doc.getHead().addScriptFile( "/mml/static/js/jquery-ui.js" );
-        doc.getHead().addScriptFile( "/mml/static/js/refloc.js" );
-        doc.getHead().addScriptFile( "/mml/static/js/formatter.js" );
-        doc.getHead().addScriptFile( "/mml/static/js/info.js" );
-        doc.getHead().addScriptFile( "/mml/static/js/rangyinputs-jquery.js");
-        doc.getHead().addScriptFile( "/mml/static/js/styles.js");
-        doc.getHead().addScriptFile( "/mml/static/js/rangy-core.js");
-        doc.getHead().addScriptFile( "/mml/static/js/annotate.js");
-        doc.getHead().addScriptFile( "/mml/static/js/mml.js" );
+        head.addCss(css);
+        head.addScriptFile( "/mml/static/js/jquery-1.11.1.js" ); 
+        head.addScriptFile( "/mml/static/js/jquery-ui.js" );
+        head.addScriptFile( "/mml/static/js/refloc.js" );
+        head.addScriptFile( "/mml/static/js/formatter.js" );
+        head.addScriptFile( "/mml/static/js/info.js" );
+        head.addScriptFile( "/mml/static/js/rangyinputs-jquery.js");
+        head.addScriptFile( "/mml/static/js/styles.js");
+        head.addScriptFile( "/mml/static/js/rangy-core.js");
+        head.addScriptFile( "/mml/static/js/buffer.js");
+        head.addScriptFile( "/mml/static/js/annotate.js");
+        head.addScriptFile( "/mml/static/js/mml.js" );
         String dialect = MMLGetMMLHandler.getDialect(shortID(),version1);
         String opts = getOpts(docid,version1);
         StringBuilder js = new StringBuilder();

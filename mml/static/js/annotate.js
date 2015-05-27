@@ -1,3 +1,15 @@
+function Position()
+{
+    this.position = 0;
+    this.setPos = function(pos)
+    {
+        this.position = pos;
+    }
+    this.getPos = function()
+    {
+        return this.position;
+    }
+}
 /**
  * Create an annotation object
  * @param id the identifier (integer)
@@ -202,6 +214,7 @@ function Annotator( editor, button )
         }
         for ( var i=0;i<annotations.length;i++ )
             console.log(annotations[i].toString());
+        this.editor.setSaved(false);
     };
     /**
      * Get a simple unique id for the next annotation
@@ -269,6 +282,111 @@ function Annotator( editor, button )
                     self.userName = ann.user; 
                 }  
             });
+        }
+    };
+    /**
+     * Update the relevant annotations' offsets
+     * @param buffer the Buffer object 
+     */
+    this.update = function( buffer ) {
+        if ( !buffer.empty() && annotations != undefined )
+        {
+            var offset = 0;
+            var lastOffset = 0;
+            var delLeft = buffer.minDelPos();
+            var delRight = buffer.maxDelPos();
+            // currently we only handle deletions
+            if ( delLeft < delRight )
+            {
+                var i = 0;
+                while ( i<annotations.length )
+                {
+                    lastOffset = offset;
+                    offset += annotations[i].offset;
+                    var end = offset + annotations[i].len;
+                    // 1. deletion before annotation
+                    if ( delLeft >= lastOffset && delRight < offset )
+                    {
+                        annotations[i].offset -= (delRight-delLeft);
+                        break;
+                    }
+                    // 2. annotation-range inside deletion
+                    else if ( delLeft <= offset && delRight >= end )
+                    {
+                        annotations.splice(i,1);
+                        offset = lastOffset;  // reset offset
+                        i--;// balance out i++ at end
+                    }
+                    // 3. deletion inside annotation-range
+                    else if ( delLeft >=offset && delRight <= end )
+                    {
+                        annotations[i].len -= (delRight-delLeft);
+                    }
+                    // 4. deletion overlaps on left of annotation
+                    else if ( delLeft < offset && delRight > offset )
+                    {
+                        annotation[i].len -= (delRight-offset);
+                        annotation[i].offset -= (offset-delLeft);
+                        break;
+                    }
+                    // 5. deletion overlaps on right of annotation
+                    else if ( delRight >= end && delLeft < end )
+                    {
+                        annotation[i].len -= end-delLeft;
+                    }
+                    i++;
+                }
+            }
+            for ( var i=0;i<annotations.length;i++ )
+                console.log(annotations[i].toString());
+        }
+    };
+    /**
+     * Get the text-node at a given offset
+     * @param offset the sought-after position in the text
+     * @param tnode the text node to start from
+     * @param pos on input global offset, on return local offset in text node
+     * @return a text-node
+     */
+    this.textNodeAt = function( offset, tnode, pos ) {
+        var loc = 0;
+        var tLen = tnode.nodeValue.length-pos.getPos();
+        while ( tnode != null && tLen+loc <= offset )
+        {
+            loc += tLen;
+            tnode = this.nextTextNode(tnode);
+            if ( tnode != null )
+                tLen = tnode.nodeValue.length;
+        }
+        pos.setPos(offset-loc);
+        return tnode;
+    };
+    /**
+     * Redraw the annotations after a text update
+     */
+    this.redraw = function() {
+        var elem = $("#"+this.editor.getTarget());
+        var tnode = this.firstTextNode(elem[0]);
+        if ( tnode != null )
+        {
+            var pos = new Position();
+            for ( var i=0;i<annotations.length;i++ )
+            {
+                var ann = annotations[i];
+                var annLen = ann.len;
+                var offset = ann.offset;// relative!
+                var first = null;
+                while ( annLen > 0 )
+                {
+                    tnode = this.textNodeAt( offset, tnode, pos );
+                    var len = Math.min(tnode.nodeValue.length-pos.getPos(),annLen);
+                    var span = this.surroundTextNode(tnode,ann.id,pos.getPos(),len);
+                    if ( first == null )
+                        first = span;
+                    annLen -= len;
+                }
+                tnode = this.firstTextNode(first);
+            }
         }
     };
     /**
