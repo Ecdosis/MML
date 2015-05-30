@@ -72,7 +72,7 @@ function MMLEditor(opts, dialect) {
             this.recomputeImageHeights();
             var clonedBuffer = this.buffer.clone();
             this.buffer.clear();
-            this.annotator.update(clonedBuffer);
+            this.annotator.update(clonedBuffer,this.formatter.taToHtml);
             this.annotator.redraw();
             this.formatter.ready = true;
         }
@@ -453,12 +453,16 @@ function MMLEditor(opts, dialect) {
     window.setInterval(
         function() { self.updateHTML(); }, 200
     );
+    $("#"+opts.source).keyup(function(event) {
+        if ( event.which == 16 )
+            self.buffer.setShiftDown(false);
+    });
     /**
      * On keydown we test to see if shift or crtl etc was pressed
      */
     $("#"+opts.source).keydown(function(event) {
         // ordinary keys
-        if ( event.which >= 65 && event.which <=90 )
+        if ( event.which == 32 || (event.which >= 65 && event.which <=90) )
         {
             self.buffer.addChars(1);
             self.changed = true;
@@ -473,9 +477,13 @@ function MMLEditor(opts, dialect) {
         {
             if ( self.buffer.shiftIsDown() )
                 self.buffer.setSelectionPending();
-            else
+            else if ( event.which == 37 )    // left
+                buffer.decStart();
+            else if ( event.which == 39 )   // right
+                buffer.incStart();
+            else    // up or down
             {
-                $ta=$("#"+opts.source);
+                var $ta = $("#"+opts.source);
                 var sel = $ta.getSelection();
                 self.buffer.setStart(sel.start);
             }
@@ -522,8 +530,7 @@ function MMLEditor(opts, dialect) {
         else
         {
             self.buffer.clearSelection();
-            if ( !self.buffer.setStart(sel.start) )
-                console.log("buffer not empty when new selection made");
+            self.buffer.setStart(sel.start);
         }
     });
     $("#"+opts.source).bind('paste', function(e) {

@@ -173,6 +173,47 @@ function Annotator( editor, button )
         return (start==null)?0:len;
     };
     /**
+     * Convert a textarea offset in the MML to a base text offset in the HTML
+     * Uses modified binary search see http://programmerspatch.blogspot.com.au
+     * /2014/08/find-greatest-value-in-list-less-than.html
+     * @param list a 2-D sorted list of mml[0] to html[1] (base text) indices
+     * @param offset offset into the textarea's MML text
+     * @return the equivalent offset in the base text of the HTML 
+     */
+    this.taToHtml = function( list, offset ) {
+        var top = 0;
+        var bot = list.length-1;
+        var mid=0;
+        while ( top <= bot )
+        {
+            mid = (top+bot)/2; // NB integer arithmetic
+            if ( offset < list[mid][0] )
+            {
+                if ( mid == 0 ) // offset < than first item
+                {
+                    mid = -1;  
+                    break;
+                }
+                else
+                    bot = mid-1;
+            }
+            else    // offset >= list[mid]
+            {
+                if ( mid == list.length-1 )
+                    // offset is >= last item
+                    break;
+                else if ( offset >= list[mid+1][0] )
+                    top = mid+1;
+                else // list[mid].mml must be biggest <= offset
+                    break;
+            }
+        }
+        if ( mid == -1 )
+            return offset;
+        else
+            return list[mid][1]+offset-list[mid][0];
+    };
+    /**
      * Find the absolute offset in the base text
      * @param range the rangy range object
      * @return the absolute text-only (no markup) offset
@@ -378,20 +419,21 @@ function Annotator( editor, button )
     /**
      * Update the relevant annotations' offsets
      * @param buffer the Buffer object 
+     * @param list the ta to html offset table
      */
-    this.update = function( buffer ) {
+    this.update = function( buffer, list ) {
         if ( !buffer.empty() && annotations != undefined )
         {
-            var delLeft = buffer.minDelPos();
-            var delRight = buffer.maxDelPos();
+            var delLeft = this.taToHtml(list,buffer.minDelPos());
+            var delRight = this.taToHtml(list,buffer.maxDelPos());
             delRight -= buffer.numAddChars;
             if ( delLeft < delRight )
                 this.updateDeletion(delLeft,delRight);
             else if ( buffer.numAddChars > 0 )
             {
-                var pos = buffer.start;
+                var pos = this.taToHtml(list,buffer.start);
                 var numChars = buffer.numAddChars;
-                numChars -= (buffer.maxDelPos()-delLeft);
+                numChars -= (buffer.maxDelPos()-buffer.minDelPos());
                 if ( numChars > 0 )
                     this.updateAddition(pos,numChars);
             }
@@ -507,8 +549,8 @@ function Annotator( editor, button )
         //3. create annotation object based on selection, current user
         var rangeOffset = self.rangeOffset(newRange);
         var rangeLen = self.rangeLength(newRange);
-        var ann = new Annotation( id, self.rangeOffset(newRange),
-            self.rangeLength(newRange), self.getUserName());
+        var ann = new Annotation( id, rangeOffset, rangeLen, self.getUserName());
+        console.log(rangeOffset+","+rangeLen);
         self.installAnnotation( ann );
         //4. generate popup containing annotation
         var commentId = "#comment-"+id;

@@ -10,6 +10,7 @@ function Buffer(sourceId)
     this.numDelRightChars = 0;
     this.numAddChars = 0;
     this.sourceId = sourceId;
+    this.startPending = -1;
     /** 
      * Clone this object 
      * @return an exact copy of this
@@ -62,22 +63,23 @@ function Buffer(sourceId)
         this.shiftDown = false;
         this.start -= (this.numDelLeftChars+this.numDelRightChars);
         this.start += this.numAddChars;
+        if ( this.startPending != -1 )
+        {
+            this.start = this.startPending;
+            this.startPending = -1;
+        }
         this.selection = undefined;
         this.selectionPending = false;
     };
     /**
      * Set the start point after a mouse click, cursor movement or paste
      * @param start the new start point 
-     * @return true if it was OK else false (not set)
      */
     this.setStart = function( start ) {
         if ( this.numDelLeftChars == 0 && this.numDelRightChars ==0 && this.numAddChars == 0 )
-        {
             this.start = start;
-            return true;
-        }
         else
-            return false;   // empty buffer first
+            this.startPending = start;
     };
     /**
      * Is there any pending data?
@@ -106,12 +108,12 @@ function Buffer(sourceId)
      */
     this.setSelection = function( sel ) {
         this.selection = sel;
+        this.start = sel.start;
     };
     /**
      * Set the selectionPending flag. When a selection is requested it will be computed
      */
     this.setSelectionPending = function() {
-        this.shiftDown = false;
         this.selectionPending = true;
     };
     /**
@@ -153,6 +155,13 @@ function Buffer(sourceId)
      */
     this.shiftIsDown = function() {
         return this.shiftDown;
+    };
+    this.decStart = function() {
+        if ( this.start >0 )
+            this.start--;
+    };
+    this.incStart = function() {
+        this.start++;
     };
 }
 
