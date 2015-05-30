@@ -299,11 +299,19 @@ function Formatter( dialect )
     {
         if ( this.dialect.charformats != undefined )
         {
+            var trimNextLF = false;
             var stack = new Array();
             var line = para.next;
             while ( line != null && line != end )
             {
                 var text = line.text;
+                // trim leading LF after hyphen
+                if ( trimNextLF )
+                {
+                    if ( line.html.length>0&&line.html[0]=='\n' )
+                        line.html = line.html.substr(1);
+                    trimNextLF = false;
+                }
                 var i = 0;
                 while ( i<text.length )
                 {
@@ -329,17 +337,17 @@ function Formatter( dialect )
                         text = line.text;
                         i = 0;
                     }
-                    else if ( c == '-' && i==text.length-1 )
+                    else if ( c == '-' && i==text.length )
                     {
-                        var link = line.split(i-1,"-\n".length);
+                        var link = line.split(i-1,1);
                         var hyphen = new Link("",'<span class="soft-hyphen">',
                             "-",link,line);
                         line.next = hyphen;
                         link.prev = hyphen;
                         link.html = '</span>';
-                        link.mml = "\n";
-                        line = link;
+                        line = link;    // needed for loop termination
                         text = line.text;
+                        trimNextLF = true;
                         i = 0;
                     } 
                 }
@@ -636,7 +644,7 @@ function Formatter( dialect )
                         }
                     }
                 }
-                this.num_lines++;
+                this.num_lines += this.countLines(link.mml);
                 link = link.next;
             }
         }
@@ -757,12 +765,10 @@ function Formatter( dialect )
                     line = new Link("\n","",lines[i],null,prev);
                     prev.next = line;
                 }
-                 // create blank link to hold final line
-                var finalP = new Link("","","",end,line);
-                line.next = finalP;
-                end.prev = finalP;
+                line.next = end;
+                end.prev = line;
                 line = para.next;
-                while ( line != finalP && line != null )
+                while ( line != end && line != null )
                 {
                     var currLevel = this.getLevel(line.text);
                     if ( mss == undefined || this.isMilestone(line.text,mss)==undefined )
@@ -786,12 +792,10 @@ function Formatter( dialect )
                     }
                     if ( line.text.length>0 )
                         line.mml += this.leadTrim(line,currLevel);
-                    /*if ( line.next != finalP )
-                        line.html += '\n';*/
                     line = line.next;
                 }
                 if ( level > 0 )
-                    line.prependHtml("</pre>");
+                    end.prependHtml("</pre>\n");
             }
         }
     };
@@ -830,6 +834,8 @@ function Formatter( dialect )
      */
     this.processPara = function( para, end )
     {
+        var old_lines = this.num_lines;
+        var text_lines = this.countLines(para.text);
         this.formatted = false;
         this.processSmartQuotes(para,end);
         this.processCodeBlocks(para,end);
@@ -851,7 +857,8 @@ function Formatter( dialect )
             para.html += '<p'+attr+'>';
             end.prependHtml('</p>');
         }
-        //console.log("num_lines="+this.num_lines);
+        if ( this.num_lines-old_lines != text_lines )
+            console.log("added_lines="+(this.num_lines-old_lines)+" text_lines="+text_lines);
     };
     /**
      * Process all the paras in a section
@@ -863,7 +870,7 @@ function Formatter( dialect )
         // strip leading new lines
         while ( section.text.length > 0 && section.text.indexOf("\n")==0 )
         {
-            section.text = section.text.slice(index+"\n".length);
+            section.text = section.text.substr("\n".length);
             section.mml += "\n"; // preserve for length calculation
             this.num_lines++;
         }
@@ -897,7 +904,7 @@ function Formatter( dialect )
                         breakText += c;
                         var link = new Link(breakText,"","",null,prev);
                         prev.next = link;
-                        lastPos = endPos;
+                        lastPos = endPos+breakText.length;
                         prev = link;
                         state = 0;
                     }
@@ -913,12 +920,13 @@ function Formatter( dialect )
         end.prev = prev;
         // process all paragraphs in this section
         var temp = section.next;
+        var added_lines = 0;
         while ( temp != end )
         {
             var next = temp.next;
             if ( next != end )
                 this.processPara(temp,next);
-            this.num_lines+=2;
+            this.num_lines += this.countLines(temp.mml);
             temp = next;
         }
     };
@@ -975,6 +983,17 @@ function Formatter( dialect )
             console.log("texts differ in length: "+t1.length+" vs "+t2.length);
     };
     /**
+     * Count the number of lines in some text
+     * @param text the text to count \ns in
+     */
+    this.countLines = function(text) {
+        var count = 0;
+        for ( var i=0;i<text.length;i++ )
+            if ( text[i]=='\n' )
+                count++;
+        return count;
+    };
+    /**
      * Convert the MML text into HTML
      * @param text the MML text to convert
      * @return HTML
@@ -983,6 +1002,7 @@ function Formatter( dialect )
     {
         var startTime = new Date().getMilliseconds();
         var html = "";
+        var first=null;
         this.num_lines = 0;
         this.text_lines = text_lines;
         this.mmlToHtml = new Array();
@@ -995,22 +1015,16 @@ function Formatter( dialect )
         var sections = text.split("\n\n\n");
         if ( sections.length > 0 )
         {
+            var additional_lines = 0;
             var link = new Link("",'<div class="'+sectionName+'">',
                 sections[0],null,null);
-            var first = link;
+            first = link;
             for ( var i=1;i<sections.length;i++ )
             {
                 var prev = link;
                 link = new Link("\n\n\n",'</div>\n<div class="'
                     +sectionName+'">',sections[i],null,prev);
                 prev.next = link;
-            }
-            // trim empty trailing sections
-            while ( this.isEmptySection(link.text) )
-            {
-                link.prev.mml += link.mml;
-                link = link.prev;
-                link.next = null;
             }
             // balance HTML
             link.next = new Link("","</div>","",null,link);
@@ -1020,15 +1034,20 @@ function Formatter( dialect )
             {
                 var next = temp.next;
                 if ( next != null )
-                    this.processSection(temp,next);
-                this.num_lines+=3;
+                {
+                    if ( !this.isEmptySection(temp.text) )
+                        this.processSection(temp,next);
+                    else
+                        this.num_lines += this.countLines(temp.text);
+                    this.num_lines+=3;
+                }
                 temp = next;
             }
         }
-        //console.log("num_lines="+this.num_lines);
         var endTime = new Date().getMilliseconds();
         console.log("time to format="+(endTime-startTime));
         this.compare( text, first.toMml() );
+        console.log("num_lines="+this.num_lines);
         return first.toHtml();
     };
 }
