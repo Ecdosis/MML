@@ -2,7 +2,7 @@
  * Represent both the converted HTML and the original MML as a 
  * linked list, where common text is preserved at the points where 
  * it diverges. This is to speed up conversion and also to allow 
- * correspondences between the MML and HTMl to be used during editing.
+ * correspondences between the MML and HTML to be used during editing.
  */
 function Link(mml,html,text,next,prev)
 {
@@ -21,8 +21,6 @@ function Link(mml,html,text,next,prev)
         while ( temp != null )
         {
             html += temp.html;
-            if ( temp.html.length>0&&temp.html.charAt(temp.html.length-1)=='\n')
-                console.log("ends in LF");
             html += temp.text;
             temp = temp.next;
         }
@@ -306,12 +304,13 @@ function Formatter( dialect )
             while ( line != null && line != end )
             {
                 var text = line.text;
-                for ( var i=0;i<text.length;i++ )
+                var i = 0;
+                while ( i<text.length )
                 {
-                    var c = text[i];
+                    var c = text[i++];
                     if ( c in this.cfmts )
                     {
-                        var link = line.split(i,1);
+                        var link = line.split(i-1,1);
                         if ( this.peek(stack)==c )
                         {
                             stack.pop();
@@ -327,10 +326,12 @@ function Formatter( dialect )
                             link.mml = c;
                         }
                         line = link;
+                        text = line.text;
+                        i = 0;
                     }
                     else if ( c == '-' && i==text.length-1 )
                     {
-                        var link = line.split(i,"-\n".length);
+                        var link = line.split(i-1,"-\n".length);
                         var hyphen = new Link("",'<span class="soft-hyphen">',
                             "-",link,line);
                         line.next = hyphen;
@@ -338,6 +339,8 @@ function Formatter( dialect )
                         link.html = '</span>';
                         link.mml = "\n";
                         line = link;
+                        text = line.text;
+                        i = 0;
                     } 
                 }
                 line = line.next;
