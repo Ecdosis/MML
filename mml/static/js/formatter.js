@@ -102,13 +102,56 @@ function Link(mml,html,text,next,prev)
             temp = temp.next;
         }
     };
-    this.textEnds = function(c) 
+    this.endsWith = function(text,str) 
     {
-        return this.text.length>0&&this.text[this.text.length-1]==c;
+        return text.length>=str.length
+            &&text.substr(text.length-str.length)==str;
     };
-    this.mmlStarts = function(c)
+    this.startsWith = function(text,str)
     {
-        return this.mml.length>0&&this.mml[0]==c;
+        return text.length>=str.length
+            &&text.substr(0,str.length)== str;
+    };
+    /**
+     * Is this line already marked up as a milestone?
+     * @param mss the self of milestones from the dialect
+     * @return the milestone object or false
+     */
+    this.isMilestone = function(mss) {
+        // check if html is set fore and aft
+        if ( this.html.length>0 && this.next.html.length>0 )
+        {
+            var index = this.html.indexOf('class=');
+            if ( this.html.startsWith('<span ') 
+                && index!=-1
+                && this.next.html.startsWith("</span>") )
+            {
+                var tail = this.html.substr(index);
+                index = tail.indexOf('"');
+                if ( index!= -1 )
+                {
+                    var prop = tail.substr(0,index);
+                    for ( var i=0;i<mss.length;i++ )
+                    {
+                        var ms = mss[i];
+                        if ( ms.prop==prop )
+                            return ms;
+                    }
+                }
+            }
+        }
+        else
+        {
+            var text = this.text.trim();
+            for ( var i=0;i<mss.length;i++ )
+            {
+                var ms = mss[i];
+                if ( this.startsWith(text,ms.leftTag) 
+                    && this.endsWith(text,ms.rightTag) )
+                    return ms;
+            }
+        }
+        return false;
     };
 }
 /**
@@ -713,17 +756,19 @@ function Formatter( dialect )
                 }
                 else if ( currLevel < level )
                 {
-                    line.html += '</pre>';
                     if ( currLevel > 0 )
-                        line.html += this.startPre(currLevel);
+                        line.prependHtml('</pre>'+this.startPre(currLevel));
+                    else
+                        line.prependHtml('</pre>');
                 }
                 level = currLevel;
                 if ( level > 0 )
                 {
                     if ( line.text.length>0 )
                         line.mml += this.leadTrim(line,level);
-                    if ( !line.textEnds("\n") 
-                        && line.next.mmlStarts("\n") )
+                    if ( !line.text.endsWith("\n") 
+                        && line.next.mml.startsWith("\n")
+                        && !line.isMilestone(this.dialect.milestones) )
                     {
                         line.next.mml = line.next.mml.substr(1);
                         line.text += "\n";
@@ -764,25 +809,6 @@ function Formatter( dialect )
         }        
     };
     /**
-     * Is the current line a milestone?
-     * @para, line the link to test
-     * @param mss an array of milestone defs
-     * @return the relevant milestone
-     */
-    this.isMilestone = function( line, mss )
-    {
-        var line2 = line.text.trim();
-        for ( var i=0;i<mss.length;i++ )
-        {
-            var ms = mss[i];
-            if ( this.startPos(line2,ms.leftTag)==0 
-                && this.endPos(line2,ms.rightTag)
-                ==line2.length-ms.rightTag.length )
-                return ms;
-        }
-        return undefined;
-    };
-    /**
      * Process any milestones contained in the current line
      * @param ms the milestone definition from the dialect
      * @param link the link containing a milestone
@@ -816,9 +842,7 @@ function Formatter( dialect )
      * @param end the next paragraph link
      */
     this.processLines = function( para, end ) {
-        var mss = (this.dialect.milestones!=undefined
-            &&this.dialect.milestones.length>0)
-            ?this.dialect.milestones:undefined;
+        var mss = this.dialect.milestones;
         var lines = para.text.split("\n");
         if ( lines.length > 0 )
         {
@@ -833,11 +857,11 @@ function Formatter( dialect )
                 //console.log(this.num_lines+" "+lines[i]);
                 line = new Link("\n","",lines[i],null,prev);
                 prev.next = line;
-                if ( mss != undefined && (ms=this.isMilestone(prev,mss))!=undefined )
+                if ( mss != undefined && (ms=prev.isMilestone(mss)) )
                     this.processMilestones(ms,prev); 
             }
             line.next = end;
-            if ( mss != undefined && (ms=this.isMilestone(line,mss))!=undefined )
+            if ( mss != undefined && (ms=line.isMilestone(mss)) )
                 this.processMilestones(ms,line); 
             end.prev = line;
         }
