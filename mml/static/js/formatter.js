@@ -102,6 +102,14 @@ function Link(mml,html,text,next,prev)
             temp = temp.next;
         }
     };
+    this.textEnds = function(c) 
+    {
+        return this.text.length>0&&this.text[this.text.length-1]==c;
+    };
+    this.mmlStarts = function(c)
+    {
+        return this.mml.length>0&&this.mml[0]==c;
+    };
 }
 /**
  * Format an MML text into HTML using a dialect
@@ -586,9 +594,6 @@ function Formatter( dialect )
         if ( this.dialect.headings !=undefined )
         {
             var res = "";
-            var mss = (this.dialect.milestones!=undefined
-                &&this.dialect.milestones.length>0)
-                ?this.dialect.milestones:undefined;
             var link = para.next;
             while ( link != end && link != null )
             {
@@ -607,44 +612,7 @@ function Formatter( dialect )
                         link.prependHtml('</'+this.tags[this.heads[c]]+'>\n');
                         this.formatted = true; 
                     }
-                    // process milestones
-                    else if ( mss != undefined 
-                        && (ms=this.isMilestone(line,mss))!=undefined )
-                    {
-                        while ( line.length>0&&(line.charAt(0)==' '
-                            ||line.charAt(0)=='\t') )
-                        {
-                            link.mml += line.charAt(0);
-                            line = line.substr(1);
-                        }
-                        var endPos = this.endPos(line,ms.rightTag);
-                        var ref = line.slice(ms.leftTag.length,endPos);
-                        link.mml += ms.leftTag;
-                        link.next.prependMml(line.substr(endPos));
-                        if ( ms.prop=="page" )
-                        {
-                            //console.log("ref="+ref+" num_lines="+this.num_lines);
-                            this.text_lines.push(new RefLoc(ref,this.num_lines));
-                        }
-                        link.text = ref;
-                        link.html += '<span class="'+ms.prop+'">';
-                        link.next.prependHtml('</span>');
-                    }
-                    else if ( link.next == end )
-                    {
-                        link.html += '\n';
-                    }
-                    else
-                    {
-                        var next = link.next.text;
-                        var d = next.charAt(0);
-                        if ( !(d in this.heads && this.isHeading(next,d)) )
-                        {
-                            link.html += '\n';
-                        }
-                    }
                 }
-                this.num_lines += this.countLines(link.mml);
                 link = link.next;
             }
         }
@@ -691,25 +659,6 @@ function Formatter( dialect )
         return text;
     };
     /**
-     * Is the current line a milestone?
-     * @para, line the line to test
-     * @param mss an array of milestone defs
-     * @return the relevant milestone
-     */
-    this.isMilestone = function( line, mss )
-    {
-        var line2 = line.trim();
-        for ( var i=0;i<mss.length;i++ )
-        {
-            var ms = mss[i];
-            if ( this.startPos(line2,ms.leftTag)==0 
-                && this.endPos(line2,ms.rightTag)
-                ==line2.length-ms.rightTag.length )
-                return ms;
-        }
-        return undefined;
-    };
-    /**
      * Get the indent level of this line
      * @param line the line with some leading spaces
      * @return the level (4 spaces or a tab == 1 level)
@@ -748,55 +697,42 @@ function Formatter( dialect )
     {
         if ( this.dialect.codeblocks!=undefined )
         {
-            var mss = (this.dialect.milestones!=undefined
-                &&this.dialect.milestones.length>0)
-                ?this.dialect.milestones:undefined;
-            var lines = para.text.split("\n");
             var level = 0;
-            if ( lines.length > 0 )
+            var line = para.next;
+            while ( line != end && line != null )
             {
-                // turn lines of para into linked list
-                var line = new Link("","",lines[0],null,para);
-                para.next = line;
-                para.text = "";
-                for ( var i=1;i<lines.length;i++ )
+                var currLevel = this.getLevel(line.text);
+                if ( currLevel > level )
                 {
-                    var prev = line;
-                    line = new Link("\n","",lines[i],null,prev);
-                    prev.next = line;
+                    if ( level > 0 )
+                        line.html = '</pre>';
+                    if ( currLevel <= this.dialect.codeblocks.length )
+                        line.html += this.startPre(currLevel);
+                    else // stay at current level
+                        currLevel = level;
                 }
-                line.next = end;
-                end.prev = line;
-                line = para.next;
-                while ( line != end && line != null )
+                else if ( currLevel < level )
                 {
-                    var currLevel = this.getLevel(line.text);
-                    if ( mss == undefined || this.isMilestone(line.text,mss)==undefined )
-                    {
-                        if ( currLevel > level )
-                        {
-                            if ( level > 0 )
-                                line.html = '</pre>';
-                            if ( currLevel <= this.dialect.codeblocks.length )
-                                line.html += this.startPre(currLevel);
-                            else // stay at current level
-                                currLevel = level;
-                        }
-                        else if ( currLevel < level )
-                        {
-                            line.html += '</pre>';
-                            if ( currLevel > 0 )
-                                line.html += this.startPre(currLevel);
-                        }
-                        level = currLevel;
-                    }
-                    if ( line.text.length>0 )
-                        line.mml += this.leadTrim(line,currLevel);
-                    line = line.next;
+                    line.html += '</pre>';
+                    if ( currLevel > 0 )
+                        line.html += this.startPre(currLevel);
                 }
+                level = currLevel;
                 if ( level > 0 )
-                    end.prependHtml("</pre>\n");
+                {
+                    if ( line.text.length>0 )
+                        line.mml += this.leadTrim(line,level);
+                    if ( !line.textEnds("\n") 
+                        && line.next.mmlStarts("\n") )
+                    {
+                        line.next.mml = line.next.mml.substr(1);
+                        line.text += "\n";
+                    }
+                }
+                line = line.next;
             }
+            if ( level > 0 )
+                end.prependHtml("</pre>\n");
         }
     };
     /**
@@ -828,15 +764,93 @@ function Formatter( dialect )
         }        
     };
     /**
+     * Is the current line a milestone?
+     * @para, line the link to test
+     * @param mss an array of milestone defs
+     * @return the relevant milestone
+     */
+    this.isMilestone = function( line, mss )
+    {
+        var line2 = line.text.trim();
+        for ( var i=0;i<mss.length;i++ )
+        {
+            var ms = mss[i];
+            if ( this.startPos(line2,ms.leftTag)==0 
+                && this.endPos(line2,ms.rightTag)
+                ==line2.length-ms.rightTag.length )
+                return ms;
+        }
+        return undefined;
+    };
+    /**
+     * Process any milestones contained in the current line
+     * @param ms the milestone definition from the dialect
+     * @param link the link containing a milestone
+     */
+    this.processMilestones = function( ms, link ) {
+        var line = link.text;
+        while ( line.length>0&&(line.charAt(0)==' '
+            ||line.charAt(0)=='\t') )
+        {
+            link.mml += line.charAt(0);
+            line = line.substr(1);
+        }
+        var endPos = this.endPos(line,ms.rightTag);
+        var ref = line.slice(ms.leftTag.length,endPos);
+        link.mml += ms.leftTag;
+        link.next.prependMml(line.substr(endPos));
+        if ( ms.prop=="page" )
+        {
+            if ( ref == "25" )
+                console.log("25");
+            //console.log("ref="+ref+" num_lines="+this.num_lines);
+            this.text_lines.push(new RefLoc(ref,this.num_lines));
+        }
+        link.text = ref;
+        link.html += '<span class="'+ms.prop+'">';
+        link.next.prependHtml('</span>');
+    };
+    /**
+     * Turn a paragraph into a linked list of lines
+     * @param para the paragraph link
+     * @param end the next paragraph link
+     */
+    this.processLines = function( para, end ) {
+        var mss = (this.dialect.milestones!=undefined
+            &&this.dialect.milestones.length>0)
+            ?this.dialect.milestones:undefined;
+        var lines = para.text.split("\n");
+        if ( lines.length > 0 )
+        {
+            var line = new Link("","",lines[0],null,para);
+            //console.log(this.num_lines+" "+lines[0]);
+            para.next = line;
+            para.text = "";
+            for ( var i=1;i<lines.length;i++ )
+            {
+                this.num_lines++;
+                var prev = line;
+                //console.log(this.num_lines+" "+lines[i]);
+                line = new Link("\n","",lines[i],null,prev);
+                prev.next = line;
+                if ( mss != undefined && (ms=this.isMilestone(prev,mss))!=undefined )
+                    this.processMilestones(ms,prev); 
+            }
+            line.next = end;
+            if ( mss != undefined && (ms=this.isMilestone(line,mss))!=undefined )
+                this.processMilestones(ms,line); 
+            end.prev = line;
+        }
+    };
+    /**
      * Process a list of paragraphs in a section
      * @param para the first paragraph to process
      * @param end the ending para
      */
     this.processPara = function( para, end )
     {
-        var old_lines = this.num_lines;
-        var text_lines = this.countLines(para.text);
         this.formatted = false;
+        this.processLines(para,end);
         this.processSmartQuotes(para,end);
         this.processCodeBlocks(para,end);
         this.processHeadings(para,end);
@@ -854,11 +868,9 @@ function Formatter( dialect )
             while ( para.text.length == 0 && para.next != end 
                 && para.next != null )
                 para = para.next;
-            para.html += '<p'+attr+'>';
-            end.prependHtml('</p>');
+            para.prependHtml('<p'+attr+'>');
+            end.html += '</p>';
         }
-        if ( this.num_lines-old_lines != text_lines )
-            console.log("added_lines="+(this.num_lines-old_lines)+" text_lines="+text_lines);
     };
     /**
      * Process all the paras in a section
@@ -920,13 +932,12 @@ function Formatter( dialect )
         end.prev = prev;
         // process all paragraphs in this section
         var temp = section.next;
-        var added_lines = 0;
         while ( temp != end )
         {
             var next = temp.next;
+            this.processPara(temp,next);
             if ( next != end )
-                this.processPara(temp,next);
-            this.num_lines += this.countLines(temp.mml);
+                this.num_lines += 2;
             temp = next;
         }
     };
