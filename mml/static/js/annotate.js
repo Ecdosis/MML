@@ -173,47 +173,6 @@ function Annotator( editor, button )
         return (start==null)?0:len;
     };
     /**
-     * Convert a textarea offset in the MML to a base text offset in the HTML
-     * Uses modified binary search see http://programmerspatch.blogspot.com.au
-     * /2014/08/find-greatest-value-in-list-less-than.html
-     * @param list a 2-D sorted list of mml[0] to html[1] (base text) indices
-     * @param offset offset into the textarea's MML text
-     * @return the equivalent offset in the base text of the HTML 
-     */
-    this.taToHtml = function( list, offset ) {
-        var top = 0;
-        var bot = list.length-1;
-        var mid=0;
-        while ( top <= bot )
-        {
-            mid = (top+bot)/2; // NB integer arithmetic
-            if ( offset < list[mid][0] )
-            {
-                if ( mid == 0 ) // offset < than first item
-                {
-                    mid = -1;  
-                    break;
-                }
-                else
-                    bot = mid-1;
-            }
-            else    // offset >= list[mid]
-            {
-                if ( mid == list.length-1 )
-                    // offset is >= last item
-                    break;
-                else if ( offset >= list[mid+1][0] )
-                    top = mid+1;
-                else // list[mid].mml must be biggest <= offset
-                    break;
-            }
-        }
-        if ( mid == -1 )
-            return offset;
-        else
-            return list[mid][1]+offset-list[mid][0];
-    };
-    /**
      * Find the absolute offset in the base text
      * @param range the rangy range object
      * @return the absolute text-only (no markup) offset
@@ -389,20 +348,23 @@ function Annotator( editor, button )
     };
     /**
      * Update the annotations when some new text is added
-     * @param pos the position of the addition
+     * @param pos the position in the base text of the addition
      * @param numChars the numer of new characters at pos
      */
     this.updateAddition = function(pos,numChars) {
         var i = 0;
         var offset = 0;
         var lastOffset = 0;
+        var lastEnd = 0;
+        var end = 0;
         while ( i<annotations.length )
         {
             lastOffset = offset;
+            lastEnd = end;
             offset += annotations[i].offset;
-            var end = offset + annotations[i].len;
+            end = offset + annotations[i].len;
             // 1. addition before annotation
-            if ( pos >= lastOffset && pos < offset )
+            if ( pos >= lastEnd && pos < offset )
             {
                 annotations[i].offset += numChars;
                 break;
@@ -411,6 +373,8 @@ function Annotator( editor, button )
             else if ( pos >=offset && pos <= end )
             {
                 annotations[i].len += numChars;
+                if ( i < annotations.length-1 )
+                    annotations[i+1].offset+=numChars;
                 break;
             }
             i++;
@@ -419,19 +383,19 @@ function Annotator( editor, button )
     /**
      * Update the relevant annotations' offsets
      * @param buffer the Buffer object 
-     * @param list the ta to html offset table
+     * @param formatter the object with the getOffset convert routine
      */
-    this.update = function( buffer, list ) {
+    this.update = function( buffer, formatter ) {
         if ( !buffer.empty() && annotations != undefined )
         {
-            var delLeft = this.taToHtml(list,buffer.minDelPos());
-            var delRight = this.taToHtml(list,buffer.maxDelPos());
+            var delLeft = formatter.getOffset(buffer.minDelPos(),"mml","text");
+            var delRight = formatter.getOffset(buffer.maxDelPos(),"mml","text");
             delRight -= buffer.numAddChars;
             if ( delLeft < delRight )
                 this.updateDeletion(delLeft,delRight);
             else if ( buffer.numAddChars > 0 )
             {
-                var pos = this.taToHtml(list,buffer.start);
+                var pos = formatter.getOffset(buffer.start,"mml","text");
                 var numChars = buffer.numAddChars;
                 numChars -= (buffer.maxDelPos()-buffer.minDelPos());
                 if ( numChars > 0 )
@@ -479,7 +443,6 @@ function Annotator( editor, button )
                 while ( annLen > 0 )
                 {
                     var old_tnode = tnode;
-                    var old_pos = pos.getPos();
                     tnode = this.textNodeAt( offset, tnode, pos );
                     var len = Math.min(tnode.nodeValue.length-pos.getPos(),annLen);
                     var span = this.surroundTextNode(tnode,ann.id,pos.getPos(),len);
@@ -488,6 +451,8 @@ function Annotator( editor, button )
                     if ( first == null )
                         first = span;
                     annLen -= len;
+                    offset = len;
+                    pos.setPos(0);
                 }
                 tnode = this.firstTextNode(first);
             }

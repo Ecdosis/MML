@@ -1027,6 +1027,63 @@ function Formatter( dialect )
         return count;
     };
     /**
+     * Compute the offsets between HTML, MML and plain text
+     * @param first the first link
+     */
+    this.computeCorrespondences = function(first) {
+        var link = first;
+        var textPos = 0;
+        var htmlPos = 0;
+        var mmlPos = 0;
+        this.mmlToHtml = new Array();
+        while ( link != null )
+        {
+            var entry = {};
+            entry.mml = mmlPos;
+            entry.html = htmlPos;
+            entry.text = textPos;
+            this.mmlToHtml.push(entry);
+            mmlPos += link.mml.length + link.text.length;
+            textPos += link.text.length;
+            htmlPos += link.html.length + link.text.length;
+            link = link.next;
+        }
+    };
+    /**
+     * Convert an offset from one coordinate system to another
+     * http://programmerspatch.blogspot.com.au/2014_08_01_archive.html
+     * @param value the offset in the from field
+     * @param from the key for value
+     * @param to the corresponding field to be output
+     * @return the corresponding offset in the the to field
+     */
+    this.getOffset = function(value,from,to) {
+        var top = 0;
+        var bot = this.mmlToHtml.length-1;
+        var mid=0;
+        while ( top <= bot )
+        {
+            mid = Math.round((top+bot)/2); 
+            if ( value < this.mmlToHtml[mid][from] )
+            {
+                if ( mid == 0 )
+                    return -1;  
+                else
+                    bot = mid-1;
+            }
+            else  
+            {
+                if ( mid == this.mmlToHtml.length-1 )
+                    break;
+                else if ( value >= this.mmlToHtml[mid+1][from] )
+                    top = mid+1;
+                else 
+                    break;
+            }
+        }
+        return value-this.mmlToHtml[mid][from]+this.mmlToHtml[mid][to];
+    };
+    /**
      * Convert the MML text into HTML
      * @param text the MML text to convert
      * @return HTML
@@ -1038,7 +1095,6 @@ function Formatter( dialect )
         var first=null;
         this.num_lines = 0;
         this.text_lines = text_lines;
-        this.mmlToHtml = new Array();
         this.buildHeadLookup();
         this.buildCfmtLookup();
         this.buildDividerLookup();
@@ -1077,10 +1133,11 @@ function Formatter( dialect )
                 temp = next;
             }
         }
+        this.computeCorrespondences(first);
         var endTime = new Date().getMilliseconds();
-        console.log("time to format="+(endTime-startTime));
-        this.compare( text, first.toMml() );
-        console.log("num_lines="+this.num_lines);
+        //console.log("time to format="+(endTime-startTime));
+        //this.compare( text, first.toMml() );
+        //console.log("num_lines="+this.num_lines);
         return first.toHtml();
     };
 }

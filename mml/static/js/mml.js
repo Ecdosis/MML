@@ -72,7 +72,7 @@ function MMLEditor(opts, dialect) {
             this.recomputeImageHeights();
             var clonedBuffer = this.buffer.clone();
             this.buffer.clear();
-            this.annotator.update(clonedBuffer,this.formatter.taToHtml);
+            this.annotator.update(clonedBuffer,this.formatter);
             this.annotator.redraw();
             this.formatter.ready = true;
         }
