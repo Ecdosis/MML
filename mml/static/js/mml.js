@@ -122,6 +122,8 @@ function MMLEditor(opts, dialect) {
      * @return the index of that value in the array or -1
      */
     this.findRefIndex = function( array, ref ) {
+        if ( array == undefined )
+            console.log("undefined");
         for ( var i=0;i<array.length;i++ )
         {
             if ( array[i].ref == ref )
@@ -225,7 +227,7 @@ function MMLEditor(opts, dialect) {
             }
         }
         else
-            return this.text_lines.ref+",0.0";
+            return /*this.text_lines.ref+*/",0.0";
     };
     /**
      * Recompute the height of the images after the window is fully loaded

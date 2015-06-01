@@ -827,8 +827,6 @@ function Formatter( dialect )
         link.next.prependMml(line.substr(endPos));
         if ( ms.prop=="page" )
         {
-            if ( ref == "25" )
-                console.log("25");
             //console.log("ref="+ref+" num_lines="+this.num_lines);
             this.text_lines.push(new RefLoc(ref,this.num_lines));
         }

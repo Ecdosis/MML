@@ -33,7 +33,6 @@ import mml.exception.JSONException;
 import mml.exception.MMLException;
 import mml.exception.MMLSaveException;
 import mml.handler.AeseResource;
-import mml.handler.json.Dialect;
 import mml.handler.json.Range;
 import mml.handler.mvd.Archive;
 import mml.handler.get.MMLGetHandler;
@@ -45,6 +44,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+
 
 /**
  * Handle POST events. Mostly saves.
@@ -52,54 +56,82 @@ import org.jsoup.nodes.TextNode;
  */
 public class MMLPostHTMLHandler extends MMLPostHandler
 {
-    /**
-     * Load one param
-     * @param request the request to read from
-     * @param key the param key
-     * @param dflt the default value or null
-     * @param reqdMessage if not null the param is required 
-     * @return the param value
-     * @throws MMLSaveException if it was required and not present
-     */
-    private String checkParam( HttpServletRequest request, String key, 
-        String dflt, String reqdMessage ) throws MMLSaveException
+    void parseRequest( HttpServletRequest request ) throws FileUploadException, 
+        Exception
     {
-        String value = request.getParameter(key);
-        if ( value == null || value.length()==0 )
+        if ( ServletFileUpload.isMultipartContent(request) )
         {
-            if ( reqdMessage != null )
-                throw new MMLSaveException( reqdMessage );
-            else
-                value = dflt;
-        }
-        return value;
-    }
-    /**
-     * Read all the params you can from the request
-     * @param request the current request
-     * @throws MMLSaveException 
-     */
-    private void readParams( HttpServletRequest request ) 
-        throws MMLSaveException
-    {
-        this.docid = checkParam( request,Params.DOCID, null,
-            "Save where? No docid, mate");
-        String json = checkParam( request, Params.DIALECT, null,
-            "Save how? Supply a dialect");
-        JSONObject jv = (JSONObject) JSONValue.parse(json);
-        if ( jv.get("language") != null )
-            this.langCode = (String)jv.get("language");
-        this.dialect = jv;
-        html = checkParam( request, Params.HTML, null,
-            "Save what? Supply some HTML!");
-        this.encoding = checkParam(request,Params.ENCODING,"UTF-8",null);
-        this.author = checkParam( request, Params.AUTHOR, "Anon", null );
-        this.title = checkParam( request, Params.TITLE, "Untitled", null );
-        this.style = checkParam( request, Params.STYLE,"TEI/default",null); 
-        this.format = checkParam( request, Params.FORMAT, "MVD/TEXT",null);
-        this.section = checkParam( request, Params.SECTION, "", null);
-        this.version1 = checkParam( request, Params.VERSION1, "/Base/first", null);
-        this.description = checkParam( request, Params.DESCRIPTION, "Version "+version1, null);
+            DiskFileItemFactory factory = new DiskFileItemFactory();
+            ServletFileUpload upload = new ServletFileUpload(factory);
+            upload.setHeaderEncoding(encoding);
+            List<FileItem> items = upload.parseRequest(request);
+            for ( int i=0;i<items.size();i++ )
+            {
+                FileItem item = (FileItem) items.get( i );
+                if ( item.isFormField() )
+                {
+                    String fieldName = item.getFieldName();
+                    if ( fieldName != null )
+                    {
+                        String contents = item.getString(encoding);
+                        if ( fieldName.equals(Params.DOCID) )
+                            this.docid = contents;
+                        else if ( fieldName.equals(Params.DIALECT) )
+                        {
+                            JSONObject jv = (JSONObject) JSONValue.parse(contents);
+                            if ( jv.get("language") != null )
+                                this.langCode = (String)jv.get("language");
+                            this.dialect = jv;
+                        }
+                        else if ( fieldName.equals( Params.HTML ) )
+                        {
+                            html = contents;
+                            if ( html.indexOf("novità") != -1 )
+                                System.out.println("Found novità");
+                            else
+                                System.out.println("Didn't find novità");
+                        }
+                        else if ( fieldName.equals(Params.ENCODING) )
+                            encoding = contents;
+                        else if ( fieldName.equals(Params.AUTHOR) )
+                            author = contents;
+                        else if ( fieldName.equals(Params.TITLE) )
+                            title = contents;
+                        else if ( fieldName.equals(Params.STYLE) )
+                            style = contents;
+                        else if ( fieldName.equals(Params.FORMAT) )
+                            format = contents;
+                        else if ( fieldName.equals(Params.SECTION) )
+                            section = contents;
+                        else if ( fieldName.equals(Params.VERSION1) )
+                            version1 = contents;
+                        else if ( fieldName.equals(Params.DESCRIPTION) )
+                            description = contents;
+                    }
+                }
+                // we're not uploading files
+            }
+            if ( encoding == null )
+                encoding = "UTF-8";
+            if ( author == null )
+                author = "Anon";
+            if ( style == null )
+                style = "TEI/default";
+            if ( format == null )
+                format = "MVD/TEXT";
+            if ( section == null )
+                section = "";
+            if ( version1 == null )
+                version1 = "/Base/first";
+            if ( description == null )
+                description = "Version "+version1;
+            if ( docid == null )
+                throw new Exception("missing docid");
+            if ( html == null )
+                throw new Exception( "Missing html");
+            if ( dialect == null )
+                throw new Exception("Missing dialect");
+        }       
     }
     /**
      * Parse a paragraph. These are always "p" elements, often with classes
@@ -510,7 +542,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     {
         try
         {
-            readParams( request );
+            parseRequest( request );
             sb = new StringBuilder();
             Document doc = Jsoup.parseBodyFragment(html);
             Element body = doc.body();  
