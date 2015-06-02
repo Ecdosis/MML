@@ -44,6 +44,40 @@ function MMLEditor(opts, dialect) {
     this.buffer = new Buffer("#"+this.opts.source);
     /* reference to ourselves when this is redefined */
     var self = this;
+    this.keycodes = 
+        [0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,0,0,0,0,0,0,//63
+        0,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,//127
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,1,1,1,1,1,1,//191
+        1,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0//255
+        ];
             
     /**
      * Check if we need to update the HTML. Gets called repeatedly.
@@ -464,7 +498,7 @@ function MMLEditor(opts, dialect) {
      */
     $("#"+opts.source).keydown(function(event) {
         // ordinary keys
-        if ( event.which == 32 || (event.which >= 65 && event.which <=90) )
+        if ( self.keycodes[event.which]==1 )
         {
             self.buffer.addChars(1);
             self.changed = true;
@@ -522,6 +556,8 @@ function MMLEditor(opts, dialect) {
             /*console.log("left:"+self.buffer.numDelLeftChars
                 +" right:"+self.buffer.numDelRightChars);*/
         }
+        else
+            console.log("ignored key "+event.which);
         return true;
     });
     $("#"+opts.source).mouseup(function(event) {

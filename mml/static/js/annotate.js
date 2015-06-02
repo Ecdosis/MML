@@ -259,8 +259,7 @@ function Annotator( editor, button )
         var text = '<div id="comment-'+ann.id+'" class="annotation">';
         text += '<p>Name: <input class="user-name" type="text" value="'
             +ann.user+'"></input></p>';
-        text += '<textarea class="comment" '
-            +'placeholder="Enter comment here..."></textarea>';
+        text += '<div class="comment">Enter comment here...</div>';
         text += '</div>';
         return text;
     }
@@ -276,6 +275,70 @@ function Annotator( editor, button )
         return null;
     };
     /**
+     * The user clicked on an editable div
+     * @param the jQuery target for later restoration
+     */
+    this.installEditor = function( target ) {
+        var content = target.html();
+        if ( content == "Enter comment here..." )
+            content = "";
+        target.replaceWith(function(){
+            return '<textarea id="tinyeditor">'+content+'</textarea>';
+        });
+        var editor = new TINY.editor.edit('editor', {
+            id: 'tinyeditor',
+            width: 584,
+            height: 175,
+            cssclass: 'tinyeditor',
+            controlclass: 'tinyeditor-control',
+            rowclass: 'tinyeditor-header',
+            dividerclass: 'tinyeditor-divider',
+            controls: [
+                'bold', 'italic', 'underline', 'strikethrough', '|', 'subscript', 'superscript', '|',
+                'orderedlist', 'unorderedlist', '|', 'outdent', 'indent', '|', 'leftalign',
+                'centeralign', 'rightalign', 'blockjustify', '|', 'unformat', '|', 'undo', 'redo', 'n',
+                'font', 'size', 'style', '|', 'image', 'hr', 'link', 'unlink'],
+            footer: true,
+            fonts: ['Verdana','Arial','Georgia','Trebuchet MS'],
+            xhtml: true,
+            bodyid: 'editor',
+            footerclass: 'tinyeditor-footer',
+            toggle: {text: 'source', activetext: 'wysiwyg', cssclass: 'toggle'},
+            resize: {cssclass: 'resize'}
+        });
+        $("div.tinyeditor").css("overflow-y","visible");
+        var dialog = $("#tinyeditor").parents(".ui-dialog").first();
+        if ( dialog != undefined )
+            dialog.css("width","611px");
+    };
+    /**
+     * Remove the editor and restore the old div with the new text
+     */
+    this.restoreDiv = function() {
+        var iframe = jQuery("#tinyeditor").next();
+        if ( iframe != undefined && iframe.length>0 )
+        {
+            var html = iframe[0].contentDocument.documentElement;
+            var content = html.lastChild.innerHTML;
+            var class_name = "comment";
+            var parent = iframe.closest("div.annotation");
+            if ( content=='<br>' )
+            {
+                content = "Enter comment here...";
+            }
+            var id = parent.attr("id");
+            iframe.closest("div.tinyeditor").replaceWith('<div id="'+id+'" class="'
+                +class_name+'">'+content+'</div>');
+            $("#"+id).click( function(e) {
+                if ( jQuery("#tinyeditor").length>0 )
+                    self.restoreDiv();
+                self.installEditor($(this).find("div.comment"));
+            });
+            $("#"+id).css("overflow-y","auto");
+            $("#"+id).closest(".ui-dialog").css("width", "300px");
+        }
+    };
+    /**
      * Initialise a jquery ui dialog widget
      * @param commentId the id of the comment div
      */
@@ -289,12 +352,18 @@ function Annotator( editor, button )
             if ( $("#annotations").length == 0 )
                 $("body").append('<div id="annotations"></div>');
             $("#annotations").append(annDiv);
-            $(commentId).dialog({ autoOpen: false, title: "Annotation", 
+            $(commentId+" div.comment").click(function(){
+                self.installEditor($(this));
+            });
+            $(commentId).dialog({ autoOpen: false, title: "Annotation", width: "300px",
                 position: { my: "bottom center", of:"[data-id='"+id+"']"}, 
                 close: function closeComment( event, ui ) {
-                    ann.setContent($(this).find(".comment").first().val());
-                    ann.setUser($(this).find(".user-name").first().val());
+                    var iframe = jQuery("#tinyeditor").next();
+                    var html = iframe[0].contentDocument.documentElement;
+                    ann.setContent(html.lastChild.innerHTML);
+                    ann.setUser($(this).find(".user-name").val());
                     self.userName = ann.user; 
+                    self.restoreDiv();
                 }  
             });
         }
@@ -515,7 +584,7 @@ function Annotator( editor, button )
         var rangeOffset = self.rangeOffset(newRange);
         var rangeLen = self.rangeLength(newRange);
         var ann = new Annotation( id, rangeOffset, rangeLen, self.getUserName());
-        console.log(rangeOffset+","+rangeLen);
+        //console.log(rangeOffset+","+rangeLen);
         self.installAnnotation( ann );
         //4. generate popup containing annotation
         var commentId = "#comment-"+id;

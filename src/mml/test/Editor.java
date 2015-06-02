@@ -415,6 +415,7 @@ public class Editor extends Test
         head.addEncoding( encoding );
         head.addCssFile("/mml/static/css/mml.css");
         head.addCssFile("/mml/static/css/custom/jquery-ui.min.css");
+        head.addCssFile("/mml/static/css/tinyeditor.css");
         String css = getCss();
         head.addCss(css);
         head.addScriptFile( "/mml/static/js/jquery-1.11.1.js" ); 
@@ -426,6 +427,7 @@ public class Editor extends Test
         head.addScriptFile( "/mml/static/js/styles.js");
         head.addScriptFile( "/mml/static/js/rangy-core.js");
         head.addScriptFile( "/mml/static/js/buffer.js");
+        head.addScriptFile( "/mml/static/js/tiny.editor.js" );
         head.addScriptFile( "/mml/static/js/annotate.js");
         head.addScriptFile( "/mml/static/js/mml.js" );
         String dialect = MMLGetMMLHandler.getDialect(shortID(),version1);
