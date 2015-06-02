@@ -36,6 +36,8 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONValue;
 
 /**
  * Handle a POST request
@@ -55,11 +57,10 @@ public class MMLPostHandler extends MMLHandler
     String style; 
     String format;
     String section;
-    String version1;
     String description;
-    protected String docid;
     ArrayList<ImageFile> images;
     ArrayList<String> files;
+    protected JSONArray annotations;
     
     /**
      * Create a POST handler for HTML that used to be MML
@@ -113,6 +114,8 @@ public class MMLPostHandler extends MMLHandler
                             this.version1 = contents;
                         else if ( fieldName.equals(Params.ENCODING) )
                             encoding = contents;
+                        else if ( fieldName.equals(Params.ANNOTATIONS) )
+                            annotations = (JSONArray) JSONValue.parse(contents);
                     }
                 }
                 else if ( item.getName().length()>0 )
@@ -188,6 +191,8 @@ public class MMLPostHandler extends MMLHandler
                 new MMLPostHTMLHandler().handle(request,response,urn);
             else if ( service.equals(Service.IMPORT) )
                 new MMLPostImportHandler().handle(request,response,urn);
+            else if ( service.equals(Service.ANNOTATIONS) )
+                new MMLPostAnnotationsHandler().handle(request,response,urn);
             else
                 throw new MMLException("invalid POST urn: "+urn);
         }

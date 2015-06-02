@@ -28,12 +28,13 @@ function Link(mml,html,text,next,prev)
     };
     /**
      * Convert this link and all subsequent ones into the original textarea text
+     * @param until if null igore else convert only until this link
      * @return the original textarea contents
      */
-    this.toMml = function() {
+    this.toMml = function(until) {
         var temp = this;
         var mml = "";
-        while ( temp != null )
+        while ( temp != until && temp != null )
         {
             mml += temp.mml;
             mml += temp.text;
@@ -388,12 +389,14 @@ function Formatter( dialect )
                         text = line.text;
                         i = 0;
                     }
-                    else if ( c == '-' && i==text.length )
+                    else if ( c == '-' && text.substr(i)=="\n" )
                     {
                         var link = line.split(i-1,1);
                         var hyphen = new Link("",'<span class="soft-hyphen">',
                             "-",link,line);
                         line.next = hyphen;
+                        link.text = "";
+                        link.mml = "\n";
                         link.prev = hyphen;
                         link.html = '</span>';
                         line = link;    // needed for loop termination
@@ -822,8 +825,9 @@ function Formatter( dialect )
             line = line.substr(1);
         }
         var endPos = this.endPos(line,ms.rightTag);
+        var startPos = this.startPos(line,ms.leftTag);
         var ref = line.slice(ms.leftTag.length,endPos);
-        link.mml += ms.leftTag;
+        link.mml += line.slice(0,startPos+ms.leftTag.length);
         link.next.prependMml(line.substr(endPos));
         if ( ms.prop=="page" )
         {
@@ -844,7 +848,7 @@ function Formatter( dialect )
         var lines = para.text.split("\n");
         if ( lines.length > 0 )
         {
-            var line = new Link("","",lines[0],null,para);
+            var line = new Link("","",lines[0]+"\n",null,para);
             //console.log(this.num_lines+" "+lines[0]);
             para.next = line;
             para.text = "";
@@ -853,7 +857,13 @@ function Formatter( dialect )
                 this.num_lines++;
                 var prev = line;
                 //console.log(this.num_lines+" "+lines[i]);
-                line = new Link("\n","",lines[i],null,prev);
+                // put back removed LF
+                var text;
+                if ( i==lines.length-1 )
+                    text = lines[i];
+                else
+                    text = lines[i]+"\n";
+                line = new Link("","",text,null,prev);
                 prev.next = line;
                 if ( mss != undefined && (ms=prev.isMilestone(mss)) )
                     this.processMilestones(ms,prev); 
@@ -910,6 +920,7 @@ function Formatter( dialect )
         }
         var text = section.text;
         var state = 0;
+        var savedText = section.text;
         section.text = "";
         var prev = new Link("","","",null,section);
         section.next = prev;
@@ -952,6 +963,10 @@ function Formatter( dialect )
         prev.text = text.substr(lastPos);
         prev.next = end;
         end.prev = prev;
+        /*var mmlText = section.toMml(end);
+        if ( mmlText.substr(0,3) == "\n\n\n" )
+            mmlText = mmlText.substr(3);
+        this.compare( savedText, mmlText );*/
         // process all paragraphs in this section
         var temp = section.next;
         while ( temp != end )
@@ -979,7 +994,7 @@ function Formatter( dialect )
         return true;
     };
     /**
-     * Make a 2-element array reference out of the current fofset object
+     * Make a 2-element array reference out of the current offset object
      * @param mml the mml offset
      * @param html the html base text offset
      * @return a 2-element array being mml,html base text offsets
@@ -989,8 +1004,34 @@ function Formatter( dialect )
         array[0] = this.offset.mml;
         array[1] = this.offset.html;
     };
+    this.sequence = function(t,i) {
+        var arr = new Array(13);
+        arr[0] = t.charCodeAt(i-6);
+        arr[1] = t.charCodeAt(i-5);
+        arr[2] = t.charCodeAt(i-4);
+        arr[3] = t.charCodeAt(i-3);
+        arr[4] = t.charCodeAt(i-2);
+        arr[5] = t.charCodeAt(i-1);
+        arr[6] = t.charCodeAt(i);
+        arr[7] = t.charCodeAt(i+1);
+        arr[8] = t.charCodeAt(i+2);
+        arr[9] = t.charCodeAt(i+3);
+        arr[10] = t.charCodeAt(i+4);
+        arr[11] = t.charCodeAt(i+5);
+        arr[12] = t.charCodeAt(i+5);
+        arr[13] = t.charCodeAt(i+5);
+        arr[14] = t.charCodeAt(i+6);
+        var res = "";
+        for ( var j=0;j<arr.length;j++ )
+        {
+            res += arr[j];
+            if ( j < arr.length-1 )
+                res += ",";
+        }
+        return res;
+    };
     /**
-     * Compare one text with another
+     * Compare one text with another - debug
      * @param t1 the first text
      * @param t2 its supposed copy
      */
@@ -1001,8 +1042,13 @@ function Formatter( dialect )
         {
             if ( t1.charAt(i) != t2.charAt(i) )
             {
-                break;
                 console.log("texts differ line "+lineNo+" char "+charNo);
+                console.log("t1:"+this.sequence(t1,i));
+                console.log("t2:"+this.sequence(t2,i));
+                console.log("t1:"+t1.substr(i,10));
+                console.log("t1:"+t2.substr(i,10));
+                console.log("offending character is t1:"+t1.charCodeAt(i)+" t2:"+t2.charCodeAt(i));
+                break;
             }
             else if ( t1.charAt(i)=='\n' )
             {
@@ -1016,7 +1062,7 @@ function Formatter( dialect )
             console.log("texts differ in length: "+t1.length+" vs "+t2.length);
     };
     /**
-     * Count the number of lines in some text
+     * Count the number of lines in some text - debug
      * @param text the text to count \ns in
      */
     this.countLines = function(text) {
@@ -1135,9 +1181,9 @@ function Formatter( dialect )
         }
         this.computeCorrespondences(first);
         var endTime = new Date().getMilliseconds();
-        //console.log("time to format="+(endTime-startTime));
+        console.log("time to format="+(endTime-startTime));
         //this.compare( text, first.toMml() );
-        //console.log("num_lines="+this.num_lines);
+        console.log("num_lines="+this.num_lines);
         return first.toHtml();
     };
 }

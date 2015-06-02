@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import mml.constants.Params;
-import calliope.core.constants.JSONKeys;
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import mml.exception.*;
@@ -48,8 +47,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
     HashMap<String,JSONObject> invertIndex;
     JSONObject dialect;
     JSONObject stil;
-    String docid;
-    String version1;
     StringBuilder mml;
     
     /**

@@ -38,8 +38,6 @@ import org.json.simple.*;
  */
 public class MMLGetImgHandler extends MMLGetHandler
 {
-    String docid;
-    String version1;
     class ImageComparator implements Comparator<String>
     {
         private int toNumber( String name )

@@ -28,6 +28,20 @@ function Annotation( id, anchorPos, anchorLen, user, content )
         return "offset:"+this.offset+" len="+this.len
         +" user:"+this.user+" content: "+this.content;
     };
+    /**
+     * Convert to a JSON string for saving
+     * @return a pukka JSON string
+     */
+    this.toJSONString = function() {
+        var json = "{ ";
+        json += "\"offset\": "+this.offset+", ";
+        json += "\"len\": "+this.len+", ";
+        json += "\"user\": \""+this.user+"\", ";
+        json += "\"content\": \""+this.content+"\",";
+        json += "\"id\": "+this.id+"";
+        json += " }";
+        return json;
+    };
     this.setContent = function( content ) {
         this.content = content;
     };

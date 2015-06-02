@@ -18,7 +18,6 @@
 
 package mml.handler.get;
 
-import calliope.core.constants.Database;
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import javax.servlet.http.HttpServletRequest;

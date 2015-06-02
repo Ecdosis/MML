@@ -447,7 +447,7 @@ function MMLEditor(opts, dialect) {
         );
     };
     /**
-     * Explicitly set the svaed property to some value
+     * Explicitly set the saved property to some value
      * @param value
      */
     this.setSaved = function( value ) {
@@ -514,9 +514,9 @@ function MMLEditor(opts, dialect) {
             if ( self.buffer.shiftIsDown() )
                 self.buffer.setSelectionPending();
             else if ( event.which == 37 )    // left
-                buffer.decStart();
+                self.buffer.decStart();
             else if ( event.which == 39 )   // right
-                buffer.incStart();
+                self.buffer.incStart();
             else    // up or down
             {
                 var $ta = $("#"+opts.source);

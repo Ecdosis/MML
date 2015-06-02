@@ -30,7 +30,6 @@ import mml.handler.AeseVersion;
  * @author desmond
  */
 public class MMLGetVersionsHandler extends MMLGetHandler {
-    String version1;
     /**
      * Get the version listing from the MVD
      * @param request the request

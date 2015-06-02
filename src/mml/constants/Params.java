@@ -35,4 +35,5 @@ public class Params
     public static String SECTION = "section";
     public static String VERSION1 = "version1";
     public static String DESCRIPTION = "description";
+    public static String ANNOTATIONS = "annotations";
 }
