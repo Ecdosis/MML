@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import calliope.core.constants.JSONKeys;
 import calliope.core.database.Connection;
+import calliope.core.exception.DbException;
 import mml.constants.Formats;
 import mml.constants.Params;
 import calliope.core.database.Connector;
@@ -36,6 +37,7 @@ import mml.handler.AeseResource;
 import mml.handler.json.Range;
 import mml.handler.mvd.Archive;
 import mml.handler.get.MMLGetHandler;
+import mml.Autosave;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -514,22 +516,82 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         }
     }
     /**
-     * Add the archive to the database
-     * @param metadata the metadata
-     * @param log the log to record errors to
+     * Save the cortex to the scratch collection
+     * @param log record message here
+     */
+    private void saveCortex( StringBuilder log ) throws DbException
+    {
+        try
+        {
+            // send the text,STIL and dialect to the database
+            if ( description == null )
+                description = "Version "+this.version1+" of "+docid;
+            Archive cortex = new Archive(Formats.TEXT, encoding, description);
+            cortex.addLongName( version1, description );
+            if ( style != null )
+                cortex.setStyle( style );
+            cortex.put( version1, sb.toString().getBytes(encoding) );
+            Connection conn = Connector.getConnection();
+            String res = conn.getFromDb(Database.SCRATCH,docid);
+            if ( res != null )
+                conn.removeFromDb(Database.SCRATCH,docid);
+            addToDBase( cortex, Database.SCRATCH, log );
+        }
+        catch ( Exception e )
+        {
+            throw new DbException(e);
+        }
+    }
+    /**
+     * Save the corcode to the temporary scratch collection
+     * @throws DbException 
+     */
+    private void saveCorcode( StringBuilder log ) throws DbException
+    {
+        try
+        {
+            // repeat for corcode
+            if ( description == null )
+                description = "Version "+this.version1+" of "+docid;
+            Archive corcode = new Archive(Formats.STIL,encoding,description);
+            if ( description != null )
+                corcode.addLongName( version1, description );
+            corcode.setStyle( style );
+            corcode.put( version1, stil.toString().getBytes(encoding) );
+            Connection conn = Connector.getConnection();
+            String ccDocId = docid+"/default";
+            String res = conn.getFromDb(Database.SCRATCH,ccDocId);
+            if ( res != null )
+                conn.removeFromDb(Database.SCRATCH,ccDocId);
+            addToDBase( corcode, Database.SCRATCH, log );
+        }
+        catch ( Exception e )
+        {
+            throw new DbException(e);
+        }
+    }
+    /**
+     * Write metadata to scratch space
+     * @param log track log messages here
      * @throws MMLException 
      */
-    protected void writeMetadata( JSONObject metadata, StringBuilder log ) 
-        throws MMLException
+    void saveMetadata( StringBuilder log ) throws MMLException
     {
         try
         {
             Connection conn = Connector.getConnection();
-            String md = conn.getFromDb(Database.METADATA, this.docid );
+            String md = conn.getFromDb(Database.SCRATCH, this.docid );
             if ( md == null )
             {
+                JSONObject metadata = new JSONObject();
+                metadata.put(JSONKeys.AUTHOR,this.author);
+                metadata.put(JSONKeys.DOCID,this.docid);
+                metadata.put(JSONKeys.ENCODING,this.encoding);
+                metadata.put(JSONKeys.SECTION,this.section);
+                metadata.put(JSONKeys.TITLE,this.title);
+                metadata.put(JSONKeys.VERSION1,this.version1);
                 md = metadata.toJSONString();
-                log.append(conn.putToDb(Database.METADATA,this.docid,md));
+                log.append(conn.putToDb(Database.SCRATCH,this.docid,md));
             }
         }
         catch ( Exception e )
@@ -537,70 +599,44 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             throw new MMLException( e );
         }
     }
+    /**
+     * Handle the request by writing everything out to scratch space
+     * @param request
+     * @param response
+     * @param urn
+     * @throws MMLException 
+     */
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException
     {
         try
         {
             parseRequest( request );
-            sb = new StringBuilder();
+            StringBuilder log = new StringBuilder();
             Document doc = Jsoup.parseBodyFragment(html);
             Element body = doc.body();  
             parseBody( body );
-            // send the text,STIL and dialect to the database
-            Archive cortex = new Archive(title, 
-                this.author,Formats.MVD_TEXT,encoding);
-            // check if this docid already exists
-            AeseResource res1 = MMLGetHandler.doGetResource( 
-                Database.CORTEX, docid );
-            if ( res1 != null )
-                cortex.fromResource(res1);
-            if ( description == null )
-                description = res1.getDescription();
-            if ( description == null )
-                description = "Version "+this.version1+" of "+docid;
-            cortex.addLongName( version1, description );
-            System.out.println("version1="+version1+" description="+description);
-            // add new version
-            cortex.setStyle( style );
-            cortex.put( version1, sb.toString().getBytes(encoding) );
-            // repeat for corcode
-            Archive corcode = new Archive(title, 
-                this.author,Formats.MVD_STIL,encoding);
-            AeseResource res2 = MMLGetHandler.doGetResource( 
-                Database.CORCODE, docid+"/default" );
-            if ( res2 != null )
-                corcode.fromResource(res2);
-            if ( description != null )
-                corcode.addLongName( version1, description );
-            corcode.setStyle( style );
-            corcode.put( version1, stil.toString().getBytes(encoding) );
-            // write metadata if not already there
-            JSONObject metadata = new JSONObject();
-            metadata.put(JSONKeys.AUTHOR,this.author);
-            metadata.put(JSONKeys.DOCID,this.docid);
-            metadata.put(JSONKeys.ENCODING,this.encoding);
-            metadata.put(JSONKeys.SECTION,this.section);
-            metadata.put(JSONKeys.TITLE,this.title);
-            metadata.put(JSONKeys.VERSION1,this.version1);
-            StringBuilder log = new StringBuilder();
-            writeMetadata(metadata,log);
-            addToDBase( cortex, Database.CORTEX, log );
-            addToDBase( corcode, Database.CORCODE, log );
-//            String baseid = Utils.baseDocID(docid);
-//            String oldDialect = Connector.getConnection().getFromDb(
-//                Database.DIALECTS, baseid );
-//            if ( oldDialect == null || !Dialect.compare(dialect,
-//                (JSONObject)JSONValue.parse(oldDialect)) )
-//            {
-//                JSONObject jDoc = Dialect.wrap(dialect,baseid);
-//                log.append( Connector.getConnection().putToDb(Database.DIALECTS, 
-//                    baseid, jDoc.toJSONString()));
-//            }
-            System.out.println(log.toString() );
+            int totalWait = 0;
+            while ( Autosave.inProgress && totalWait < 100000 )
+            {
+                Thread.sleep(4000);
+                totalWait += 400;
+            }
+            if ( totalWait >= 100000 )
+                throw new DbException("Save timed out");
+            if ( !Autosave.inProgress )
+            {
+                Autosave.lock = true;
+                saveCortex(log);
+                saveCorcode(log);
+                saveMetadata(log);
+                Autosave.lock = false;
+            }
+            System.out.println( log.toString() );
         }
         catch ( Exception e )
         {
+            Autosave.lock = false;
             throw new MMLException(e);
         }
     }

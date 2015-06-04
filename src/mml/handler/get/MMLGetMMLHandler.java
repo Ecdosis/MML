@@ -28,8 +28,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import mml.constants.Params;
+import mml.DocType;
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
+import calliope.core.constants.JSONKeys;
 import mml.exception.*;
 import calliope.core.Utils;
 import mml.handler.AeseVersion;
@@ -412,6 +414,55 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
     }
     /**
+     * Get a cortex or corcode from the scratch collection
+     * @param docId the docid of the resource
+     * @param version the version to fetch
+     * @param cortex is this a cortex? if false corcode is assumed
+     * @return null if not there else the AeseVersion of the resource
+     * @throws DbException 
+     */
+    AeseVersion getScratchVersion( String docId, String version, 
+        boolean cortex ) throws DbException
+    {
+        try
+        {
+            Connection conn = Connector.getConnection();
+            String[] docids = conn.listDocuments(Database.SCRATCH, docid+".*", 
+                JSONKeys.DOCID );
+            for ( int i=0;i<docids.length;i++ )
+            {
+                String jDoc = conn.getFromDb(Database.SCRATCH, docids[i] );
+                JSONObject jObj = (JSONObject) JSONValue.parse(jDoc);
+                if ( docids[i].equals(docId)
+                    && (cortex&&DocType.classifyObj(jObj)==DocType.CORTEX)
+                    ||(!cortex&&DocType.classifyObj(jObj)==DocType.CORCODE) )
+                {
+                    AeseVersion av = new AeseVersion();
+                    String format = (String)jObj.get(JSONKeys.FORMAT);
+                    if ( format == null )
+                        format = "TEXT";
+                    av.setFormat( format );
+                    String style = (String)jObj.get(JSONKeys.STYLE);
+                    if ( style == null )
+                        style = "TEI/default";
+                    av.setStyle( style );
+                    String body = (String)jObj.get(JSONKeys.BODY);
+                    String encoding = (String)jObj.get(JSONKeys.ENCODING);
+                    if ( encoding == null )
+                        encoding = "UTF-8";
+                    av.setVersion1( version );
+                    av.setVersion(body.getBytes(encoding));
+                    return av;
+                }
+            }
+        }
+        catch ( Exception e )
+        {
+            throw new DbException(e);
+        }
+        return null;
+    }       
+    /**
      * Handle the request
      * @param request the request
      * @param response the response
@@ -423,15 +474,20 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         try
         {
-            Connection conn = Connector.getConnection();
             docid = request.getParameter(Params.DOCID);
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
-            AeseVersion cortex = doGetResourceVersion( Database.CORTEX, 
-                docid, version1 );
-            AeseVersion corcode = doGetResourceVersion( Database.CORCODE, 
-                docid+"/default", version1 );
+            AeseVersion cortex, corcode;
+            cortex = getScratchVersion( docid, version1, true );
+            corcode = getScratchVersion( docid, version1+"/default", false );
+            if ( cortex == null || corcode == null )
+            {
+                cortex = doGetResourceVersion( Database.CORTEX, 
+                    docid, version1 );
+                corcode = doGetResourceVersion( Database.CORCODE, 
+                    docid+"/default", version1 );
+            }
             String shortID = shortenDocID(docid);
             String dialectStr = getDialect( shortID, version1 );
             this.dialect = (JSONObject)JSONValue.parse(dialectStr);

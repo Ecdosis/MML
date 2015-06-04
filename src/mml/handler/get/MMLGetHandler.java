@@ -184,7 +184,7 @@ public class MMLGetHandler extends MMLHandler {
                     data = mvd.getVersion( vId );
                     String desc = mvd.getDescription();
                     //System.out.println("description="+desc);
-                    int nversions = mvd.numVersions();
+                    //int nversions = mvd.numVersions();
                     //System.out.println("nversions="+nversions);
                     //System.out.println("length of version "+vId+"="+data.length);
                     if ( data != null )

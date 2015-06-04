@@ -34,39 +34,30 @@ import edu.luc.nmerge.mvd.Version;
  */
 public class Archive extends HashMap<String,byte[]>
 {
-    String author;
-    String title;
     String description;
     StringBuilder log;
     String style;
     String version1;
-    String revid;
     String format;
     String encoding;
     HashMap<String,String> nameMap;
+    private Archive()
+    {
+    }
     /**
      * Create an archive
-     * @param title the title of the work
-     * @param author the full author's name
      * @param format the format (changes to MVD if more than 1 version)
      * @param encoding defaults to UTF-8
+     * @param description the MVD description
      */
-    public Archive( String title, String author, String format, String encoding )
+    public Archive( String format, String encoding, String description )
     {
-        this.title = title;
-        this.author = author;
         this.log = new StringBuilder();
         this.style = "default";
         this.nameMap = new HashMap<String,String>();
         this.format = format;
         this.encoding = (encoding==null)?"UTF-8":encoding;
-        StringBuilder sb = new StringBuilder(title);
-//        sb.append( " by ");
-//        if ( author.length()>0 )
-//            sb.append( Character.toUpperCase(author.charAt(0)) );
-//        if ( author.length()>1 )
-//            sb.append( author.substring(1) );
-        description = sb.toString();
+        this.description = description;
     }
     /**
      * Add a long name to our map for later use
@@ -89,6 +80,10 @@ public class Archive extends HashMap<String,byte[]>
     public String getLog()
     {
         return log.toString();
+    }
+    public String getEncoding()
+    {
+        return this.encoding;
     }
     /**
      * Split off the groups path if any
@@ -183,7 +178,6 @@ public class Archive extends HashMap<String,byte[]>
                 }
                 long diff = System.currentTimeMillis()-startTime;
                 log.append( "merged " );
-                log.append( title );
                 log.append( ": " );
                 log.append( mvdName );
                 log.append( " in " );
@@ -195,10 +189,7 @@ public class Archive extends HashMap<String,byte[]>
                 if ( format.equals(Formats.TEXT)||format.equals(Formats.STIL) )
                 format = "MVD/"+format;
             }
-            doc.add( JSONKeys.TITLE, title, false );
             doc.add( JSONKeys.VERSION1, version1, false );
-            doc.add( JSONKeys.DESCRIPTION, description, false );
-            doc.add( JSONKeys.AUTHOR, author, false );
             doc.add( JSONKeys.STYLE, style, false );
             doc.add( JSONKeys.FORMAT, format, false );
             doc.add( JSONKeys.BODY, body, false );
@@ -213,37 +204,41 @@ public class Archive extends HashMap<String,byte[]>
      * Convert a resource to an Archive, for updating
      * @param resource a string representation of the MVD as a JSON document
      */
-    public void fromResource( AeseResource resource ) throws MMLException
+    public static Archive fromResource( AeseResource resource ) throws MMLException
     {
+        Archive arc = new Archive();
+        arc.format = resource.getFormat();
         if ( resource.getFormat().startsWith("MVD") )
         {
             MVD mvd = MVDFile.internalise( resource.getContent() );
+            arc.encoding = mvd.getEncoding();
+            arc.description = mvd.getDescription();
             int nVersions = mvd.numVersions();
-            this.nameMap = new HashMap<String,String>();
+            arc.nameMap = new HashMap<String,String>();
             for ( int vId=1;vId<=nVersions;vId++ )
             {
                 byte[] data = mvd.getVersion(vId);
                 String groupName = mvd.getGroupPath((short)vId);
                 String shortName = mvd.getVersionShortName( vId );
                 String versionID = groupName+"/"+shortName;
-                nameMap.put(versionID,mvd.getVersionLongName(vId));
-                put( versionID, data );
+                arc.nameMap.put(versionID,mvd.getVersionLongName(vId));
+                arc.put( versionID, data );
             }
-            this.version1 = resource.getVersion1();
+            arc.version1 = resource.getVersion1();
         }
         else
         {
-            version1 = resource.getVersion1();
+            arc.version1 = resource.getVersion1();
             try
             {
-                put( version1, resource.getContent().getBytes(encoding) );
-                nameMap.put( version1, resource.getDescription() );
+                arc.put( arc.version1, resource.getContent().getBytes(arc.encoding) );
+                arc.nameMap.put( arc.version1, resource.getDescription() );
             }
             catch ( Exception e )
             {
                 throw new MMLException(e);
             }
         }
-        this.format = resource.getFormat();
+        return arc;
     }
 }
