@@ -26,42 +26,23 @@ import mml.handler.mvd.Archive;
 import calliope.core.constants.JSONKeys;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Iterator;
 import mml.handler.AeseResource;
 import mml.handler.get.MMLGetHandler;
+import mml.exception.MMLException;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import org.bson.types.ObjectId;
 import edu.luc.nmerge.mvd.MVD;
+import edu.luc.nmerge.mvd.MVDFile;
 /**
  * Reap the SCRATCH collection waiting for stuff to appear for saving
  * @author desmond
  */
 public class Reaper extends Thread
 {
-    DocType classifyObj( JSONObject jObj )
-    {
-        String format = (String)jObj.get(JSONKeys.FORMAT);
-        boolean hasBody = jObj.containsKey(JSONKeys.BODY);
-        if ( !jObj.containsKey(JSONKeys.DOCID) )
-            return DocType.UNKNOWN;
-        else
-        {
-            if ( format != null && (format.equals(Formats.TEXT) 
-                || format.equals(Formats.MVD_TEXT))
-                && hasBody )
-                return DocType.CORTEX;
-            if ( hasBody && format != null 
-                && (format.equals(Formats.MVD_STIL)|| format.equals(Formats.STIL)) )
-                return DocType.CORCODE;
-            if ( jObj.containsKey(JSONKeys.OFFSET)
-                && jObj.containsKey(JSONKeys.LEN) 
-                && jObj.containsKey(JSONKeys.USER)
-                && jObj.containsKey(JSONKeys.CONTENT) )
-                return DocType.ANNOTATION;
-            else
-                return DocType.UNKNOWN;
-        }
-    }
     /**
      * Save cortex for a docid by first removing the old cortex
      * @param jObj the json object representing the version to save
@@ -77,6 +58,7 @@ public class Reaper extends Thread
                 Database.CORTEX, docid );
             if ( res != null )
             {
+                // put new stuff in old body
                 Archive cortex = Archive.fromResource(res);
                 String newContent = (String)jObj.get(JSONKeys.BODY);
                 String vid = (String)jObj.get(JSONKeys.VERSION1);
@@ -118,9 +100,24 @@ public class Reaper extends Thread
             throw new DbException(e);
         }
     }
-    private MVD getCortexMVD( String docid )
+    /**
+     * Get the cortex MVD for a given docid
+     * @param docid the desired docid
+     * @return an MVD already loaded
+     * @throws MMLException 
+     */
+    private MVD getCortexMVD( String docid ) throws MMLException
     {
-        return null;
+        try
+        {
+            AeseResource res = MMLGetHandler.doGetResource( 
+                Database.CORTEX, docid );
+            return MVDFile.internalise(res.getContent());
+        }
+        catch ( MMLException e )
+        {
+            throw e;
+        }
     }
     /**
      * Split a vpath into its short name and group path components
@@ -143,6 +140,25 @@ public class Reaper extends Thread
         }
         return parts;
     }
+    private HashMap<String,JSONObject> saveMap( ArrayList<JSONObject> list )
+    {
+        HashMap<String,JSONObject> map = new HashMap<String,JSONObject>();
+        for ( int i=0;i<list.size();i++ )
+        {
+            String ctDocId = (String)list.get(i).get(JSONKeys.DOCID);
+            if ( ctDocId.endsWith("/default") )
+                ctDocId = ctDocId.substring(0,ctDocId.length()-8);
+            String ctVid = (String)list.get(i).get(JSONKeys.VERSION1);
+            map.put( ctDocId+ctVid, list.get(i) );
+        }
+        return map;
+    }
+    /**
+     * Run the reaper. Every 5 minutes we look for new entries in the
+     * scratch collection. If we find them we classify them as annotation,
+     * cortex or corcode. We then merge them into the proper databases 
+     * and delete the temporary copies.
+     */
     public void run()
     {
         try
@@ -175,7 +191,7 @@ public class Reaper extends Thread
                         if ( jDoc != null )
                         {
                             JSONObject jObj = (JSONObject)JSONValue.parse(jDoc);
-                            DocType type = classifyObj( jObj );
+                            DocType type = DocType.classifyObj( jObj );
                             switch ( type )
                             {
                                 case CORTEX:
@@ -194,22 +210,29 @@ public class Reaper extends Thread
                         }
                     }
                     // 3. Save the cortexs if they have matching corcodes
-                    for ( int i=0;i<cortexs.size();i++ )
+                    HashMap<String,JSONObject> cortexMap = saveMap( cortexs );
+                    HashMap<String,JSONObject> corcodeMap = saveMap( corcodes );
+                    for ( int m=0;m<cortexs.size();m++ )
                     {
-                        String ctDocId = (String)cortexs.get(i).get(JSONKeys.DOCID);
-                        for ( int j=0;j<corcodes.size();j++ )
+                        JSONObject jObj = cortexs.get(m);
+                        String did = (String)jObj.get(JSONKeys.DOCID);
+                        conn.removeFromDb( Database.SCRATCH, did );
+                    }
+                    for ( int m=0;m<corcodes.size();m++ )
+                    {
+                        JSONObject jObj = corcodes.get(m);
+                        String did = (String)jObj.get(JSONKeys.DOCID);
+                        conn.removeFromDb( Database.SCRATCH, did );
+                    }
+                    Set<String> keys = cortexMap.keySet();
+                    Iterator<String> iter = keys.iterator();
+                    while ( iter.hasNext() )
+                    {
+                        String key = iter.next();
+                        if ( corcodeMap.containsKey(key) )
                         {
-                            String ccDocId = (String)corcodes.get(i).get(JSONKeys.DOCID);
-                            int lastSlashPos = ccDocId.lastIndexOf("/");
-                            if ( lastSlashPos != -1 )
-                            {
-                                ccDocId = ccDocId.substring(0,lastSlashPos);
-                                if ( ccDocId.equals(ctDocId) )
-                                {
-                                    saveCortex( cortexs.get(i) );
-                                    saveCorcode( corcodes.get(j) );
-                                }
-                            }
+                            saveCortex( cortexMap.get(key) );
+                            saveCorcode( corcodeMap.get(key) );
                         }
                     }
                     // 4. Save annotations
@@ -241,16 +264,21 @@ public class Reaper extends Thread
                                     list.add( vids[m] );
                                 jobjs[k].put(JSONKeys.VERSIONS, vids);
                                 current = docid;
+                                if ( jobjs[k].containsKey(JSONKeys._ID) )
+                                {
+                                    conn.removeFromDbByField(
+                                        Database.ANNOTATIONS,
+                                        JSONKeys._ID,
+                                        (String)jobjs[k].get(JSONKeys._ID));
+                                    jobjs[k].remove(JSONKeys._ID);
+                                    if ( jobjs[k].containsKey(JSONKeys.ID) )
+                                        jobjs[k].remove(JSONKeys.ID);
+                                    conn.putToDb(Database.ANNOTATIONS,
+                                        docid, jobjs[k].toJSONString());
+                                }
                             }
                         }
-                    }
-                    // for each annotation load its MVD, find out the versions
-                    // that share that annotation, and set it into the annotation
-                    // then save it to the annotations database
-                    // so when we request the annotaitons for one of those other 
-                    // versions we will find it
-                    // even though we created it for another version
-                    
+                    }                    
                     // 5. anything we couldn't classify shouldn't be there
                     // so remove them
                     for ( int m=0;m<unclassified.size();m++ )

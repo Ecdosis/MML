@@ -54,6 +54,10 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLResourceHandler(Database.CORFORM).handle( request, response, urn );
             else if ( service.equals(Database.DIALECTS) )
                 new MMLResourceHandler(Database.DIALECTS).handle( request, response, urn );
+            else if ( service.equals(Service.DIALECT) )
+                new MMLGetDialectHandler().handle( request, response, urn );
+            else if ( service.equals(Service.VERSION1) )
+                new MMLGetVersion1Handler().handle( request, response, urn );
             else if ( service.equals(Database.CORTEX) )
                 new MMLResourceHandler(Database.CORTEX).handle( request, response, urn );
             else if ( service.equals(Database.CORCODE) )

@@ -31,6 +31,6 @@ public class Autosave {
     static 
     {
         Reaper reaper = new Reaper();
-        reaper.run();
+        reaper.start();
     }
 }

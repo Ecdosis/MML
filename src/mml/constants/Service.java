@@ -41,4 +41,6 @@ public class Service
     public static final String VERSIONS = "versions";
     public static final String STATIC = "static";
     public static final String ANNOTATIONS = "annotations";
+    public static final String DIALECT = "dialect";
+    public static final String VERSION1 = "version1";
 }
