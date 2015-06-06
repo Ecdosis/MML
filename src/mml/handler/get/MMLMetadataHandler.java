@@ -20,6 +20,7 @@ package mml.handler.get;
 
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
+import mml.constants.Params;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.exception.MMLException;
@@ -30,17 +31,15 @@ import mml.exception.MMLException;
  */
 public class MMLMetadataHandler extends MMLGetHandler 
 {
-    String database;
-    public MMLMetadataHandler( String database )
-    {
-        this.database = database;
-    }
     public void handle(HttpServletRequest request,
         HttpServletResponse response, String urn) throws MMLException {
         try
         {
             Connection conn = Connector.getConnection();
-            String md = conn.getMetadata( urn );
+            String docid = request.getParameter(Params.DOCID);
+            if ( docid == null || docid.length()== 0 )
+                docid = urn;
+            String md = conn.getMetadata( docid );
             if ( md != null)
             {
                 response.setContentType("application/json");

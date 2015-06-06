@@ -35,7 +35,21 @@ import org.json.simple.JSONObject;
  */
 public class MMLGetDialectHandler extends MMLGetHandler
 {
-    static String DEFAULT_DIALECT = "{ \"body\": \"{\\\"paragraph\\\":{\\\"prop\\\":\\\"\\\"},\\\"softhyphens\\\":true,\\\"smartquotes\\\":true,\\\"codeblocks\\\":[{\\\"tag\\\":\\\"pre\\\",\\\"prop\\\":\\\"level1\\\"}], \\\"section\\\":{\\\"prop\\\":\\\"section\\\"},\\\"headings\\\":[{\\\"tag\\\":\\\"=\\\",\\\"prop\\\":\\\"h1\\\"},{\\\"tag\\\":\\\"-\\\",\\\"prop\\\":\\\"h2\\\"},{\\\"tag\\\":\\\"_\\\",\\\"prop\\\":\\\"h3\\\"}],\\\"milestones\\\":[{\\\"rightTag\\\":\\\"]\\\",\\\"leftTag\\\":\\\"[\\\",\\\"prop\\\":\\\"page\\\"}],\\\"quotations\\\":[{\\\"prop\\\":\\\"level1\\\"}],\\\"description\\\":\\\"Default dialect\\\",\\\"language\\\":\\\"en\\\",\\\"paraformats\\\":[{\\\"rightTag\\\":\\\"<-\\\",\\\"leftTag\\\":\\\"->\\\",\\\"prop\\\":\\\"centered\\\"}],\\\"charformats\\\":[{\\\"tag\\\":\\\"*\\\",\\\"prop\\\":\\\"italics\\\"},{\\\"tag\\\":\\\"`\\\",\\\"prop\\\":\\\"letter-spacing\\\"},{\\\"tag\\\":\\\"@\\\",\\\"prop\\\":\\\"small-caps\\\"}]}\" }";
+    static String DEFAULT_DIALECT = "{ \"body\": \"{\\\"paragraph\\\":{\\\"prop"
+        +"\\\":\\\"\\\"},\\\"softhyphens\\\":true,\\\"smartquotes\\\":true,"
+        +"\\\"codeblocks\\\":[{\\\"tag\\\":\\\"pre\\\",\\\"prop\\\":\\\"lev"
+        +"el1\\\"}], \\\"section\\\":{\\\"prop\\\":\\\"section\\\"},\\\"hea"
+        +"dings\\\":[{\\\"tag\\\":\\\"=\\\",\\\"prop\\\":\\\"h1\\\"},{\\\"t"
+        +"ag\\\":\\\"-\\\",\\\"prop\\\":\\\"h2\\\"},{\\\"tag\\\":\\\"_\\\","
+        +"\\\"prop\\\":\\\"h3\\\"}],\\\"milestones\\\":[{\\\"rightTag\\\":"
+        +"\\\"]\\\",\\\"leftTag\\\":\\\"[\\\",\\\"prop\\\":\\\"page\\\"}],"
+        +"\\\"quotations\\\":[{\\\"prop\\\":\\\"level1\\\"}],\\\"description"
+        +"\\\":\\\"Default dialect\\\",\\\"language\\\":\\\"en\\\",\\\"para"
+        +"formats\\\":[{\\\"rightTag\\\":\\\"<-\\\",\\\"leftTag\\\":\\\"->\\\","
+        +"\\\"prop\\\":\\\"centered\\\"}],\\\"charformats\\\":[{\\\"tag\\\":"
+        +"\\\"*\\\",\\\"prop\\\":\\\"italics\\\"},{\\\"tag\\\":\\\"`\\\","
+        +"\\\"prop\\\":\\\"letter-spacing\\\"},{\\\"tag\\\":\\\"@\\\",\\\"pr"
+        +"op\\\":\\\"small-caps\\\"}]}\" }";
     @Override
     public void handle( HttpServletRequest request, 
         HttpServletResponse response, String urn ) throws MMLException

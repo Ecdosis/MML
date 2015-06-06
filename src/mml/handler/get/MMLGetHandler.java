@@ -45,7 +45,7 @@ public class MMLGetHandler extends MMLHandler {
             String service = Utils.first(urn);
             urn = Utils.pop(urn);
             if ( service.equals(Service.METADATA) )
-                new MMLMetadataHandler(Database.CORTEX).handle( request, response, urn );
+                new MMLMetadataHandler().handle( request, response, urn );
             else if ( service.equals(Database.CORPIX) )
                 new MMLCorpixHandler().handle( request, response, urn );
             else if (service.equals(Service.VERSIONS))

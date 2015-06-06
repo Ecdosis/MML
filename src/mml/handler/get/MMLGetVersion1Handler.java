@@ -67,6 +67,7 @@ public class MMLGetVersion1Handler extends MMLGetHandler
             }
             else
                 version1 = "";
+            response.setContentType("text/plain");
             response.getWriter().write(version1);
         }
         catch ( Exception e )

@@ -5,8 +5,8 @@
  * In the third a HTML preview generated from the editable text.
  * The MML dialect is defined via a JSON object.
  * To use it just create one:
- * var editor = new MMLEditor(opts,dialect);
- * @param opts the options neede to run MMLEditor:
+ * var editor = new MML(opts,dialect);
+ * @param opts the options neede to run MML:
  * source: the ID of a textarea on the page (no leading "#")
  * target: the ID of an empty div element (ditto)
  * images: the ID of the div to receive the images (ditto)
@@ -17,7 +17,7 @@
         desc: an array of ref, width and height keys for each image
  * @param dialect an MML dialect description in JSON format, see README.md
  */
-function MMLEditor(opts, dialect) {
+function MML(opts, dialect) {
     /** set to true when source altered, controls updating */
     this.changed = true;
     /** set to false whenever use edits and does not save*/
@@ -32,7 +32,7 @@ function MMLEditor(opts, dialect) {
     this.html_lines = new Array();
     /** page-breaks for images */
     this.image_lines = new Array();
-    /** copy of options for MMLEditor */
+    /** copy of options for MML */
     this.opts = opts;
     /** formatter converts MML to HTML */
     this.formatter = new Formatter(dialect);
@@ -42,8 +42,9 @@ function MMLEditor(opts, dialect) {
     this.annotator = new Annotator(this,"annotate");
     /** buffer to hold added or deleted chars */
     this.buffer = new Buffer("#"+this.opts.source);
-    /* reference to ourselves when this is redefined */
+    /** reference to ourselves when this is redefined */
     var self = this;
+    /** records which keycodes are characters to be typed */
     this.keycodes = 
         [0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,
@@ -270,12 +271,11 @@ function MMLEditor(opts, dialect) {
     {
         var currHt = 0;
         this.image_lines = [];
-        var editor = this;
         $(".image").each( function(index) {
             var img = $(this).children().first();
             var ref = img.attr("data-ref");
             var imgHeight = img.height();
-            editor.image_lines.push( new RefLoc(ref,currHt) );    
+            self.image_lines.push( new RefLoc(ref,currHt) );    
             currHt += imgHeight;
         });
     };
@@ -374,6 +374,7 @@ function MMLEditor(opts, dialect) {
         helpObj.width(Math.floor(wWidth/3)-this.hiAdjust(helpObj));
         srcObj.width(Math.floor(wWidth/3)-this.hiAdjust(srcObj));
         // compute height
+        console.log("wHeight="+wHeight+" topOffset="+topOffset);
         imgObj.height(wHeight);
         tgtObj.height(wHeight-this.viAdjust(tgtObj));
         helpObj.height(wHeight-this.viAdjust(helpObj));
@@ -625,16 +626,24 @@ function MMLEditor(opts, dialect) {
             self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
         }
     });
-    /*$(window).on('beforeunload',function(){
-        console.log("beforeunload");
-        if ( !self.saved )
-            return 'You have unsaved data';
+    $(window).load(function() {
+        self.recomputeImageHeights()
+    }); 
+    $("#info").click( function() {
+        self.toggleHelp();
     });
-    $(window).unload(function(){
-        console.log("jQuery unload handler");
-        if ( !self.saved )
-            return 'You have unsaved data';
-    });*/
+    $("#save").click( function() {
+        self.save();
+    });
+    $("#dropdown").change( function() {
+        var parts = $("#dropdown").val().split("&");
+        for ( var i=0;i<parts.length;i++ ) {
+            var value = parts[i].split("=");
+            if ( value.length== 2 )
+                $("#"+value[0]).val(value[1]);
+        }
+        $("form").submit();
+    });
     this.styles = new Styles(this,"styles");
     // This will execute whenever the window is resized
     $(window).resize(
@@ -646,42 +655,5 @@ function MMLEditor(opts, dialect) {
     this.info.makeInfo();
     /* setup window */
     this.resize();
-}
-/**
- * This reads the "arguments" to the javascript file
- * @param scrName the name of the script file minus ".js"
- */
-function getArgs( scrName )
-{
-    var scripts = jQuery("script");
-    var params = new Object ();
-    scripts.each( function(i) {
-        var src = jQuery(this).attr("src");
-        if ( src != undefined && src.indexOf(scrName) != -1 )
-        {
-            var qStr = src.replace(/^[^\?]+\??/,'');
-            if ( qStr )
-            {
-                var pairs = qStr.split(/[;&]/);
-                for ( var i = 0; i < pairs.length; i++ )
-                {
-                    var keyVal = pairs[i].split('=');
-                    if ( ! keyVal || keyVal.length != 2 )
-                        continue;
-                    var key = unescape( keyVal[0] );
-                    var val = unescape( keyVal[1] );
-                    val = val.replace(/\+/g, ' ');
-                    params[key] = val;
-                }
-            }
-            return params;
-        }
-    });
-    return params;
-}
-jQuery(document).ready( 
-    function(){
-        var params = getArgs('project_edit');
-        var editor = new project_edit(params['docid'],params['options']);
-    }
-); 
+}    
+
