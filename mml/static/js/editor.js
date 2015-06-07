@@ -31,11 +31,24 @@ function Editor( target, docid, modpath )
     /**
      * Get the mml text for this document
      */
+    this.getVersions = function() {
+        $.get("/mml/versions?docid="+this.docid,
+            function(data) {
+            self.versions = data;
+            self.setup();
+        })
+        .fail(function() {
+            alert("failed to load versions");
+        });
+    }
+    /**
+     * Get the mml text for this document
+     */
     this.getMml = function() {
         $.get("/mml/mml?docid="+this.docid+"&version1="+this.version1,
             function(data) {
             self.text = data;
-            self.setup();
+            self.getVersions();
         })
         .fail(function() {
             alert("failed to load MML");
@@ -174,6 +187,7 @@ function Editor( target, docid, modpath )
         $("#toolbar-wrapper").append('<button title="add a note" '
             +'class="annotate-button" id="annotate"></button>');
         $("#toolbar-wrapper").append(this.getStyles());
+        $("#toolbar-wrapper").append(this.getVersionDropdown());
     }
     /**
      * Build the test age for the editor
@@ -268,6 +282,65 @@ function Editor( target, docid, modpath )
             group += '</optgroup>';
             select += group;
         }
+        return select;
+    };
+    /**
+     * Recursively build options in a select
+     * @param set the set of options and groups
+     * @return the html contents of the select
+     */
+    this.buildOptions = function( set ) {
+        var html = "";
+        var keys = [];
+        for (var key in set) 
+        {
+            if (set.hasOwnProperty(key))
+                keys.push(key);
+        }
+        for ( var i=0;i<keys.length;i++ )
+        {
+            var key = keys[i];
+            if ( set[key].desc != undefined )
+                html += '<option title="'+set[key].desc
+                    +'" value="'+set[key].value+'">'+key+'</option>';
+            else if ( key != "Base" )
+                html += '<optgroup label="'+key+'">'
+                    +this.buildOptions(set[key])+'</optgroup>';
+            else
+                html += this.buildOptions(set[key]);
+        }
+        return html;
+    };
+    /**
+     * Create a select dropdown with the docid's versions
+     * @return a select list with groups for grouped versions
+     */
+    this.getVersionDropdown = function() {
+        var select = '<select id="versions">';
+        if ( this.versions == undefined || this.versions.length==0 )
+        {
+            this.versions = new Array();
+            this.versions.push(this.version1);
+        }
+        var set = {};
+        for ( var i=0;i<this.versions.length;i++ )
+        {
+            var parts = this.versions[i].vid.split("/");
+            var current = set;
+            for ( var j=0;j<parts.length;j++ )
+            {
+                if ( parts[j].length>0 )
+                {
+                    if ( current[parts[j]] == undefined )
+                        current[parts[j]] = {};
+                    current = current[parts[j]];
+                }
+            }
+            current['desc'] = this.versions[i].desc;
+            current['value'] = this.versions[i].vid;
+        }
+        select += this.buildOptions(set);
+        select += '</select>';
         return select;
     };
     /**

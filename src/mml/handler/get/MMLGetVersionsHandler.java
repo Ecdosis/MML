@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.constants.Params;
 import mml.exception.MMLException;
-import mml.handler.AeseVersion;
+import mml.handler.AeseResource;
 
 /**
  * Get the versions of the current docid
@@ -45,26 +45,25 @@ public class MMLGetVersionsHandler extends MMLGetHandler {
             String docid = request.getParameter(Params.DOCID);
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
-            version1 = request.getParameter(Params.VERSION1);
-            if ( version1 == null )
-                throw new Exception("You must specify a version1 parameter");
-            AeseVersion res = doGetResourceVersion( Database.CORTEX, docid,
-                version1 );
+            AeseResource res = doGetResource( Database.CORTEX, docid );
             StringBuilder json = new StringBuilder();
-            json.append("{ \"versions\": [");
-            String[] versions = res.listVersions();
-            for ( int i=0;i<versions.length;i++ )
+            json.append("[ ");
+            if ( res != null )
             {
-                json.append("{ \"vid\":");
-                json.append( "\"" );
-                json.append(versions[i]);
-                json.append( "\",\"desc\":\"");
-                json.append(res.getVersionLongName(i+1));
-                json.append("\"}");
-                if ( i < versions.length-1 )
-                    json.append(",");
+                String[] versions = res.listVersions();
+                for ( int i=0;i<versions.length;i++ )
+                {
+                    json.append("{ \"vid\":");
+                    json.append( "\"" );
+                    json.append(versions[i]);
+                    json.append( "\",\"desc\":\"");
+                    json.append(res.getVersionLongName(i+1));
+                    json.append("\"}");
+                    if ( i < versions.length-1 )
+                        json.append(",");
+                }
             }
-            json.append("] }");
+            json.append(" ]");
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
             response.getWriter().println(json.toString());

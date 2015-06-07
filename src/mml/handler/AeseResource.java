@@ -16,7 +16,8 @@
  */
 
 package mml.handler;
-
+import edu.luc.nmerge.mvd.MVD;
+import edu.luc.nmerge.mvd.MVDFile;
 /**
  * An MVD or plain text file wrapped up as a resource
  * @author desmond
@@ -27,6 +28,7 @@ public class AeseResource
     String content;
     String description;
     String version1;
+    MVD mvd;
     public void setFormat( String format )
     {
         this.format = format;
@@ -58,5 +60,42 @@ public class AeseResource
     public String getDescription( )
     {
         return this.description;
+    }
+    /**
+     * Get the full versionIDs of all the versions
+     * @return an array of versionIDs
+     */
+    public String[] listVersions()
+    {
+        if ( !format.startsWith("MVD") )
+        {
+            String[] array = new String[1];
+            array[0] = this.version1;
+            return array;
+        }
+        else
+        {
+            this.mvd = MVDFile.internalise( this.content );
+            int nversions = mvd.numVersions();
+            String[] array = new String[nversions];
+            for ( int i=0;i<nversions;i++ )
+            {
+                short id = (short)(i+1);
+                array[i] = mvd.getGroupPath(id)+"/"+mvd.getVersionShortName(id);
+            }
+            return array;
+        }
+    }
+    /**
+     * Get the long name for the given version int id
+     * @param id the identifier as an index+1 into the version table
+     * @return a String
+     */
+    public String getVersionLongName( int id )
+    {
+        if ( mvd != null )
+            return mvd.getVersionLongName(id);
+        else
+            return this.description;
     }
 }
