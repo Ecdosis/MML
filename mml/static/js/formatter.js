@@ -1181,9 +1181,9 @@ function Formatter( dialect )
         }
         this.computeCorrespondences(first);
         var endTime = new Date().getMilliseconds();
-        console.log("time to format="+(endTime-startTime));
+        //console.log("time to format="+(endTime-startTime));
         //this.compare( text, first.toMml() );
-        console.log("num_lines="+this.num_lines);
+        //console.log("num_lines="+this.num_lines);
         return first.toHtml();
     };
 }

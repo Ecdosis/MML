@@ -115,8 +115,11 @@ function Annotator( editor, button )
             var id = this.getAttribute("data-id");
             var commentId = "#comment-"+id;
             if ( $(commentId).length == 0 )
+            {
+                console.log("intialising dialog "+commentId);
                 self.initDialog(commentId);
-            $("#comment-"+id).dialog("open");
+            }
+            $(commentId).dialog("open");
         });
         return midNode;
     };
@@ -373,11 +376,15 @@ function Annotator( editor, button )
                 position: { my: "bottom center", of:"[data-id='"+id+"']"}, 
                 close: function closeComment( event, ui ) {
                     var iframe = jQuery("#tinyeditor").next();
-                    var html = iframe[0].contentDocument.documentElement;
-                    ann.setContent(html.lastChild.innerHTML);
-                    ann.setUser($(this).find(".user-name").val());
-                    self.userName = ann.user; 
-                    self.restoreDiv();
+                    if ( iframe[0] != undefined )
+                    {
+                        var html = iframe[0].contentDocument.documentElement;
+                        ann.setContent(html.lastChild.innerHTML);
+                        ann.setUser($(this).find(".user-name").val());
+                        self.userName = ann.user; 
+                        self.restoreDiv();
+                    }
+                    // else nothing was edited
                 }  
             });
         }

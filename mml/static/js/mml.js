@@ -374,7 +374,6 @@ function MML(opts, dialect) {
         helpObj.width(Math.floor(wWidth/3)-this.hiAdjust(helpObj));
         srcObj.width(Math.floor(wWidth/3)-this.hiAdjust(srcObj));
         // compute height
-        console.log("wHeight="+wHeight+" topOffset="+topOffset);
         imgObj.height(wHeight);
         tgtObj.height(wHeight-this.viAdjust(tgtObj));
         helpObj.height(wHeight-this.viAdjust(helpObj));
