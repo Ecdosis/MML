@@ -1,9 +1,10 @@
 /**
  * Hold the number of additional and/or deleted characters
  * and the position they start from
+ * @param parent the mml editor object
  * @param sourceId the #+id of the source textarea
  */
-function Buffer(sourceId)
+function Buffer(parent,sourceId)
 {
     this.start = 0;
     this.numDelLeftChars = 0;
@@ -11,16 +12,18 @@ function Buffer(sourceId)
     this.numAddChars = 0;
     this.sourceId = sourceId;
     this.startPending = -1;
+    this.parent = parent;
     /** 
      * Clone this object 
      * @return an exact copy of this
      */
     this.clone = function() {
-        var clone = new Buffer(sourceId);
+        var clone = new Buffer(this.parent,this.sourceId);
         clone.start = this.start;
         clone.numDelLeftChars = this.numDelLeftChars;
         clone.numDelRightChars = this.numDelRightChars;
         clone.numAddChars = this.numAddChars;
+        clone.startPending = this.startPending;
         return clone;
     };
     /** 
@@ -40,6 +43,7 @@ function Buffer(sourceId)
             this.selection = undefined;
         }
         this.numAddChars += num;
+        this.parent.changed = true;
     };
     /** 
      * Delete chars to the left of start
@@ -47,6 +51,7 @@ function Buffer(sourceId)
      */
     this.delLeftChars = function(num) {
         this.numDelLeftChars += num;
+        this.parent.changed = true;
     };
     /** 
      * Delete chars to the right of start
@@ -54,6 +59,7 @@ function Buffer(sourceId)
      */
     this.delRightChars = function(num) {
         this.numDelRightChars += num;
+        this.parent.changed = true;
     };
     /**
      * Clear this buffer after the preview and annotations have been updated
@@ -139,22 +145,15 @@ function Buffer(sourceId)
      * The user pressed a delete key or another character when text was selected
      */
     this.deleteSelection = function() {
+        if ( this.selectionPending )
+        {
+            this.selection = $(this.sourceId).getSelection();
+            this.selectionPending = false;
+        }
         this.start = this.selection.start;
         this.numDelRightChars = this.selection.end-this.selection.start;
         this.selection = undefined;
-    };
-    /**
-     * The user pressed shift
-     */
-    this.setShiftDown = function(down) {
-        this.shiftDown = down;
-    };
-    /**
-     * Is the shift key being held down?
-     * @return true if it was held down
-     */
-    this.shiftIsDown = function() {
-        return this.shiftDown;
+        this.parent.changed = true;
     };
     this.decStart = function() {
         if ( this.start >0 )
@@ -162,6 +161,21 @@ function Buffer(sourceId)
     };
     this.incStart = function() {
         this.start++;
+    };
+    this.redo = function() {
+        console.log("redo");
+        this.parent.changed = true;
+    };
+    this.undo = function() {
+        console.log("undo");
+        this.parent.changed = true;
+    };
+    this.paste = function() {
+        console.log("paste");
+        this.parent.changed = true;
+    };
+    this.copy = function() {
+        console.log("copy");
     };
 }
 

@@ -13,6 +13,7 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Formats.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/MMLHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/DocidComparator.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersion1Handler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostResourceHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersionsHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostLiteralHandler.java</file>

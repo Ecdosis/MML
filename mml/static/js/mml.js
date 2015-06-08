@@ -41,7 +41,7 @@ function MML(opts, dialect) {
     /** annotator for notes */
     this.annotator = new Annotator(this,"annotate");
     /** buffer to hold added or deleted chars */
-    this.buffer = new Buffer("#"+this.opts.source);
+    this.buffer = new Buffer(this,"#"+this.opts.source);
     /** reference to ourselves when this is redefined */
     var self = this;
     /** records which keycodes are characters to be typed */
@@ -489,29 +489,45 @@ function MML(opts, dialect) {
     window.setInterval(
         function() { self.updateHTML(); }, 200
     );
-    $("#"+opts.source).keyup(function(event) {
-        if ( event.which == 16 )
-            self.buffer.setShiftDown(false);
-    });
     /**
      * On keydown we test to see if shift or crtl etc was pressed
      */
     $("#"+opts.source).keydown(function(event) {
+        if ( event.ctrlKey )
+        {
+            if ( event.which == 90 )
+            {
+                // undo/redo
+                if ( event.shiftKey )
+                    self.buffer.redo();
+                else
+                    self.buffer.undo();
+            }
+            else if ( event.which == 88 )
+            {
+                // cut
+                self.buffer.deleteSelection();
+            }
+            else if ( event.which == 86 )
+            {
+                // paste
+                self.buffer.paste();
+            }
+            else if ( event.which == 67 )
+            {
+                // copy
+                self.buffer.copy();
+            }
+        }
         // ordinary keys
-        if ( self.keycodes[event.which]==1 )
+        else if ( self.keycodes[event.which]==1 )
         {
             self.buffer.addChars(1);
-            self.changed = true;
-            if ( self.saved )
-            {
-                self.saved = false;
-                self.toggleSave();
-            } 
         }
         // cursor keys
         else if ( event.which >= 37 && event.which <= 40 )
         {
-            if ( self.buffer.shiftIsDown() )
+            if ( event.metaKey )
                 self.buffer.setSelectionPending();
             else if ( event.which == 37 )    // left
                 self.buffer.decStart();
@@ -524,20 +540,12 @@ function MML(opts, dialect) {
                 self.buffer.setStart(sel.start);
             }
         }
-        else if ( event.which==16 )  // shift
-            self.buffer.setShiftDown(true);
         else if ( event.which == 8 ) //DEL
         {
             if ( self.buffer.hasSelection() )
                 self.buffer.deleteSelection();
             else
                 self.buffer.delLeftChars(1);
-            self.changed = true;
-            if ( self.saved )
-            {
-                self.saved = false;
-                self.toggleSave();
-            }
             /*console.log("left:"+self.buffer.numDelLeftChars
                 +" right:"+self.buffer.numDelRightChars);*/
         }
@@ -547,17 +555,11 @@ function MML(opts, dialect) {
                 self.buffer.deleteSelection();
             else
                 self.buffer.delRightChars(1);
-            self.changed = true;
-            if ( self.saved )
-            {
-                self.saved = false;
-                self.toggleSave();
-            }
             /*console.log("left:"+self.buffer.numDelLeftChars
                 +" right:"+self.buffer.numDelRightChars);*/
         }
-        else
-            console.log("ignored key "+event.which);
+        /*else
+            console.log("ignored key "+event.which);*/
         return true;
     });
     $("#"+opts.source).mouseup(function(event) {
@@ -574,12 +576,6 @@ function MML(opts, dialect) {
     $("#"+opts.source).bind('paste', function(e) {
         var pastedData = e.originalEvent.clipboardData.getData('text');
         self.buffer.addChars(pastedData.length);
-        self.changed = true;
-        if ( self.saved )
-        {
-            self.saved = false;
-            self.toggleSave();
-        } 
     });
     // scroll the textarea
     $("#"+opts.source).scroll(function(e) {

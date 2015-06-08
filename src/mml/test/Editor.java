@@ -49,7 +49,7 @@ public class Editor extends Test
     static String EDITOR_START_JS = 
         "jQuery( document ).ready(function() {";
     static String EDITOR_END_JS =
-    "var editor = new MMLEditor(opts, dialect);\njQuery(window).load(fu"
+    "var editor = new MML(opts, dialect);\njQuery(window).load(fu"
     +"nction() {\n\t\teditor.recomputeImageHeights()\n}); \njQuery(\"#i"
     +"nfo\").click( function() {\n\t\teditor.toggleHelp();\n});\njQuery"
     +"(\"#save\").click( function() {\n\t\teditor.save();\n});\njQuery("
