@@ -1,4 +1,25 @@
 /**
+ * Hold undo information about an edit operation, 
+ * so we can reverse it later if needed.
+ */
+function Undo() {
+    this.delLeft = 0;
+    this.delRight = 0;
+    this.addRight = 0;
+    this.prev = null;
+    this.next = null;
+    this._pop = function() {
+        var curr = this;
+        if ( this.prev != null )
+            this.prev = null;
+        return this.prev;
+    };
+    this._push = function( u ) {
+        this.next = u;
+        return u;
+    };
+}
+/**
  * Hold the number of additional and/or deleted characters
  * and the position they start from
  * @param parent the mml editor object
@@ -13,6 +34,7 @@ function Buffer(parent,sourceId)
     this.sourceId = sourceId;
     this.startPending = -1;
     this.parent = parent;
+    this.undos = null;
     /** 
      * Clone this object 
      * @return an exact copy of this
@@ -44,6 +66,9 @@ function Buffer(parent,sourceId)
         }
         this.numAddChars += num;
         this.parent.changed = true;
+        if ( this.undos == null )
+            this.undos = new Undo();
+        this.undos.addRight += num;
     };
     /** 
      * Delete chars to the left of start
@@ -52,6 +77,9 @@ function Buffer(parent,sourceId)
     this.delLeftChars = function(num) {
         this.numDelLeftChars += num;
         this.parent.changed = true;
+        if ( this.undos == null )
+            this.undos = new Undo();
+        this.undos.delLeft += num;
     };
     /** 
      * Delete chars to the right of start
@@ -60,6 +88,9 @@ function Buffer(parent,sourceId)
     this.delRightChars = function(num) {
         this.numDelRightChars += num;
         this.parent.changed = true;
+        if ( this.undos == null )
+            this.undos = new Undo();
+        this.undos.delRight += num;
     };
     /**
      * Clear this buffer after the preview and annotations have been updated
@@ -86,6 +117,11 @@ function Buffer(parent,sourceId)
             this.start = start;
         else
             this.startPending = start;
+        if ( this.undos != null )
+        {
+            var u = new Undo();
+            this.undos._push(u);
+        }
     };
     /**
      * Is there any pending data?
@@ -115,6 +151,11 @@ function Buffer(parent,sourceId)
     this.setSelection = function( sel ) {
         this.selection = sel;
         this.start = sel.start;
+        if ( this.undos != null )
+        {
+            var u = new Undo();
+            this.undos._push(u);
+        }
     };
     /**
      * Set the selectionPending flag. When a selection is requested it will be computed
@@ -154,28 +195,40 @@ function Buffer(parent,sourceId)
         this.numDelRightChars = this.selection.end-this.selection.start;
         this.selection = undefined;
         this.parent.changed = true;
+        if ( this.undos != null )
+        {
+            var u = new Undo();
+            this.undos._push(u);
+        }
+        else
+            this.undos = new Undo();
+        this.undos.delRight = this.numDelRightChars;
     };
     this.decStart = function() {
         if ( this.start >0 )
-            this.start--;
+            this.setStart( this.start-1 )
     };
     this.incStart = function() {
-        this.start++;
+        this.setStart( this.start+1 )
     };
     this.redo = function() {
         console.log("redo");
         this.parent.changed = true;
     };
     this.undo = function() {
-        console.log("undo");
+        if ( this.undos != null )
+        {
+            var curr = this.undos;
+            this.startPending = -1;
+            this.numDelRightChars += curr.addRight;
+            this.numAddChars += curr.delRight + curr.delLeft;
+            this.undos = this.undos._pop();
+        }
         this.parent.changed = true;
     };
     this.paste = function() {
         console.log("paste");
         this.parent.changed = true;
-    };
-    this.copy = function() {
-        console.log("copy");
     };
 }
 
