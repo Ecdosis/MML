@@ -630,15 +630,6 @@ function MML(opts, dialect) {
     $("#save").click( function() {
         self.save();
     });
-    $("#dropdown").change( function() {
-        var parts = $("#dropdown").val().split("&");
-        for ( var i=0;i<parts.length;i++ ) {
-            var value = parts[i].split("=");
-            if ( value.length== 2 )
-                $("#"+value[0]).val(value[1]);
-        }
-        $("form").submit();
-    });
     this.styles = new Styles(this,"styles");
     // This will execute whenever the window is resized
     $(window).resize(

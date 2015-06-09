@@ -1,7 +1,7 @@
 Custom scripts
 ==============
 
-All these scripts require jQuery. Except for editor.js they are all downloaded on demand by the Drupal client via the mml service, which looks for them in the static/js folder of the web application. The Drupal module only contains editor.js.
+All these scripts require jQuery. Except for editor.js they are all downloaded on demand by the Drupal client via the mml service, which looks for them in the static/js folder of the web application. [https://github.com/schmidda/ecdosis/tree/master/mml_edit](Mml_edit) only contains editor.js.
 
 editor.js
 ---------
