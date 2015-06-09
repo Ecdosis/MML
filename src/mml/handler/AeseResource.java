@@ -81,7 +81,9 @@ public class AeseResource
             for ( int i=0;i<nversions;i++ )
             {
                 short id = (short)(i+1);
-                array[i] = mvd.getGroupPath(id)+"/"+mvd.getVersionShortName(id);
+                String groupPath = mvd.getGroupPath(id);
+                String shortName = mvd.getVersionShortName(id);
+                array[i] = groupPath+"/"+shortName;
             }
             return array;
         }
