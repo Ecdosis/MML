@@ -22,9 +22,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashSet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import calliope.core.constants.Database;
+import calliope.core.constants.JSONKeys;
 import mml.constants.Params;
 import mml.MMLWebApp;
 import calliope.core.image.Corpix;
@@ -38,6 +40,7 @@ import org.json.simple.*;
  */
 public class MMLGetImgHandler extends MMLGetHandler
 {
+    String[] pageRefs;
     class ImageComparator implements Comparator<String>
     {
         private int toNumber( String name )
@@ -59,7 +62,27 @@ public class MMLGetImgHandler extends MMLGetHandler
         }
     }
     /**
-     * Create the editor options
+     * Compile a page ref list that is the intersection of pageRefs and names
+     * @param names the image names found on disk
+     * @return the sorted and available list of page-refs
+     */
+    private String[] sortByPageRefs( String[] names )
+    {
+        ArrayList<String> available = new ArrayList<String>();
+        HashSet<String> set = new HashSet<String>();
+        for ( String name : names )
+            set.add( name );
+        for ( String ref : pageRefs )
+        {
+            if ( set.contains(ref) )
+                available.add(ref);
+        }
+        String [] array = new String[available.size()];
+        available.toArray(array);
+        return array;
+    }
+    /**
+     * Create the list of images
      * @param req the http request
      * @param map the page reference to dimensions map
      * @return the images as a sequence of IMGs inside divs
@@ -68,12 +91,18 @@ public class MMLGetImgHandler extends MMLGetHandler
     { 
         Element images = new Element("div");
         images.addAttribute("id","images");
-        String url = "/"+Database.CORPIX+"/"+docid+version1;
         Set<String> keys = map.keySet();
         String[] names = new String[keys.size()];
         keys.toArray(names);
-        ImageComparator comp = new ImageComparator();
-        Arrays.sort(names,comp);
+        if ( pageRefs == null )
+        {
+            ImageComparator comp = new ImageComparator();
+            Arrays.sort(names,comp);
+        }
+        else
+        {
+            names = sortByPageRefs( names );
+        }
         for ( String name: names )
         {
             String jDoc = map.get(name);
@@ -81,7 +110,8 @@ public class MMLGetImgHandler extends MMLGetHandler
             Element wrap = new Element("div");
             wrap.addAttribute("class","image");
             Element img = new Element("img");
-            String src = url+"/"+name;
+            String jDocId = (String)info.get(JSONKeys.DOCID);
+            String src = "/"+jDocId;
             img.addAttribute("src",src);
             img.addAttribute("id","image_"+name);
             //String mimetype = (String)info.get("mimetype");
@@ -125,6 +155,9 @@ public class MMLGetImgHandler extends MMLGetHandler
         {
             docid = request.getParameter(Params.DOCID);
             version1 = request.getParameter(Params.VERSION1);
+            String pageRefParam = request.getParameter(Params.PAGEREFS);
+            if ( pageRefParam != null && pageRefParam.length() > 0 )
+                pageRefs = pageRefParam.split(",");
             String longDocID = docid+version1;
             String[] imgs = Corpix.listImages( MMLWebApp.webRoot, longDocID );
             HashMap<String,String> imageMap = new HashMap<String,String>();

@@ -14,7 +14,7 @@ public enum DialectKeys
 {
     description,
     language,
-    section,
+    sections,
     paragraph,
     codeblocks,
     quotations,

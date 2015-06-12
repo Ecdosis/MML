@@ -33,6 +33,9 @@ import mml.constants.*;
 import mml.handler.AeseVersion;
 import mml.handler.AeseResource;
 import mml.handler.MMLHandler;
+import mml.filters.Filter;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Handle GET request for the MML service

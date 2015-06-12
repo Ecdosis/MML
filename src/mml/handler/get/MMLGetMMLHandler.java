@@ -18,7 +18,6 @@
 
 package mml.handler.get;
 
-import calliope.core.URLEncoder;
 import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,7 +47,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
 {
     HashMap<String,JSONObject> invertIndex;
     JSONObject dialect;
-    JSONObject stil;
     StringBuilder mml;
     
     /**
@@ -79,7 +77,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
         StringBuilder sb;
         switch ( key )
         {
-            case section:
+            case sections:
+                if ( !defn.containsKey("prop")
+                    ||((String)defn.get("prop")).length()==0 )
+                    return "";
+                else
+                    return "{"+(String)defn.get("prop")+"}\n";
             case paragraph:
             case headings:
                 return "";
@@ -117,7 +120,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
         DialectKeys key = DialectKeys.valueOf(kind);
         switch ( key )
         {
-            case section:
+            case sections:
                 return "\n\n\n";
             case paragraph:
                 return "\n\n";
@@ -176,8 +179,13 @@ public class MMLGetMMLHandler extends MMLGetHandler
             Object value = dialect.get(keyword);
             switch ( key )
             {
-                case section:
-                    enterProp(value,keyword,"div");
+                case sections:
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject obj = (JSONObject)array.get(i);
+                        enterProp(obj,keyword,"div");
+                    }
                     break;
                 case softhyphens:
                     if (((Boolean)value).booleanValue() )
@@ -483,10 +491,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
             corcode = getScratchVersion( docid, version1+"/default", false );
             if ( cortex == null || corcode == null )
             {
-                cortex = doGetResourceVersion( Database.CORTEX, 
-                    docid, version1 );
                 corcode = doGetResourceVersion( Database.CORCODE, 
                     docid+"/default", version1 );
+                cortex = doGetResourceVersion( Database.CORTEX, 
+                    docid, version1 );
             }
             String shortID = shortenDocID(docid);
             String dialectStr = getDialect( shortID, version1 );
@@ -528,15 +536,18 @@ public class MMLGetMMLHandler extends MMLGetHandler
     {
         try
         {
-            String suffix = docid+version1;
-            String prefix = "http://localhost/mml/dialects/";
-            String url = prefix+suffix;
-            String dialect = URLEncoder.getResponseForUrl(url).trim();
-            while ( dialect == null||!isJSON(dialect) )
+            Connection conn = Connector.getConnection();
+            String path = docid+version1;
+            String dialect = conn.getFromDb(Database.DIALECTS,path);
+            while ( path.length()>0 && dialect == null )
             {
-                suffix = Utils.chomp( suffix );
-                url = prefix+suffix;
-                dialect = URLEncoder.getResponseForUrl(url).trim();
+                path = Utils.chomp( path );
+                String bson = conn.getFromDb(Database.DIALECTS,path);
+                if ( bson != null )
+                {
+                    JSONObject jObj = (JSONObject)JSONValue.parse(bson);
+                    dialect = (String)jObj.get(JSONKeys.BODY);
+                }
             }
             if ( dialect == null )
                 throw new MMLException("No dialect for "+docid+" found");

@@ -26,8 +26,11 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Params.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/Reaper.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/AeseResource.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetDialectHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/MMLPutHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostImportHandler.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/DialectKeys.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MVDMap.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/Autosave.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/DocType.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Service.java</file>
