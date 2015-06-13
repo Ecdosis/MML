@@ -1130,6 +1130,64 @@ function Formatter( dialect )
         return value-this.mmlToHtml[mid][from]+this.mmlToHtml[mid][to];
     };
     /**
+     * Read a section name at the start of a section
+     * @param section the text of the section
+     * @return an object containing the name and the consumed MML text
+     */
+    this.readSectionName = function( section ) {
+        var state = 0;
+        var ret = {};
+        ret.name = "";
+        ret.mml = "";
+        for ( var i=0;i<section.length;i++ )
+        {
+            ret.mml += section[i];
+            switch ( state )
+            {
+                case 0: // looking for "{"
+                    if ( section[i]!=' '&&section[i]!='\t'&&section[i]!='\n'&&section[i]!='\r')
+                    {
+                        if ( section[i]=='{' )
+                            state = 1;
+                    }
+                    else
+                    {
+                        state = -1;
+                        ret.mml = "";
+                    }
+                    break;
+                case 1: // seen '{'
+                    if ( section[i] == '}' )
+                        state = 2;
+                    else if ( section[i]==' '||section[i]=='\t'||section[i]=='\n'||section[i]=='\r')
+                    {
+                        ret.name="";
+                        ret.mml = "";
+                        state = -1;
+                    }
+                    else
+                        name += section[i];
+                    break;
+                case 2: // reading NL after name
+                    if ( section[i]!=' '&&section[i]!='\t')
+                    {
+                        if ( section[i] == '\r'||section[i]=='\n' )
+                            state = -1;
+                    }
+                    else
+                    {
+                        ret.mml = "";
+                        ret.name = "";
+                        state = -1;
+                    }
+                    break;
+            }
+            if ( state == -1 )
+                break;
+        }
+        return ret;
+    }
+    /**
      * Convert the MML text into HTML
      * @param text the MML text to convert
      * @return HTML
@@ -1144,21 +1202,20 @@ function Formatter( dialect )
         this.buildHeadLookup();
         this.buildCfmtLookup();
         this.buildDividerLookup();
-        var sectionName = (this.dialect.section!=undefined
-            &&this.dialect.section.prop!=undefined)
-            ?this.dialect.section.prop:"section";
         var sections = text.split("\n\n\n");
         if ( sections.length > 0 )
         {
             var additional_lines = 0;
-            var link = new Link("",'<div class="'+sectionName+'">',
-                sections[0],null,null);
+            var ret = this.readSectionName(sections[0]);
+            var link = new Link(ret.mml,'<div class="'+ret.name+'">',
+                sections[0].substr(ret.mml.length),null,null);
             first = link;
             for ( var i=1;i<sections.length;i++ )
             {
                 var prev = link;
-                link = new Link("\n\n\n",'</div>\n<div class="'
-                    +sectionName+'">',sections[i],null,prev);
+                ret = this.readSectionName(sections[i]);
+                link = new Link("\n\n\n"+ret.mml,'</div>\n<div class="'
+                    +ret.name+'">',sections[i].substr(ret.mml.length),null,prev);
                 prev.next = link;
             }
             // balance HTML

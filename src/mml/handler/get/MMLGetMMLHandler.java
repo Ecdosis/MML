@@ -310,6 +310,21 @@ public class MMLGetMMLHandler extends MMLGetHandler
         for (int k=0;k<level;k++ )
             mml.append("    ");
     }
+    boolean verifyCorCode(String stil, String text )
+    {
+        JSONObject jObj = (JSONObject)JSONValue.parse(stil);
+        JSONArray ranges = (JSONArray)jObj.get(JSONKeys.RANGES);
+        int offset = 0;
+        for ( int i=0;i<ranges.size();i++ )
+        {
+            JSONObject range = (JSONObject)ranges.get(i);
+            offset += ((Number)range.get("reloff")).intValue();
+            int len = ((Number)range.get("len")).intValue();
+            if ( offset+len > text.length() )
+                return false;
+        }
+        return true;
+    }
     /**
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
@@ -320,6 +335,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
         String text = cortex.getVersionString();
         mml = new StringBuilder();
         String stil = corcode.getVersionString();
+        if ( !verifyCorCode(stil,text) )
+            System.out.println("invalid corcode+text");
         JSONObject markup = (JSONObject)JSONValue.parse(stil);
         JSONArray ranges = (JSONArray)markup.get("ranges");
         Stack<EndTag> stack = new Stack<EndTag>();
@@ -348,6 +365,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         startPreLine( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
+                        if ( j >= text.length() )
+                            System.out.println("error");
                         char c = text.charAt(j);
                         mml.append(c);
                         if ( c=='\n' && inPre && j<tagEnd-1 )
@@ -363,6 +382,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 boolean inPre =isInPre(stack);
                 for ( int j=pos;j<start;j++ )
                 {
+                    if ( j >= text.length() )
+                        System.out.println("error");
                     char c = text.charAt(j);
                     mml.append(c);
                     if ( c=='\n' && inPre )
@@ -375,6 +396,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 mml.append(startTag);
                 stack.push(new EndTag(start+len.intValue(),endTag,def));
             }
+            else
+                System.out.println("Ignoring tag "+name);
             offset += relOff.intValue();
         }
         //empty stack

@@ -28,7 +28,25 @@ function Info( helpId, dialect )
         var i;
         var info = "";
         info += "<h2>Novel markup for De Roberto</h2>";
-        info += this.describeSimpleProp("Sections",this.dialect.sections,"two blank lines");
+        if ( this.dialect.sections )
+        {
+            info += "<p><b>Sections:</b> are formed by two blank lines, "
+            +"optionally followed on a new line by a name enclosed in braces:</p>";
+            if ( this.dialect.sections.length>0 )
+            {
+                info += "<ul>";
+                for ( var i=0;i<this.dialect.sections.length;i++ )
+                {
+                    if ( this.dialect.sections[i].prop.length>0 )
+                    {
+                        info += "<li>";
+                        info += "{"+this.dialect.sections[i].prop+"}"
+                        info += "</li>";
+                    }
+                }
+                info += "</ul>";
+            }
+        }
         info += this.describeSimpleProp("Paragraphs",this.dialect.paragraphs,"one blank line");
         info += this.describeSimpleProp("Quotations",this.dialect.quotations,
             "initial '> ', which may be nested");

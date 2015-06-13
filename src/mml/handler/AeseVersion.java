@@ -116,6 +116,17 @@ public class AeseVersion
         return version;
     }
     /**
+     * Get the encoding of the version data
+     * @return an encoding name
+     */
+    public String getEncoding()
+    {
+        if ( mvd != null )
+            return mvd.getEncoding();
+        else
+            return "UTF-8";
+    }
+    /**
      * Get the MVD version as a String
      * @return the string or an "invalid encoding" message
      */
