@@ -335,8 +335,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
         String text = cortex.getVersionString();
         mml = new StringBuilder();
         String stil = corcode.getVersionString();
-        if ( !verifyCorCode(stil,text) )
-            System.out.println("invalid corcode+text");
         JSONObject markup = (JSONObject)JSONValue.parse(stil);
         JSONArray ranges = (JSONArray)markup.get("ranges");
         Stack<EndTag> stack = new Stack<EndTag>();
@@ -365,8 +363,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         startPreLine( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
-                        if ( j >= text.length() )
-                            System.out.println("error");
                         char c = text.charAt(j);
                         mml.append(c);
                         if ( c=='\n' && inPre && j<tagEnd-1 )
@@ -382,14 +378,18 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 boolean inPre =isInPre(stack);
                 for ( int j=pos;j<start;j++ )
                 {
-                    if ( j >= text.length() )
-                        System.out.println("error");
                     char c = text.charAt(j);
-                    mml.append(c);
-                    if ( c=='\n' && inPre )
+                    if ( c == '\n' )
                     {
-                        startPreLine(stack);
+                        if ( mml.length()==0||mml.charAt(mml.length()-1)!='\n')
+                            mml.append(c);
+                        if ( inPre )
+                        {
+                            startPreLine(stack);
+                        }
                     }
+                    else
+                        mml.append(c);
                 }
                 // 3. insert new start tag
                 normaliseNewlines(startTag);

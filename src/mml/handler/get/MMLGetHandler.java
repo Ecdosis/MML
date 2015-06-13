@@ -129,6 +129,13 @@ public class MMLGetHandler extends MMLHandler {
         }
         return resource;
     }
+    /**
+     * Have 2 goes at getting a piece of metadata
+     * @param key the key to look for
+     * @param o1 the first object (probably explicit metadata, maybe null)
+     * @param o2 the backup source object
+     * @return the key's value in o1, failing that in o2
+     */
     String getBestString( String key, JSONObject o1, JSONObject o2 )
     {
         String ans = null;
