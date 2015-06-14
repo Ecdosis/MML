@@ -394,6 +394,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 // 3. insert new start tag
                 normaliseNewlines(startTag);
                 mml.append(startTag);
+                if ( start+len.intValue()==1131 )
+                    System.out.println("1131");
                 stack.push(new EndTag(start+len.intValue(),endTag,def));
             }
             else
