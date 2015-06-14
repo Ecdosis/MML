@@ -1130,22 +1130,42 @@ function Formatter( dialect )
         return value-this.mmlToHtml[mid][from]+this.mmlToHtml[mid][to];
     };
     /**
-     * Read a section name at the start of a section
+     * Is this a whitespace character?
+     * @param c the character to test
+     * @return true if it is else false
+     */
+    this.isWhitespace = function( c ) {
+        return c==' '||c=='\n'||c=='\t'||c=='\r';
+    };
+    /**
+     * Is this an alphanumeric character?
+     * @param c the character to test
+     * @return true if it is else false
+     */
+    this.isAlphanumeric = function( c ) {
+        return (c>='a'&&c<='z')
+            ||(c>='A'&&c<='Z')
+            || (c>'0'&&c<='9')
+            ||c=='_';
+    };
+    /**
+     * Read a section name at the start
      * @param section the text of the section
-     * @return an object containing the name and the consumed MML text
+     * @return an object containing the name read and the consumed MML text
      */
     this.readSectionName = function( section ) {
         var state = 0;
         var ret = {};
-        ret.name = "";
+        ret.tag = "";
         ret.mml = "";
         for ( var i=0;i<section.length;i++ )
         {
             ret.mml += section[i];
+            var c = section[i];
             switch ( state )
             {
                 case 0: // looking for "{"
-                    if ( section[i]!=' '&&section[i]!='\t'&&section[i]!='\n'&&section[i]!='\r')
+                    if ( !this.isWhitespace(c))
                     {
                         if ( section[i]=='{' )
                             state = 1;
@@ -1157,28 +1177,34 @@ function Formatter( dialect )
                     }
                     break;
                 case 1: // seen '{'
-                    if ( section[i] == '}' )
+                    if ( c == '}' )
                         state = 2;
-                    else if ( section[i]==' '||section[i]=='\t'||section[i]=='\n'||section[i]=='\r')
+                    else if ( this.isAlphanumeric(c) )
+                        ret.tag += c;
+                    else
                     {
-                        ret.name="";
+                        ret.tag="";
                         ret.mml = "";
                         state = -1;
                     }
-                    else
-                        name += section[i];
                     break;
                 case 2: // reading NL after name
-                    if ( section[i]!=' '&&section[i]!='\t')
+                    if ( c!=' '&&c!='\t' )
                     {
-                        if ( section[i] == '\r'||section[i]=='\n' )
+                        if ( c=='\n'|| c=='\r' )
                             state = -1;
-                    }
-                    else
-                    {
-                        ret.mml = "";
-                        ret.name = "";
-                        state = -1;
+                        // DOS line-endings
+                        else if (i<section.length-1&&c=='\n'&&section[i+1]=='\r')
+                        {
+                            ret.mml += '\r';
+                            state = -1;
+                        }
+                        else
+                        {
+                            ret.mml = "";
+                            ret.tag = "";
+                            state = -1;
+                        }
                     }
                     break;
             }
@@ -1186,7 +1212,45 @@ function Formatter( dialect )
                 break;
         }
         return ret;
-    }
+    };
+    /**
+     * Parse section names to determine what nests inside what
+     * @param ret an array of named section objects, updated on exit
+     */
+    this.parseSectionNames = function( ret )
+    {
+        if ( ret.length > 0 )
+        {
+            var stack = new Array();
+            for ( var i=0;i<ret.length;i++ )
+            {
+                ret[i].divStart = "";
+                // pop off back to the last section of that name
+                var pos = (ret[i].tag.length!=0)?stack.indexOf(ret[i].tag):-1;
+                // al la Java we count back from stack top=1
+                if ( pos > -1 )
+                    pos = stack.length-pos;
+                // unnamed sections terminate all divs
+                if ( ret[i].tag.length==0 )
+                    pos = stack.length;
+                while ( pos > 0 )
+                {
+                    ret[i].divStart += "</div>";
+                    stack.pop();
+                    pos--;
+                }
+                stack.push(ret[i].tag);
+                var sectionName = (ret[i].tag.length==0)?"section":ret[i].tag;
+                ret[i].divStart += "<div class=\""+sectionName+"\">";
+            }
+            // set last ret element .divEnd to the final HTML
+            while ( stack.length>0 )
+            {
+                stack.pop();
+                ret[ret.length-1].divEnd += "</div>"; 
+            }
+        }
+    };
     /**
      * Convert the MML text into HTML
      * @param text the MML text to convert
@@ -1206,20 +1270,25 @@ function Formatter( dialect )
         if ( sections.length > 0 )
         {
             var additional_lines = 0;
-            var ret = this.readSectionName(sections[0]);
-            var link = new Link(ret.mml,'<div class="'+ret.name+'">',
-                sections[0].substr(ret.mml.length),null,null);
-            first = link;
-            for ( var i=1;i<sections.length;i++ )
+            var ret = new Array(sections.length);
+            for ( var i=0;i<sections.length;i++ )
+                ret[i] = this.readSectionName(sections[i]);
+            this.parseSectionNames( ret );
+            first = null;
+            var link = null;
+            for ( var i=0;i<sections.length;i++ )
             {
                 var prev = link;
-                ret = this.readSectionName(sections[i]);
-                link = new Link("\n\n\n"+ret.mml,'</div>\n<div class="'
-                    +ret.name+'">',sections[i].substr(ret.mml.length),null,prev);
-                prev.next = link;
+                var prefix = (i==0)?"":"\n\n\n";
+                link = new Link(prefix+ret.mml,ret[i].divStart,
+                    sections[i].substr(ret[i].mml.length),null,prev);
+                if ( first == null )
+                    first = link;
+                else
+                    prev.next = link;
             }
             // balance HTML
-            link.next = new Link("","</div>","",null,link);
+            link.next = new Link("",ret[ret.length-1].divEnd,"",null,link);
             // now process the list
             var temp = first;
             while ( temp != null )

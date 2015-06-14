@@ -80,9 +80,9 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case sections:
                 if ( !defn.containsKey("prop")
                     ||((String)defn.get("prop")).length()==0 )
-                    return "";
+                    return "\n\n\n";
                 else
-                    return "{"+(String)defn.get("prop")+"}\n";
+                    return "\n\n\n{"+(String)defn.get("prop")+"}\n";
             case paragraph:
             case headings:
                 return "";
