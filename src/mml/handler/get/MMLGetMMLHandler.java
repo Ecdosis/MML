@@ -288,6 +288,11 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
         mml.setLength(mmlEnd+1);
     }
+    /**
+     * Are we in a preformatted section?
+     * @param stack the tag stack
+     * @return true if it is true
+     */
     boolean isInPre( Stack<EndTag> stack )
     {
         if ( !stack.isEmpty() )
@@ -303,6 +308,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
         else return false;
     }
+    /**
+     * Insert the line-start spacing in a preformatted section
+     * @param stack the tag stack to tell us the depth
+     */
     void startPreLine( Stack<EndTag> stack )
     {
         JSONObject oldDef = stack.peek().def;
@@ -310,6 +319,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
         for (int k=0;k<level;k++ )
             mml.append("    ");
     }
+    /**
+     * Debug: Check that the corcode stil ranges do not go beyond text end
+     * @param stil the stil markup as text
+     * @param text the text it refers to
+     * @return true if it was OK, else false
+     */
     boolean verifyCorCode(String stil, String text )
     {
         JSONObject jObj = (JSONObject)JSONValue.parse(stil);
@@ -345,6 +360,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
             Long len = (Long)r.get("len");
             Long relOff = (Long)r.get("reloff");
             String name = (String)r.get("name");
+            if ( name.equals("metamark") )
+                System.out.println("metamark");
             if ( invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
@@ -394,8 +411,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 // 3. insert new start tag
                 normaliseNewlines(startTag);
                 mml.append(startTag);
-                if ( start+len.intValue()==1131 )
-                    System.out.println("1131");
                 stack.push(new EndTag(start+len.intValue(),endTag,def));
             }
             else
@@ -436,6 +451,9 @@ public class MMLGetMMLHandler extends MMLGetHandler
         else
             return parts[0]+"/"+parts[1]+"/"+parts[2];
     }
+    /**
+     * Debug: print the invert index (properties to definitions)
+     */
     private void printInvertIndex()
     {
         Set<String> keys = invertIndex.keySet();
@@ -536,6 +554,11 @@ public class MMLGetMMLHandler extends MMLGetHandler
             throw new MMLException( e );
         }
     }
+    /**
+     * Is this piece of text JSON?
+     * @param text the text to test
+     * @return true if it was else false
+     */
     private static boolean isJSON( String text )
     {
         try

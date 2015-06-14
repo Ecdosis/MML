@@ -752,8 +752,6 @@ function Formatter( dialect )
             var line = para.next;
             while ( line != end && line != null )
             {
-                if ( line.isMilestone(this.dialect.milestones) )
-                    console.log("milestone in code block!");
                 var currLevel = this.getLevel(line.text);
                 if ( currLevel > level )
                 {

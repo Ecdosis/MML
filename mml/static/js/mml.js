@@ -572,6 +572,7 @@ function MML(opts, dialect) {
             self.buffer.clearSelection();
             self.buffer.setStart(sel.start);
         }
+        self.scroller = undefined;
     });
     $("#"+opts.source).bind('paste', function(e) {
         var pastedData = e.originalEvent.clipboardData.getData('text');
@@ -580,8 +581,9 @@ function MML(opts, dialect) {
     // scroll the textarea
     $("#"+opts.source).scroll(function(e) {
         // prevent feedback
-        if ( e.originalEvent )
+        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="textarea") )
         {
+            self.scroller = "textarea";
             var loc = self.getSourcePage($(this));
             // console.log("loc sent to other scrollbars:"+loc);
             self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
@@ -596,8 +598,10 @@ function MML(opts, dialect) {
     });
     // scroll the preview
     $("#"+opts.target).scroll(function(e) {
-        if ( e.originalEvent )
+        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="target") )
         {
+            self.scroller = "target";
+            console.log( "clicked in html target: " + e.target.nodeName );
             var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
                 /self.formatter.num_lines;
             var loc = self.getPixelPage($(this),self.html_lines);
@@ -611,8 +615,10 @@ function MML(opts, dialect) {
     });
     // scroll the images
     $("#"+opts.images).scroll(function(e) {
-        if ( e.originalEvent )
+        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="images") )
         {
+            self.scroller = "images";
+            console.log( "clicked in images: " + e.target.nodeName );
             var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
                 /self.formatter.num_lines;
             var loc = self.getPixelPage($(this),self.image_lines);
