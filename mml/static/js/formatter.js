@@ -131,12 +131,17 @@ function Link(mml,html,text,next,prev)
                 index = tail.indexOf('"');
                 if ( index!= -1 )
                 {
-                    var prop = tail.substr(0,index);
-                    for ( var i=0;i<mss.length;i++ )
+                    var prop = tail.substr(index+1);
+                    index = prop.indexOf('"');
+                    if ( index != -1 )
                     {
-                        var ms = mss[i];
-                        if ( ms.prop==prop )
-                            return ms;
+                        prop = prop.substr(0,index);
+                        for ( var i=0;i<mss.length;i++ )
+                        {
+                            var ms = mss[i];
+                            if ( ms.prop==prop )
+                                return ms;
+                        }
                     }
                 }
             }
@@ -747,6 +752,8 @@ function Formatter( dialect )
             var line = para.next;
             while ( line != end && line != null )
             {
+                if ( line.isMilestone(this.dialect.milestones) )
+                    console.log("milestone in code block!");
                 var currLevel = this.getLevel(line.text);
                 if ( currLevel > level )
                 {
@@ -759,10 +766,15 @@ function Formatter( dialect )
                 }
                 else if ( currLevel < level )
                 {
-                    if ( currLevel > 0 )
-                        line.prependHtml('</pre>'+this.startPre(currLevel));
-                    else
-                        line.prependHtml('</pre>');
+                    if ( !line.isMilestone(this.dialect.milestones) )
+                    {
+                        if ( currLevel > 0 )
+                            line.prependHtml('</pre>'+this.startPre(currLevel));
+                        else
+                            line.prependHtml('</pre>');
+                    }
+                    else    // stay where we are
+                        currLevel = level;
                 }
                 level = currLevel;
                 if ( level > 0 )
@@ -857,7 +869,7 @@ function Formatter( dialect )
                 this.num_lines++;
                 var prev = line;
                 //console.log(this.num_lines+" "+lines[i]);
-                // put back removed LF
+                // restore removed LF
                 var text;
                 if ( i==lines.length-1 )
                     text = lines[i];
