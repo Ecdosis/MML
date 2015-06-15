@@ -486,6 +486,9 @@ function MML(opts, dialect) {
         else
             $("#info").attr("class","edit-button");
     };
+    /**
+     * Set a timeout for when we reset the this.scroller field
+     */
     this.setScrollTimeout = function() {
         if ( this.timeoutId == 0 )
             this.timeoutId = window.setTimeout(function(){

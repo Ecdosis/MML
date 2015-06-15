@@ -1257,7 +1257,7 @@ function Formatter( dialect )
             while ( stack.length>0 )
             {
                 stack.pop();
-                ret[ret.length-1].divEnd += "</div>"; 
+                ret[ret.length-1].divEnd = "</div>"; 
             }
         }
     };
