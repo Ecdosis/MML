@@ -360,8 +360,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
             Long len = (Long)r.get("len");
             Long relOff = (Long)r.get("reloff");
             String name = (String)r.get("name");
-            if ( name.equals("metamark") )
-                System.out.println("metamark");
+            if ( name.startsWith("metamark") )
+                System.out.println(name);
             if ( invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
