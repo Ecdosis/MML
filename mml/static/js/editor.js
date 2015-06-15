@@ -33,7 +33,7 @@ function Editor( target, docid, modpath )
      * @return a comma-separated list of page references e.g. 4e,2f
      */
     this.getPageRefs = function() {
-        if ( this.var milestones != undefined )
+        if ( this.dialect.milestones != undefined )
         {
             var leftTag,rightTag;
             var mls = this.dialect.milestones;
@@ -49,7 +49,7 @@ function Editor( target, docid, modpath )
             if ( leftTag != undefined && rightTag != undefined )
             {
                 var sb = "";
-                var state = 0;
+                var state = 1;
                 current = "";
                 for ( var i=0;i<this.text.length;i++ )
                 {
@@ -63,7 +63,7 @@ function Editor( target, docid, modpath )
                         case 1:
                             if ( c == leftTag )
                                 state = 2;
-                            else if ( c != ' ' && c != '\r' && c != '\t' )
+                            else 
                                 state = 0;
                             break;
                         case 2:
