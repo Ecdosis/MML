@@ -491,7 +491,6 @@ function MML(opts, dialect) {
             this.timeoutId = window.setTimeout(function(){
                 self.scroller=undefined;
                 self.timeoutId = 0;
-                console.log("reset scroll timeout");
             }, 200);
     };
     // this sets up the timer for updating
