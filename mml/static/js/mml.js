@@ -42,6 +42,8 @@ function MML(opts, dialect) {
     this.annotator = new Annotator(this,"annotate");
     /** buffer to hold added or deleted chars */
     this.buffer = new Buffer(this,"#"+this.opts.source);
+    /** timeoutId for clearning scrolling flag */
+    this.timeoutId = 0;
     /** reference to ourselves when this is redefined */
     var self = this;
     /** records which keycodes are characters to be typed */
@@ -365,7 +367,8 @@ function MML(opts, dialect) {
         var srcObj = $("#"+this.opts.source);
         var helpObj = $("#help");
         var tgtObj = $("#"+this.opts.target);
-        var topOffset = imgObj.parent().position().top;
+        var topOffset = imgObj.parent().offset().top;
+        //console.log("images parent="+imgObj.parent()[0].nodeName+" topOffset="+topOffset);
         var wHeight = $(window).height()-topOffset;
         var wWidth = imgObj.parent().outerWidth();
         // compute width
@@ -483,6 +486,14 @@ function MML(opts, dialect) {
         else
             $("#info").attr("class","edit-button");
     };
+    this.setScrollTimeout = function() {
+        if ( this.timeoutId == 0 )
+            this.timeoutId = window.setTimeout(function(){
+                self.scroller=undefined;
+                self.timeoutId = 0;
+                console.log("reset scroll timeout");
+            }, 200);
+    };
     // this sets up the timer for updating
     // this should really reset the interval based on how long it took
     // force update when user modifies the source
@@ -572,7 +583,6 @@ function MML(opts, dialect) {
             self.buffer.clearSelection();
             self.buffer.setStart(sel.start);
         }
-        self.scroller = undefined;
     });
     $("#"+opts.source).bind('paste', function(e) {
         var pastedData = e.originalEvent.clipboardData.getData('text');
@@ -581,50 +591,43 @@ function MML(opts, dialect) {
     // scroll the textarea
     $("#"+opts.source).scroll(function(e) {
         // prevent feedback
-        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="textarea") )
+        if ( self.scroller==undefined||self.scroller=="textarea" )
         {
             self.scroller = "textarea";
             var loc = self.getSourcePage($(this));
             // console.log("loc sent to other scrollbars:"+loc);
             self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
             self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
-            //console.log($("#images")[0].scrollHeight);
-            //var height = 0;
-            //var images = $(".image");
-            //for ( var i=0;i<images.length;i++ )
-            //    height += images[i].clientHeight;
-            //console.log("overall height="+height);
+            self.setScrollTimeout();
         }
     });
     // scroll the preview
     $("#"+opts.target).scroll(function(e) {
-        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="target") )
+        if ( self.scroller==undefined||self.scroller=="target" )
         {
             self.scroller = "target";
-            console.log( "clicked in html target: " + e.target.nodeName );
             var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
                 /self.formatter.num_lines;
             var loc = self.getPixelPage($(this),self.html_lines);
             self.scrollTo(loc,self.text_lines,
                 $("#"+self.opts.source),lineHeight);
-            // for some reason this causes feedback, but it works without!!
-            if ( self.infoDisplayed )
-                self.scrollTo(loc,self.image_lines,
-                $("#"+self.opts.images),1.0);
+            //if ( self.infoDisplayed )
+            self.scrollTo(loc,self.image_lines,$("#"+self.opts.images),1.0);
+            self.setScrollTimeout();
         }
     });
     // scroll the images
     $("#"+opts.images).scroll(function(e) {
-        if ( e.originalEvent && (self.scroller==undefined||self.scroller=="images") )
+        if ( self.scroller==undefined||self.scroller=="images" )
         {
             self.scroller = "images";
-            console.log( "clicked in images: " + e.target.nodeName );
             var lineHeight = $("#"+self.opts.source).prop("scrollHeight")
                 /self.formatter.num_lines;
             var loc = self.getPixelPage($(this),self.image_lines);
             self.scrollTo(loc,self.text_lines,
                 $("#"+self.opts.source),lineHeight);
             self.scrollTo(loc,self.html_lines,$("#"+self.opts.target),1.0);
+            self.setScrollTimeout();
         }
     });
     $(window).load(function() {
