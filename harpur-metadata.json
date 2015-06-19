@@ -1,0 +1,2 @@
+db.metadata.remove({docid:"english/harpur/h642"})
+db.metadata.insert({ "docid" : "english/harpur/h642", "author" : "Charles Harpur", "encoding" : "UTF-8", "title" : "The Tower of the Dream", "version1" : "/h642a/base" })

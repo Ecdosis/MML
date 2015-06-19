@@ -36,7 +36,7 @@ public class MMLMetadataHandler extends MMLGetHandler
         try
         {
             Connection conn = Connector.getConnection();
-            String docid = request.getParameter(Params.DOCID);
+            docid = request.getParameter(Params.DOCID);
             if ( docid == null || docid.length()== 0 )
                 docid = urn;
             String md = conn.getMetadata( docid );

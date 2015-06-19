@@ -56,8 +56,12 @@ public class MMLResourceHandler extends MMLGetHandler
                         if ( last.equals("default") )
                         {
                             urn = Utils.chomp(urn);
-                            if ( !urn.equals("/") )
+                            if ( urn.length()>0 )
                                 urn = Utils.chomp(urn)+"/"+last;
+                            else if ( !urn.equals("TEI") )
+                            {
+                                urn = "TEI/default";
+                            }
                             else
                                 break;
                         }

@@ -203,7 +203,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     }
                     break;
                 case paragraph:
-                    enterProp(value,keyword,"p");
+                    enterProp(value,keyword,"paragraph");
                     break;
                 case codeblocks:
                     array = (JSONArray)value;
@@ -289,6 +289,26 @@ public class MMLGetMMLHandler extends MMLGetHandler
         mml.setLength(mmlEnd+1);
     }
     /**
+     * Are we in a milestone?
+     * @param stack the tag stack
+     * @return true if it is true
+     */
+    boolean isInMilestone( Stack<EndTag> stack )
+    {
+        if ( !stack.isEmpty() )
+        {
+            EndTag top = stack.peek();
+            if ( top != null )
+            {
+                JSONObject obj = top.def;
+                return "milestones".equals(obj.get("kind"));
+            }
+            else
+                return false;
+        }
+        else return false;
+    }
+    /**
      * Are we in a preformatted section?
      * @param stack the tag stack
      * @return true if it is true
@@ -360,6 +380,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
             Long len = (Long)r.get("len");
             Long relOff = (Long)r.get("reloff");
             String name = (String)r.get("name");
+            if ( name.equals("page") )
+                System.out.println("page");
             if ( invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
@@ -376,10 +398,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     boolean inPre = isInPre( stack );
                     if ( inPre && mml.charAt(mml.length()-1) == '\n' )
                         startPreLine( stack );
+                    boolean inPage = isInMilestone( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
                         char c = text.charAt(j);
-                        mml.append(c);
+                        if ( c!='\n' || !inPage )
+                            mml.append(c);
                         if ( c=='\n' && inPre && j<tagEnd-1 )
                             startPreLine(stack);
                     }

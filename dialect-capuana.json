@@ -1,0 +1,2 @@
+db.dialects.remove({"docid": "italian/capuana/ildrago"})
+db.dialects.insert({ "docid": "italian/capuana/ildrago", "body": "{\"description\":\"Markup for Capuana's il drago\", \"softhyphens\":true, \"smartquotes\":true, \"language\":\"it\", \"headings\":[{\"tag\":\"=\",\"prop\":\"head\"}], \"milestones\":[{\"rightTag\":\"]\",\"leftTag\":\"[\",\"prop\":\"page\"}], \"quotations\":[{\"prop\":\"quote1\"}], \"dividers\":[], \"paragraph\":{\"prop\":\"\"}, \"codeblocks\":[], \"sections\":[{\"prop\":\"section\"}], \"paraformats\":[], \"charformats\":[]}" })

@@ -56,8 +56,8 @@ public class MMLGetDialectHandler extends MMLGetHandler
     {
         try
         {
-            String docid = request.getParameter(Params.DOCID);
-            String version1 = request.getParameter(Params.VERSION1);
+            docid = request.getParameter(Params.DOCID);
+            version1 = request.getParameter(Params.VERSION1);
             if ( version1 != null && version1.length()>0 && !docid.endsWith(version1) )
                 docid += version1;
             // look for a dialect file with the full path then
