@@ -15,11 +15,6 @@
       <servlet-name>MMLWebApp</servlet-name>
       <servlet-class>mml.MMLWebApp</servlet-class>
     </servlet>
-    <listener>
-	<listener-class>
-             mml.MMLContextListener 
-        </listener-class>
-    </listener>
     <context-param>
         <param-name>repository</param-name>
         <param-value>MONGO</param-value>
