@@ -44,7 +44,7 @@ public class MMLPostImageHandler extends MMLPostHandler
                 {
                     ImageFile iFile = images.get(i);
                     Corpix.addImage( MMLWebApp.webRoot, docid, 
-                        iFile.type,iFile.getData() );
+                        iFile.getName(),null,iFile.type,iFile.getData() );
                 }
                 response.setContentType("text/html;charset=UTF-8");
             } 

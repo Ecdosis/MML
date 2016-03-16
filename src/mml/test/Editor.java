@@ -175,9 +175,9 @@ public class Editor extends Test
                 String text = (String)item.get("prop");
                 //System.out.println(text);
                 option.addText(text);
-                group.addElement(option);
+                group.addChild(option);
             }
-            select.addElement( group );
+            select.addChild( group );
         }
     }
     /**
@@ -219,39 +219,39 @@ public class Editor extends Test
         if ( DEROBERTO_1920.startsWith(currentValue) )
             option1.addAttribute("selected","");
         option1.addText("De Roberto I Vicerè 1920 Chapter 1");
-        dropdown.addElement(option1);
+        dropdown.addChild(option1);
         Element option2 = new Element("option");
         option2.addAttribute("value",HARPUR_1883);
         if ( HARPUR_1883.startsWith(currentValue) )
             option2.addAttribute("selected","");
         option2.addText("Harpur Tower of the Dream 1883");
-        dropdown.addElement(option2);
+        dropdown.addChild(option2);
         Element option3 = new Element("option");
         option3.addAttribute("value",DEROBERTO_1894);
         option3.addText("De Roberto I Vicerè 1894 Chapter 1");
         if ( DEROBERTO_1894.startsWith(currentValue) )
             option3.addAttribute("selected","");
-        dropdown.addElement(option3);
-        wrapper.addElement(dropdown);
+        dropdown.addChild(option3);
+        wrapper.addChild(dropdown);
         Element save = new Element("button");
         save.addAttribute("title","saved");
         save.addAttribute("class","saved-button");
         save.addAttribute("disabled","disabled");
         save.addAttribute("id","save");
-        wrapper.addElement(save);
+        wrapper.addChild(save);
         Element info = new Element("button");
         info.addAttribute("title","about the markup");
         info.addAttribute("class","info-button");
         info.addAttribute("id","info");
-        wrapper.addElement(info);
+        wrapper.addChild(info);
         Element annotate = new Element("button");
         annotate.addAttribute("title","add a note");
         annotate.addAttribute("class","annotate-button");
         annotate.addAttribute("id","annotate");
-        wrapper.addElement(annotate);
+        wrapper.addChild(annotate);
         Element styles = getStyles(dialect);
-        wrapper.addElement(styles);
-        toolbar.addElement( wrapper );
+        wrapper.addChild(styles);
+        toolbar.addChild( wrapper );
         return toolbar;
     }
     void writeHiddenTag( Element parent, String name, String value  )
@@ -261,7 +261,7 @@ public class Editor extends Test
         hidden.addAttribute("name",name);
         hidden.addAttribute("id",name);
         hidden.addAttribute("value",value);
-        parent.addElement(hidden);
+        parent.addChild(hidden);
     }
     String section()
     {
@@ -449,15 +449,15 @@ public class Editor extends Test
         wrapper.addText( getImages() );
         Element help = new Element("div");
         help.addAttribute("id", "help");
-        wrapper.addElement( help );
+        wrapper.addChild( help );
         Element textarea = new Element( "textarea" );
         textarea.addAttribute("id", "source" );
         String mml = getMml(docid,version1);
         textarea.addText( mml );
-        wrapper.addElement( textarea );
+        wrapper.addChild( textarea );
         Element target = new Element("div");
         target.addAttribute("id","target");
-        wrapper.addElement( target );
+        wrapper.addChild( target );
         doc.addElement( wrapper );
         writeHiddenTags();
     }

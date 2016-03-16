@@ -21,7 +21,6 @@ import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.Database;
 import calliope.core.exception.DbException;
-import mml.constants.Formats;
 import mml.handler.mvd.Archive;
 import calliope.core.constants.JSONKeys;
 import java.util.ArrayList;
@@ -62,7 +61,7 @@ public class Reaper extends Thread
                 Archive cortex = Archive.fromResource(res);
                 String newContent = (String)jObj.get(JSONKeys.BODY);
                 String vid = (String)jObj.get(JSONKeys.VERSION1);
-                cortex.put(vid, newContent.getBytes(cortex.getEncoding()) );
+                cortex.put(vid, newContent.toCharArray());
                 Connector.getConnection().putToDb(Database.CORTEX,docid,
                     cortex.toResource(docid));
             }
@@ -90,7 +89,7 @@ public class Reaper extends Thread
                 Archive corcode = Archive.fromResource(res);
                 String newContent = (String)jObj.get(JSONKeys.BODY);
                 String vid = (String)jObj.get(JSONKeys.VERSION1);
-                corcode.put(vid, newContent.getBytes(corcode.getEncoding()) );
+                corcode.put(vid, newContent.toCharArray() );
                 Connector.getConnection().putToDb(Database.CORCODE,docid,
                     corcode.toResource(docid));
             }

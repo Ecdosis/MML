@@ -29,8 +29,6 @@ if [ ! -d mml/WEB-INF/lib ]; then
 fi
 rm -f mml/WEB-INF/lib/*.jar
 cp dist/MML.jar mml/WEB-INF/lib/
-cp lib/*.jar mml/WEB-INF/lib/
-rm mml/WEB-INF/lib/servlet*.jar
 cp web.xml mml/WEB-INF/
 jar cf mml.war -C mml WEB-INF -C mml static
 echo "NB: you MUST copy the contents of tomcat-bin to \$tomcat_home/bin"

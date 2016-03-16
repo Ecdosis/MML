@@ -33,7 +33,7 @@ import calliope.core.database.Connector;
 import calliope.core.constants.JSONKeys;
 import mml.exception.*;
 import calliope.core.Utils;
-import mml.handler.AeseVersion;
+import calliope.core.handler.EcdosisVersion;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -365,7 +365,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
      * @param cortex the plain text version
      * @param corcode the STIL markup for that plain text
      */
-    void createMML( AeseVersion cortex, AeseVersion corcode )
+    void createMML( EcdosisVersion cortex, EcdosisVersion corcode )
     {
         String text = cortex.getVersionString();
         mml = new StringBuilder();
@@ -494,7 +494,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
      * @return null if not there else the AeseVersion of the resource
      * @throws DbException 
      */
-    AeseVersion getScratchVersion( String docId, String version, 
+    EcdosisVersion getScratchVersion( String docId, String version, 
         boolean cortex ) throws DbException
     {
         try
@@ -510,7 +510,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     && (cortex&&DocType.classifyObj(jObj)==DocType.CORTEX)
                     ||(!cortex&&DocType.classifyObj(jObj)==DocType.CORCODE) )
                 {
-                    AeseVersion av = new AeseVersion();
+                    EcdosisVersion av = new EcdosisVersion();
                     String format = (String)jObj.get(JSONKeys.FORMAT);
                     if ( format == null )
                         format = "TEXT";
@@ -523,8 +523,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     String encoding = (String)jObj.get(JSONKeys.ENCODING);
                     if ( encoding == null )
                         encoding = "UTF-8";
-                    av.setVersion1( version );
-                    av.setVersion(body.getBytes(encoding));
+//                    av.setVersion1( version );
+//                    av.setVersion(body.getBytes(encoding));
                     return av;
                 }
             }
@@ -551,7 +551,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
-            AeseVersion cortex, corcode;
+            EcdosisVersion cortex, corcode;
             cortex = getScratchVersion( docid, version1, true );
             corcode = getScratchVersion( docid, version1+"/default", false );
             if ( cortex == null || corcode == null )

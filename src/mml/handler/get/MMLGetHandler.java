@@ -30,7 +30,7 @@ import calliope.core.Utils;
 import calliope.core.URLEncoder;
 import mml.exception.*;
 import mml.constants.*;
-import mml.handler.AeseVersion;
+import calliope.core.handler.EcdosisVersion;
 import mml.handler.AeseResource;
 import mml.handler.MMLHandler;
 
@@ -150,13 +150,13 @@ public class MMLGetHandler extends MMLHandler {
      * @return the CorTex/CorCode version contents or null if not found
      * @throws MMLException if the resource couldn't be found for some reason
      */
-    protected AeseVersion doGetResourceVersion( String db, String docID, 
+    protected EcdosisVersion doGetResourceVersion( String db, String docID, 
         String vPath ) throws MMLException
     {
-        AeseVersion version = new AeseVersion();
+        EcdosisVersion version = new EcdosisVersion();
         JSONObject doc = null;
         JSONObject md = null;
-        byte[] data = null;
+        char[] data = null;
         String res = null;
         String metadata;
         //System.out.println("fetching version "+vPath );
@@ -193,7 +193,7 @@ public class MMLGetHandler extends MMLHandler {
                 if ( vId != 0 )
                 {
                     data = mvd.getVersion( vId );
-                    String desc = mvd.getDescription();
+                    // String desc = mvd.getDescription();
                     //System.out.println("description="+desc);
                     //int nversions = mvd.numVersions();
                     //System.out.println("nversions="+nversions);
@@ -210,14 +210,14 @@ public class MMLGetHandler extends MMLHandler {
             {
                 String body = (String)doc.get( JSONKeys.BODY );
                 version.setStyle(getBestString(JSONKeys.STYLE,md,doc));
-                version.setDescription(getBestString(JSONKeys.TITLE,md,doc)+" "
-                    +getBestString(JSONKeys.SECTION,md,doc));
-                version.setVersion1(getBestString(JSONKeys.VERSION1,md,doc));
+//                version.setDescription(getBestString(JSONKeys.TITLE,md,doc)+" "
+//                    +getBestString(JSONKeys.SECTION,md,doc));
+//                version.setVersion1(getBestString(JSONKeys.VERSION1,md,doc));
                 if ( body == null )
                     throw new MMLException("empty body");
                 try
                 {
-                    data = body.getBytes("UTF-8");
+                    data = body.toCharArray();
                 }
                 catch ( Exception e )
                 {

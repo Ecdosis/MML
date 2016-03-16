@@ -308,10 +308,7 @@ function MML(opts, dialect) {
         // scrolldown one half-pagescp js mml.js
         pos -= Math.round(elemToScroll.height()/2);
         if ( pos < 0 )
-        {
-            console.log("pos="+pos);
             pos = 0;
-        }
         if ( elemToScroll[0].scrollTopMax !=undefined && pos > elemToScroll[0].scrollTopMax )
             pos = elemToScroll[0].scrollTopMax;
         else if ( pos > elemToScroll[0].scrollHeight-elemToScroll[0].clientHeight )

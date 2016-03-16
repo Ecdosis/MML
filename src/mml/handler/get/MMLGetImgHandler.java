@@ -122,8 +122,8 @@ public class MMLGetImgHandler extends MMLGetHandler
             img.addAttribute("data-width",Integer.toString(width));
             img.addAttribute("data-height",Integer.toString(height));
             img.addAttribute("data-ref",name);
-            wrap.addElement( img );
-            images.addElement( wrap );
+            wrap.addChild( img );
+            images.addChild( wrap );
         }
         return images.toString();
     }

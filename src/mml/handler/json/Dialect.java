@@ -30,8 +30,8 @@ import calliope.core.constants.JSONKeys;
 public class Dialect {
     static String dia1 = 
     "{\n\t\t\"description\": \"Novel markup for De Roberto\",\n\t\t"
-    +"\"language\": \"it\",\n\t\t\"section\": {\"prop\": \"sectio"
-    +"n\"},\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
+    +"\"language\": \"it\",\n\t\t\"sections\": [{\"prop\": \"sectio"
+    +"n\"}],\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
     +"s\": {\"prop\": \"\"},\n\t\t\"quotations\": {\"prop\": \"\"}"
     +",\n\t\t\"smartquotes\": true,\n\t\t\"softhyphens\": true,\n\t"
     +"\t\"headings\": [{\"tag\":\"=\",\"prop\":\"h1\"},{\"tag\":\""
@@ -45,8 +45,8 @@ public class Dialect {
     +"g\":\"[\",\"rightTag\":\"]\",\"prop\":\"page\"}]\n}\n";
     static String dia2 = 
     "{\n\t\t\"description\": \"Novel markup for De Roberto\",\n\t\t"
-    +"\"language\": \"en\",\n\t\t\"section\": {\"prop\": \"sectio"
-    +"n\"},\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
+    +"\"language\": \"en\",\n\t\t\"sections\": [{\"prop\": \"sectio"
+    +"n\"}],\n\t\t\"paragraph\": {\"prop\": \"\"},\n\t\t\"codeblock"
     +"s\": {\"prop\": \"\"},\n\t\t\"quotations\": {\"prop\": \"\"}"
     +",\n\t\t\"smartquotes\": true,\n\t\t\"softhyphens\": true,\n\t"
     +"\t\"headings\": [{\"tag\":\"=\",\"prop\":\"h1\"},{\"tag\":\""

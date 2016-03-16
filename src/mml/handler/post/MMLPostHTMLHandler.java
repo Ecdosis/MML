@@ -524,11 +524,11 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             // send the text,STIL and dialect to the database
             if ( description == null )
                 description = "Version "+this.version1+" of "+docid;
-            Archive cortex = new Archive(Formats.TEXT, encoding, description);
+            Archive cortex = new Archive(Formats.TEXT, description);
             cortex.addLongName( version1, description );
             if ( style != null )
                 cortex.setStyle( style );
-            cortex.put( version1, sb.toString().getBytes(encoding) );
+            cortex.put( version1, sb.toString().toCharArray() );
             Connection conn = Connector.getConnection();
             String res = conn.getFromDb(Database.SCRATCH,docid);
             if ( res != null )
@@ -551,11 +551,11 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             // repeat for corcode
             if ( description == null )
                 description = "Version "+this.version1+" of "+docid;
-            Archive corcode = new Archive(Formats.STIL,encoding,description);
+            Archive corcode = new Archive(Formats.STIL,description);
             if ( description != null )
                 corcode.addLongName( version1, description );
             corcode.setStyle( style );
-            corcode.put( version1, stil.toString().getBytes(encoding) );
+            corcode.put( version1, stil.toString().toCharArray() );
             Connection conn = Connector.getConnection();
             String ccDocId = docid+"/default";
             String res = conn.getFromDb(Database.SCRATCH,ccDocId);

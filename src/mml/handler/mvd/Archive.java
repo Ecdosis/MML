@@ -32,14 +32,13 @@ import edu.luc.nmerge.mvd.Version;
  * indexed by the group-path/shortname separated by "/"
  * @author desmond
  */
-public class Archive extends HashMap<String,byte[]>
+public class Archive extends HashMap<String,char[]>
 {
     String description;
     StringBuilder log;
     String style;
     String version1;
     String format;
-    String encoding;
     HashMap<String,String> nameMap;
     private Archive()
     {
@@ -50,13 +49,12 @@ public class Archive extends HashMap<String,byte[]>
      * @param encoding defaults to UTF-8
      * @param description the MVD description
      */
-    public Archive( String format, String encoding, String description )
+    public Archive( String format, String description )
     {
         this.log = new StringBuilder();
         this.style = "default";
         this.nameMap = new HashMap<String,String>();
         this.format = format;
-        this.encoding = (encoding==null)?"UTF-8":encoding;
         this.description = description;
     }
     /**
@@ -80,10 +78,6 @@ public class Archive extends HashMap<String,byte[]>
     public String getLog()
     {
         return log.toString();
-    }
-    public String getEncoding()
-    {
-        return this.encoding;
     }
     /**
      * Split off the groups path if any
@@ -134,12 +128,12 @@ public class Archive extends HashMap<String,byte[]>
                 Set<String> keys = keySet();
                 Iterator<String> iter = keys.iterator();
                 String key = iter.next();
-                byte[] data = get( key );
+                char[] data = get( key );
                 if ( format.equals(Formats.MVD_STIL) )
                     format = Formats.STIL;
                 else if ( format.equals(Formats.MVD_TEXT) )
                     format = Formats.TEXT;
-                body = new String( data, encoding );
+                body = new String( data );
                 if ( version1 == null )
                     version1 = key;
                 if ( nameMap.containsKey(version1) )
@@ -162,7 +156,7 @@ public class Archive extends HashMap<String,byte[]>
                     String shortKey = getKey( key );
                     if ( version1 == null )
                         version1 = "/"+groups+"/"+shortKey;
-                    byte[] data = get( key );
+                    char[] data = get( key );
                     String longName = nameMap.get(key);
                     if ( longName == null )
                     {
@@ -211,13 +205,12 @@ public class Archive extends HashMap<String,byte[]>
         if ( resource.getFormat().startsWith("MVD") )
         {
             MVD mvd = MVDFile.internalise( resource.getContent() );
-            arc.encoding = mvd.getEncoding();
             arc.description = mvd.getDescription();
             int nVersions = mvd.numVersions();
             arc.nameMap = new HashMap<String,String>();
             for ( int vId=1;vId<=nVersions;vId++ )
             {
-                byte[] data = mvd.getVersion(vId);
+                char[] data = mvd.getVersion(vId);
                 String groupName = mvd.getGroupPath((short)vId);
                 String shortName = mvd.getVersionShortName( vId );
                 String versionID = groupName+"/"+shortName;
@@ -231,7 +224,7 @@ public class Archive extends HashMap<String,byte[]>
             arc.version1 = resource.getVersion1();
             try
             {
-                arc.put( arc.version1, resource.getContent().getBytes(arc.encoding) );
+                arc.put( arc.version1, resource.getContent().toCharArray() );
                 arc.nameMap.put( arc.version1, resource.getDescription() );
             }
             catch ( Exception e )
