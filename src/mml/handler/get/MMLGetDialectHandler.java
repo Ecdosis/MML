@@ -35,7 +35,7 @@ import org.json.simple.JSONObject;
  */
 public class MMLGetDialectHandler extends MMLGetHandler
 {
-    static String DEFAULT_DIALECT = "{ \"body\": \"{\\\"paragraph\\\":{\\\"prop"
+    public static String DEFAULT_DIALECT = "{ \"body\": \"{\\\"paragraph\\\":{\\\"prop"
         +"\\\":\\\"\\\"},\\\"softhyphens\\\":true,\\\"smartquotes\\\":true,"
         +"\\\"codeblocks\\\":[{\\\"tag\\\":\\\"pre\\\",\\\"prop\\\":\\\"lev"
         +"el1\\\"}], \\\"section\\\":{\\\"prop\\\":\\\"section\\\"},\\\"hea"

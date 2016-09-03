@@ -18,7 +18,6 @@ package mml.handler.mvd;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import mml.handler.json.JSONDocument;
 import mml.handler.AeseResource;
 import calliope.core.constants.JSONKeys;
 import mml.constants.Formats;
@@ -26,6 +25,7 @@ import mml.exception.MMLException;
 import edu.luc.nmerge.mvd.MVD;
 import edu.luc.nmerge.mvd.MVDFile;
 import edu.luc.nmerge.mvd.Version;
+import org.json.simple.JSONObject;
 
 /**
  * A set of CorCode or CorTex files, each a version of the same work, 
@@ -122,7 +122,7 @@ public class Archive extends HashMap<String,char[]>
         try
         {
             String body;
-            JSONDocument doc = new JSONDocument();
+            JSONObject doc = new JSONObject();
             if ( size()==1 )
             {
                 Set<String> keys = keySet();
@@ -183,10 +183,10 @@ public class Archive extends HashMap<String,char[]>
                 if ( format.equals(Formats.TEXT)||format.equals(Formats.STIL) )
                 format = "MVD/"+format;
             }
-            doc.add( JSONKeys.VERSION1, version1, false );
-            doc.add( JSONKeys.STYLE, style, false );
-            doc.add( JSONKeys.FORMAT, format, false );
-            doc.add( JSONKeys.BODY, body, false );
+            doc.put( JSONKeys.VERSION1, version1 );
+            doc.put( JSONKeys.STYLE, style );
+            doc.put( JSONKeys.FORMAT, format );
+            doc.put( JSONKeys.BODY, body );
             return doc.toString();
         }
         catch ( Exception e )

@@ -46,8 +46,8 @@ public class MMLGetHandler extends MMLHandler {
             urn = Utils.pop(urn);
             if ( service.equals(Service.METADATA) )
                 new MMLMetadataHandler().handle( request, response, urn );
-            else if ( service.equals(Database.CORPIX) )
-                new MMLCorpixHandler().handle( request, response, urn );
+            else if ( service.equals(Service.MML) )
+                new MMLGetMMLHandler().handle( request, response, urn );
             else if (service.equals(Service.VERSIONS))
                 new MMLGetVersionsHandler().handle(request,response,urn);
             else if ( service.equals(Database.CORFORM) )
@@ -64,8 +64,6 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLResourceHandler(Database.CORCODE).handle( request, response, urn );
             else if (service.equals(Service.TEST))
                 new MMLGetTestHandler().handle(request,response,urn);
-            else if ( service.equals(Service.MML) )
-                new MMLGetMMLHandler().handle( request, response, urn );
             else if ( service.equals(Service.IMAGES))
                 new MMLGetImgHandler().handle( request, response, urn );
             else if ( service.equals(Service.ANNOTATIONS) )

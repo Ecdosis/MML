@@ -1,4 +1,5 @@
-/* This file is part of MML.
+/*
+ * This file is part of MML.
  *
  *  MML is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,36 +13,28 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with MML.  If not, see <http://www.gnu.org/licenses/>.
+ *  (c) copyright Desmond Schmidt 2016
  */
-
-package mml.handler.json;
-import mml.exception.JSONException;
-import org.json.simple.*;
+package mml.handler.scratch;
+import org.json.simple.JSONObject;
+import calliope.core.constants.JSONKeys;
 /**
- * Represent a simple attribute
+ *
  * @author desmond
  */
-public class Annotation 
-{
+public class ScratchLayer {
+    String mml;
     String name;
-    Object value;
-    public Annotation( String name, Object value )
+    public ScratchLayer( String mml, String layerName )
     {
-        this.name = name;
-        this.value = value;
+        this.name = layerName;
+        this.mml = mml;
     }
-    public JSONObject toJSONObject() throws JSONException
+    public JSONObject toJSONObject()
     {
-        JSONObject doc = new JSONObject();
-        doc.put( name, (String)value );
-        return doc;
-    }
-    public String getName()
-    {
-        return name;
-    }
-    public Object getValue()
-    {
-        return value;
-    }
+        JSONObject jObj = new JSONObject();
+        jObj.put( JSONKeys.NAME, name );
+        jObj.put(JSONKeys.BODY, mml);
+        return jObj;
+    }        
 }

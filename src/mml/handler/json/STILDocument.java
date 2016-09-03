@@ -18,40 +18,39 @@ package mml.handler.json;
 import calliope.core.constants.JSONKeys;
 import mml.constants.Formats;
 import mml.exception.JSONException;
-import java.io.File;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.ArrayList;
+import org.json.simple.*;
 /**
  *
  * @author desmond
  */
-public class STILDocument extends JSONDocument
+public class STILDocument extends JSONObject
 {
-    ArrayList<JSONDocument> ranges;
-    HashMap<Range,JSONDocument> map;
+    ArrayList<JSONObject> ranges;
+    HashMap<Range,JSONObject> map;
     /** array of actual ranges with absolute offsets */
     ArrayList<Range> rangeArray;
     int lastOffset;
     
-    public STILDocument()
+    public STILDocument( String style )
     {
         super();
-        put( JSONKeys.STYLE, Formats.DEFAULT );
-        ranges = new ArrayList<JSONDocument>();
+        put( JSONKeys.STYLE, style );
+        ranges = new ArrayList<JSONObject>();
         put( JSONKeys.RANGES, ranges );
         put( JSONKeys.FORMAT, Formats.STIL );
         lastOffset = 0;
-        map = new HashMap<Range,JSONDocument>();
+        map = new HashMap<Range,JSONObject>();
     }
     /**
      * Add a range to the STIL Document. Must be added in sequence
      * @param r the actual range to add (NOT relative)
      * @return the added document
      */
-    public JSONDocument add( Range r ) throws JSONException
+    public JSONObject add( Range r ) throws JSONException
     {
-        JSONDocument doc = new JSONDocument();
+        JSONObject doc = new JSONObject();
         int reloff = r.offset - lastOffset;
         lastOffset = r.offset;
         doc.put( JSONKeys.NAME, r.name );
@@ -65,7 +64,7 @@ public class STILDocument extends JSONDocument
             for ( int i=0;i<r.annotations.size();i++ )
             {
                 Annotation a = r.annotations.get( i );
-                attrs.add( a.toJSONDocument() );
+                attrs.add( a.toJSONObject() );
             }
             doc.put( JSONKeys.ANNOTATIONS, attrs );
         }
@@ -76,46 +75,8 @@ public class STILDocument extends JSONDocument
     }
     public void updateLen( Range r, int len )
     {
-        JSONDocument doc = map.get(r);
+        JSONObject doc = map.get(r);
         doc.put(JSONKeys.LEN, len );
-    }
-    /**
-     * Read in a CorCode document
-     * @param src the source document
-     * @return the document
-     */
-    public static STILDocument internalise( File src ) throws Exception
-    {
-        JSONDocument doc = JSONDocument.internalise( src, "UTF-8" );
-        STILDocument stil = new STILDocument();
-        stil.rangeArray = new ArrayList<Range>();
-        ArrayList list = (ArrayList)doc.get( JSONKeys.RANGES );
-        int currentOffset = 0;
-        for ( int i=0;i<list.size();i++ )
-        {
-            JSONDocument subDoc = (JSONDocument) list.get( i );
-            Integer len = (Integer)subDoc.get( JSONKeys.LEN );
-            Integer relOff = (Integer)subDoc.get( JSONKeys.RELOFF );
-            String name = (String) subDoc.get( JSONKeys.NAME );
-            ArrayList annotations = (ArrayList) subDoc.get( 
-                JSONKeys.ANNOTATIONS );
-            currentOffset += relOff.intValue();
-            Range r = new Range( name, currentOffset, len.intValue() );
-            if ( annotations != null )
-            {
-                for ( int j=0;j<annotations.size();j++ )
-                {
-                    JSONDocument annotation = (JSONDocument)annotations.get(j);
-                    // there is always only one key-value pair
-                    Set<String> keys = annotation.keySet();
-                    String[] array = new String[keys.size()];
-                    keys.toArray( array );
-                    r.addAnnotation( array[j], annotation.get(array[j]) );
-                }
-            }
-            stil.rangeArray.add( r );
-        }
-        return stil;
     }
     /**
      * Get the range information from a loaded document

@@ -20,10 +20,14 @@ package mml.handler.get;
 
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
+import calliope.core.Utils;
 import mml.constants.Params;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import mml.exception.MMLException;
+import org.json.simple.*;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Get metadata about a document
@@ -39,18 +43,34 @@ public class MMLMetadataHandler extends MMLGetHandler
             docid = request.getParameter(Params.DOCID);
             if ( docid == null || docid.length()== 0 )
                 docid = urn;
-            String md = conn.getMetadata( docid );
-            if ( md != null)
+            JSONObject md = new JSONObject();
+            boolean changed = false;
+            String docId = docid;
+            do
             {
-                response.setContentType("application/json");
-                response.setCharacterEncoding(encoding);
-                response.getWriter().println(md.toString());
-            }
-            else
-            {
-                response.getOutputStream().println("metadata at "
-                    +urn+" not found");
-            }
+                String jStr = conn.getMetadata( docId );
+                if ( jStr != null )
+                {
+                    JSONObject jObj = (JSONObject)JSONValue.parse(jStr);
+                    Set<String> keys = jObj.keySet();
+                    Iterator<String> iter = keys.iterator();
+                    while ( iter.hasNext() )
+                    {
+                        String key = iter.next();
+                        md.put( key, jObj.get(key) );
+                    }
+                    changed = true;
+                }
+                else
+                {
+                    System.out.println("No metadata found for "+docId);
+                    changed = false;
+                }
+                docId = Utils.chomp(docId);
+            } while ( changed );
+            response.setContentType("application/json");
+            response.setCharacterEncoding(encoding);
+            response.getWriter().println(md.toJSONString());
         }
         catch ( Exception e )
         {

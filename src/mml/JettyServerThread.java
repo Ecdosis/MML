@@ -35,7 +35,6 @@ public class JettyServerThread extends Thread
             Connector[] connectors = server.getConnectors();
             connectors[0].setHost(MMLWebApp.host);
             // initialise autosave by forcing class to load
-            Autosave.lock = false;
             Autosave.inProgress = false;
             server.setHandler(new JettyServer());
             System.out.println("starting...");

@@ -36,6 +36,8 @@ import mml.exception.MMLSaveException;
 import mml.handler.json.Range;
 import mml.handler.mvd.Archive;
 import mml.Autosave;
+import mml.handler.json.STILDocument;
+import mml.handler.scratch.ScratchVersionSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -86,10 +88,6 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                         else if ( fieldName.equals( Params.HTML ) )
                         {
                             html = contents;
-                            if ( html.indexOf("novità") != -1 )
-                                System.out.println("Found novità");
-                            else
-                                System.out.println("Didn't find novità");
                         }
                         else if ( fieldName.equals(Params.ENCODING) )
                             encoding = contents;
@@ -305,7 +303,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
      * @param elem the element in question
      * @return 
      */
-    String getTextOf( Node elem )
+    String getTextOf( Node elem ) 
     {
         if ( elem instanceof TextNode )
             return ((TextNode)elem).getWholeText();
@@ -316,7 +314,19 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             if ( nName.equals("span") 
                 && ((Element)elem).attr("class") != null 
                 && isMilestone(((Element)elem).attr("class")) )
+            {
+                int offset = sb.length();
+                String name = ((Element)elem).attr("class");
+                Range r = new Range( name, offset, 0 );
+                try
+                {
+                    pages.add(r);
+                }
+                catch ( JSONException e )
+                {
+                }
                 return getTextOf(elem.nextSibling());
+            }
             else
             {
                 List<Node> children = elem.childNodes();
@@ -409,17 +419,19 @@ public class MMLPostHTMLHandler extends MMLPostHandler
             if ( name == null||name.length()==0 )
                 name = "span";
             Range r = new Range( name, offset, 0 );
-            stil.add( r );
             if ( span.hasAttr("class") )
             {
                 name = span.attr("class");
                 this.sb.append( span.text() );
                 if ( isMilestone(name) )
                 {
+                    pages.add(r);
                     this.sb.append("\n");
+                    pages.updateLen(r,sb.length()-offset);
                 }
                 else if ( name.equals("soft-hyphen") )
                 {
+                    stil.add(r);
                     int i = sb.length()-1;
                     while ( i > 0 && !Character.isWhitespace(sb.charAt(i)) )
                         i--;
@@ -429,11 +441,20 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                     String next = clean(nextWord(span),false);  
                     if ( this.speller.isHardHyphen(prev,next) )
                         name = "hard-hyphen";
+                    stil.updateLen(r,sb.length()-offset);
+                }
+                else
+                {
+                    stil.add( r );
+                    stil.updateLen(r,sb.length()-offset);
                 }
             }
             else
+            {
+                stil.add(r);
                 sb.append( span.text() );
-            this.stil.updateLen(r,sb.length()-offset);
+                stil.updateLen(r,sb.length()-offset);
+            }
         }
         // else strangely no text: ignore it
     }
@@ -442,12 +463,15 @@ public class MMLPostHTMLHandler extends MMLPostHandler
      * @param body should be contents of the target div in the editor
      * @throws JSONException 
      */
-    private void parseBody( Element body ) throws MMLSaveException
+    protected void parseBody( Element body ) throws MMLSaveException
     {
         try
         {
             this.speller = new AeseSpeller( this.langCode );
             this.sb = new StringBuilder();
+            String style = ScratchVersionSet.getDefaultStyleName(this.docid);
+            stil = new STILDocument(style);
+            pages = new STILDocument(style);
             if ( body.nodeName().toLowerCase().equals("div") )
                 parseDiv( body );
             else

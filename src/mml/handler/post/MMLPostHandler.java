@@ -50,6 +50,7 @@ public class MMLPostHandler extends MMLHandler
     String html;
     StringBuilder sb;
     STILDocument stil;
+    STILDocument pages;
     JSONObject dialect;
     String langCode;
     String author;
@@ -69,7 +70,6 @@ public class MMLPostHandler extends MMLHandler
     {
         encoding = "UTF-8";
         langCode = Locale.getDefault().getLanguage();
-        stil = new STILDocument();
     }
     /**
      * Parse the import params from the request
@@ -191,6 +191,8 @@ public class MMLPostHandler extends MMLHandler
                 new MMLPostHTMLHandler().handle(request,response,urn);
             else if ( service.equals(Service.IMPORT) )
                 new MMLPostImportHandler().handle(request,response,urn);
+            else if ( service.equals(Service.VERSION) )
+                new MMLPostVersionHandler().handle(request,response,urn);
             else if ( service.equals(Service.ANNOTATIONS) )
                 new MMLPostAnnotationsHandler().handle(request,response,urn);
             else

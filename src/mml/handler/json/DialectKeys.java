@@ -24,5 +24,6 @@ public enum DialectKeys
     dividers,
     charformats,
     paraformats,
-    milestones
+    milestones,
+    globals
 }

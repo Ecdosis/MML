@@ -18,22 +18,25 @@
 
 package mml.handler.get;
 
-import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
+import java.util.Arrays;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import calliope.core.constants.Database;
 import mml.constants.Params;
-import mml.DocType;
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.JSONKeys;
+import calliope.core.json.corcode.Range;
+import calliope.core.json.corcode.Annotation;
 import mml.exception.*;
+import mml.handler.scratch.Scratch;
+import mml.handler.scratch.ScratchVersion;
+import mml.handler.scratch.ScratchLayer;
 import calliope.core.Utils;
-import calliope.core.handler.EcdosisVersion;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -46,6 +49,7 @@ import org.json.simple.JSONValue;
 public class MMLGetMMLHandler extends MMLGetHandler
 {
     HashMap<String,JSONObject> invertIndex;
+    HashMap<Character,String> globals;
     JSONObject dialect;
     StringBuilder mml;
     
@@ -166,7 +170,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
     /**
      * Make a reverse index of the dialect file
      */
-    private void invertDialect()
+    private void invertDialect() throws Exception
     {
         this.invertIndex = new HashMap<String,JSONObject>();
         JSONArray array;
@@ -240,6 +244,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         JSONObject obj = (JSONObject)array.get(i);
                         enterProp(obj,keyword,"p");
                     }
+                    break;
                 case milestones:
                     array = (JSONArray)value;
                     for ( int i=0;i<array.size();i++ )
@@ -247,7 +252,19 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         JSONObject obj = (JSONObject)array.get(i);
                         enterProp(obj,keyword,"span");
                     }
-                break;
+                    break;
+                case globals:
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject jObj = (JSONObject)array.get(i);
+                        String rep = (String)jObj.get("rep");
+                        if ( rep.length() != 1 )
+                            throw new Exception("Global replacement string must be single char");
+                        char repChar = rep.charAt(0);
+                        globals.put(repChar,(String)jObj.get("seq"));
+                    }
+                    break;
             }
         }
     }
@@ -361,27 +378,113 @@ public class MMLGetMMLHandler extends MMLGetHandler
         return true;
     }
     /**
+     * Merge two corcode sets
+     * @param cc1 the first corcode as a STIL JSON object
+     * @param cc2 the second corcode as a STIL JSON object
+     * @return a STIL object with the two merged arrays
+     */
+    JSONObject mergeCorcodes( JSONObject cc1, JSONObject cc2 )
+    {
+        JSONArray arr1 = (JSONArray)cc1.get("ranges");
+        JSONArray arr2 = (JSONArray)cc2.get("ranges");
+        Range[] ranges = new Range[arr1.size()+arr2.size()];
+        int offset = 0;
+        for ( int i=0;i<arr1.size();i++ )
+        {
+            JSONObject obj = (JSONObject)arr1.get(i);
+            offset += (Long)obj.get(JSONKeys.RELOFF);
+            Range r = new Range( (String)obj.get(JSONKeys.NAME), 
+                offset, ((Long)obj.get(JSONKeys.LEN)).intValue() );
+            if ( obj.containsKey(JSONKeys.ANNOTATIONS) )
+            {
+                JSONArray anns = (JSONArray)obj.get(JSONKeys.ANNOTATIONS);
+                for ( int j=0;j<anns.size();j++ )
+                {
+                    JSONObject ann = (JSONObject)anns.get(j);
+                    Set<String> keys = ann.keySet();
+                    if ( keys.size()==1 )
+                    {
+                        String[] key = new String[1];
+                        keys.toArray(key);
+                        r.addAnnotation(key[0],ann.get(key[0]));
+                    }
+                }
+            }
+            ranges[i] = r;
+        }
+        offset = 0;
+        for ( int i=0,j=arr1.size();i<arr2.size();i++,j++ )
+        {
+            JSONObject obj = (JSONObject)arr2.get(i);
+            offset += (Long)obj.get(JSONKeys.RELOFF);
+            Range r = new Range( (String)obj.get(JSONKeys.NAME), 
+                offset, ((Long)obj.get(JSONKeys.LEN)).intValue() );
+            ranges[j] = r;
+        }
+        // now sort
+        Arrays.sort( ranges );
+        JSONArray newArr = new JSONArray();
+        int lastOffset = 0;
+        for ( int i=0;i<ranges.length;i++ )
+        {
+            JSONObject obj = new JSONObject();
+            obj.put(JSONKeys.RELOFF, ranges[i].offset-lastOffset);
+            lastOffset = ranges[i].offset;
+            obj.put(JSONKeys.LEN,ranges[i].len);
+            obj.put(JSONKeys.NAME, ranges[i].name);
+            if ( ranges[i].annotations != null 
+                && ranges[i].annotations.size()>0 )
+            {
+                for ( int j=0;j<ranges[i].annotations.size();j++ )
+                {
+                    Annotation a = ranges[i].annotations.get(j);
+                    JSONObject annObj = new JSONObject();
+                    annObj.put(a.getName(), a.getValue());
+                    JSONArray arr;
+                    if ( !obj.containsKey(JSONKeys.ANNOTATIONS) )
+                    {
+                        arr = new JSONArray();
+                        obj.put(JSONKeys.ANNOTATIONS,arr);
+                    }
+                    else
+                        arr = (JSONArray)obj.get(JSONKeys.ANNOTATIONS);
+                    arr.add(annObj);
+                }
+            }
+            newArr.add(obj);
+        }
+        cc1.put(JSONKeys.RANGES, newArr);
+        return cc1;
+    }
+    /**
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
-     * @param corcode the STIL markup for that plain text
+     * @param ccDflt the default STIL markup for that plain text
+     * @param ccPages the page-breaks
+     * @param layer the number of the layer to build
      */
-    void createMML( EcdosisVersion cortex, EcdosisVersion corcode )
+    void createMML( ScratchVersion cortex, ScratchVersion ccDflt, 
+        ScratchVersion ccPages, int layer )
     {
-        String text = cortex.getVersionString();
+        String text = cortex.getLayerString(layer);
         mml = new StringBuilder();
-        String stil = corcode.getVersionString();
-        JSONObject markup = (JSONObject)JSONValue.parse(stil);
-        JSONArray ranges = (JSONArray)markup.get("ranges");
+        String stilDflt = ccDflt.getLayerString(layer);
+        String stilPages = (ccPages==null)?null:ccPages.getLayerString(layer);
+        JSONObject mDflt = (JSONObject)JSONValue.parse(stilDflt);
+        if ( stilPages != null )
+        {
+            JSONObject mPages = (JSONObject)JSONValue.parse(stilPages);
+            mDflt = mergeCorcodes(mDflt,mPages);
+        }
+        JSONArray ranges = (JSONArray)mDflt.get("ranges");
         Stack<EndTag> stack = new Stack<EndTag>();
         int offset = 0;
         for ( int i=0;i<ranges.size();i++ )
         {
             JSONObject r = (JSONObject)ranges.get(i);
-            Long len = (Long)r.get("len");
-            Long relOff = (Long)r.get("reloff");
+            Number len = (Number)r.get("len");
+            Number relOff = (Number)r.get("reloff");
             String name = (String)r.get("name");
-            if ( name.equals("page") )
-                System.out.println("page");
             if ( invertIndex.containsKey(name) )
             {
                 JSONObject def = invertIndex.get(name);
@@ -403,7 +506,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     {
                         char c = text.charAt(j);
                         if ( c!='\n' || !inPage )
-                            mml.append(c);
+                        {
+                            if ( globals.containsKey(c) )
+                                mml.append(globals.get(c));
+                            else
+                                mml.append(c);
+                        }
                         if ( c=='\n' && inPre && j<tagEnd-1 )
                             startPreLine(stack);
                     }
@@ -487,55 +595,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
     }
     /**
-     * Get a cortex or corcode from the scratch collection
-     * @param docId the docid of the resource
-     * @param version the version to fetch
-     * @param cortex is this a cortex? if false corcode is assumed
-     * @return null if not there else the AeseVersion of the resource
-     * @throws DbException 
-     */
-    EcdosisVersion getScratchVersion( String docId, String version, 
-        boolean cortex ) throws DbException
-    {
-        try
-        {
-            Connection conn = Connector.getConnection();
-            String[] docids = conn.listDocuments(Database.SCRATCH, docid+".*", 
-                JSONKeys.DOCID );
-            for ( int i=0;i<docids.length;i++ )
-            {
-                String jDoc = conn.getFromDb(Database.SCRATCH, docids[i] );
-                JSONObject jObj = (JSONObject) JSONValue.parse(jDoc);
-                if ( docids[i].equals(docId)
-                    && (cortex&&DocType.classifyObj(jObj)==DocType.CORTEX)
-                    ||(!cortex&&DocType.classifyObj(jObj)==DocType.CORCODE) )
-                {
-                    EcdosisVersion av = new EcdosisVersion();
-                    String format = (String)jObj.get(JSONKeys.FORMAT);
-                    if ( format == null )
-                        format = "TEXT";
-                    av.setFormat( format );
-                    String style = (String)jObj.get(JSONKeys.STYLE);
-                    if ( style == null )
-                        style = "TEI/default";
-                    av.setStyle( style );
-                    String body = (String)jObj.get(JSONKeys.BODY);
-                    String encoding = (String)jObj.get(JSONKeys.ENCODING);
-                    if ( encoding == null )
-                        encoding = "UTF-8";
-//                    av.setVersion1( version );
-//                    av.setVersion(body.getBytes(encoding));
-                    return av;
-                }
-            }
-        }
-        catch ( Exception e )
-        {
-            throw new DbException(e);
-        }
-        return null;
-    }       
-    /**
      * Handle the request
      * @param request the request
      * @param response the response
@@ -551,25 +610,34 @@ public class MMLGetMMLHandler extends MMLGetHandler
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
-            EcdosisVersion cortex, corcode;
-            cortex = getScratchVersion( docid, version1, true );
-            corcode = getScratchVersion( docid, version1+"/default", false );
-            if ( cortex == null || corcode == null )
-            {
-                corcode = doGetResourceVersion( Database.CORCODE, 
-                    docid+"/default", version1 );
-                cortex = doGetResourceVersion( Database.CORTEX, 
-                    docid, version1 );
-            }
+            if( version1 == null )
+                version1 = "base";
+            ScratchVersion cortex, corcodeDefault,corcodePages;
+            cortex = Scratch.getVersion( docid, version1, Database.CORTEX );
+            corcodeDefault = Scratch.getVersion( docid+"/default", version1, Database.CORCODE );
+            corcodePages = Scratch.getVersion( docid+"/pages", version1, Database.CORCODE );
             String shortID = shortenDocID(docid);
             String dialectStr = getDialect( shortID, version1 );
             this.dialect = (JSONObject)JSONValue.parse(dialectStr);
+            globals = new HashMap<Character,String>();
             invertDialect();
             //printInvertIndex();
-            createMML(cortex,corcode);
-            response.setContentType("text/plain");
+            int[] layers = cortex.getLayerNumbers();
+            Arrays.sort(layers);
+            JSONObject jObj = new JSONObject();
+            jObj.put( JSONKeys.VERSION1, version1 );
+            JSONArray jArr = new JSONArray();
+            jObj.put(JSONKeys.LAYERS,jArr);
+            for ( int i=0;i<layers.length;i++ )
+            {
+                createMML(cortex,corcodeDefault,corcodePages,layers[i]);
+                ScratchLayer sl = new ScratchLayer(mml.toString(),
+                    ScratchVersion.simpleLayerName(layers[i]));
+                jArr.add( sl.toJSONObject() );
+            }
+            response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
-            response.getWriter().println(mml.toString());
+            response.getWriter().println(jObj.toJSONString());
         }
         catch ( Exception e )
         {
@@ -607,20 +675,30 @@ public class MMLGetMMLHandler extends MMLGetHandler
         try
         {
             Connection conn = Connector.getConnection();
-            String path = docid+version1;
+            String path = docid;
+            if ( version1 != null && !version1.equals("base") )
+                path += version1;
             String dialect = conn.getFromDb(Database.DIALECTS,path);
-            while ( path.length()>0 && dialect == null )
+            if ( dialect != null )
             {
-                path = Utils.chomp( path );
-                String bson = conn.getFromDb(Database.DIALECTS,path);
-                if ( bson != null )
+                JSONObject jObj = (JSONObject)JSONValue.parse(dialect);
+                dialect = (String)jObj.get(JSONKeys.BODY);
+            }
+            else
+            {
+                while ( path.length()>0 && dialect == null )
                 {
-                    JSONObject jObj = (JSONObject)JSONValue.parse(bson);
-                    dialect = (String)jObj.get(JSONKeys.BODY);
+                    path = Utils.chomp( path );
+                    String bson = conn.getFromDb(Database.DIALECTS,path);
+                    if ( bson != null )
+                    {
+                        JSONObject jObj = (JSONObject)JSONValue.parse(bson);
+                        dialect = (String)jObj.get(JSONKeys.BODY);
+                    }
                 }
             }
             if ( dialect == null )
-                throw new MMLException("No dialect for "+docid+" found");
+                throw new MMLException("No dialect for "+path+" found");
             else
                 return dialect;
         }
