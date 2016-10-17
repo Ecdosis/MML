@@ -92,18 +92,18 @@ public class MMLPostVersionHandler extends MMLPostHTMLHandler
                 JSONObject jObj = (JSONObject) JSONValue.parse(value);
                 this.version1 = (String)jObj.get(JSONKeys.VERSION1);
                 if ( version1==null )
-                    version1 = "/base-layer-final";
+                    version1 = "/base";
                 else
                     version1 = URLDecoder.decode(version1,"UTF-8");
                 this.docid = (String)jObj.get(JSONKeys.DOCID);
                 this.dialect = getDialectFromDocid();
                 JSONArray layers = (JSONArray)jObj.get("layers");
                 ScratchVersion corcodeDefault = new ScratchVersion(
-                    version1, docid+"/default", Database.CORCODE);
+                    version1, docid+"/default", Database.CORCODE,null, true);
                 ScratchVersion corcodePages = new ScratchVersion(
-                    version1, docid+"/pages", Database.CORCODE);
+                    version1, docid+"/pages", Database.CORCODE,null,true);
                 ScratchVersion text = new ScratchVersion(version1, 
-                    docid, Database.CORTEX);
+                    docid, Database.CORTEX,null,true);
                 String style = ScratchVersionSet.getDefaultStyleName(docid);
                 for ( int i=0;i<layers.size();i++ )
                 {

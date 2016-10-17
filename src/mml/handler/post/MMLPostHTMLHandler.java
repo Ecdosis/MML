@@ -50,7 +50,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
-
+import java.util.HashSet;
 
 /**
  * Handle POST events. Mostly saves.
@@ -58,6 +58,13 @@ import org.apache.commons.fileupload.FileUploadException;
  */
 public class MMLPostHTMLHandler extends MMLPostHandler
 {
+    static HashSet<String> milestones;
+    static
+    {
+        milestones = new HashSet<String>();
+        milestones.add("page");
+        // add more milestone keywords here
+    }
     void parseRequest( HttpServletRequest request ) throws FileUploadException, 
         Exception
     {
@@ -139,10 +146,14 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     private void parsePara( Element p, String defaultName ) throws JSONException
     {
         List<Node> children = p.childNodes();
-        int offset = sb.length();
         String name = p.attr("class");
         if ( name == null || name.length()==0 )
             name = defaultName;
+        if ( isLineFormat(name) )
+            ensure(1,false);
+        else
+            ensure(2,true);
+        int offset = sb.length();
         Range r = new Range( name, offset, 0 );
         stil.add( r );
         for ( Node child: children )
@@ -161,7 +172,10 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 sb.append(tn.getWholeText());
             }
         }
-        ensure(2);
+        if ( isLineFormat(name) )
+            ensure(1,true);
+        else
+            ensure(2,true);
         this.stil.updateLen(r,sb.length()-offset);
     }
     /**
@@ -189,17 +203,31 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     /**
      * Ensure that there are at least a given number of NLs
      * @param nNLs the number of newlines that must be at the end of sb
+     * @param erase true if we are allowed to erase existing NLs
      */
-    private void ensure( int nNLs )
+    private void ensure( int nNLs, boolean erase )
     {
-        char c = sb.charAt(sb.length()-1);
-        while ( sb.length()>0 && (c == 10 || c == 13) ) 
+        int nExisting = 0;
+        if ( sb.length()>0 )
         {
-            sb.setLength(sb.length()-1);
-            c = sb.charAt(sb.length()-1);
+            char c = sb.charAt(sb.length()-1);
+            int index = 1;
+            while ( index<=sb.length() && (c == 10 || c == 13) ) 
+            {
+                nExisting++;
+                index++;
+                c = sb.charAt(sb.length()-index);
+            }
         }
-        for ( int i=0;i<nNLs;i++ )
-            sb.append("\n");
+        if ( nNLs>nExisting )
+        {
+            for ( int i=0;i<nNLs-nExisting;i++ )
+                sb.append("\n");
+        }
+        else if ( erase && nNLs < nExisting )
+        {
+            sb.setLength(sb.length()-(nExisting-nNLs));
+        }
     }
     /**
      * Parse a div (section)
@@ -232,7 +260,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                     parseOtherElement((Element)child);
             }
         }
-        ensure(3);
+        ensure(3,true);
         this.stil.updateLen(r,sb.length()-offset);
     }
     /**
@@ -275,26 +303,22 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         return (start<=end)?input.substring(start,end+1):"";
     }
     /**
-     * Check if the span name is a milestone
+     * Check if the span name is a line format
      * @param name the name of the milestone property
      * @return true if there is a prop in the milestones called name
      */
     boolean isMilestone( String name )
     {
-        Object obj = dialect.get("milestones");
-        if ( obj != null )
+        return milestones.contains(name);
+    }
+    boolean isLineFormat( String name )
+    {
+        JSONArray lfs = (JSONArray)dialect.get("lineformats");
+        for ( int i=0;i<lfs.size();i++ )
         {
-            JSONArray milestones = (JSONArray)obj;
-            for ( Object milestone : milestones )
-            {
-                if ( milestone instanceof JSONObject )
-                {
-                    JSONObject m = (JSONObject)milestone;
-                    if ( m.containsKey("prop") 
-                        && ((String)m.get("prop")).equals(name) )
-                        return true;
-                }
-            }
+            JSONObject lf = (JSONObject)lfs.get(i);
+            if ( name.equals((String)lf.get("prop")) )
+                return true;
         }
         return false;
     }

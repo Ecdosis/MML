@@ -40,6 +40,7 @@ import calliope.core.Utils;
 import mml.handler.json.DialectKeys;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import java.util.HashSet;
 import org.json.simple.JSONValue;
 
 /**
@@ -48,10 +49,12 @@ import org.json.simple.JSONValue;
  */
 public class MMLGetMMLHandler extends MMLGetHandler
 {
+    /** reverse index property-names to their MML definitions */
     HashMap<String,JSONObject> invertIndex;
     HashMap<Character,String> globals;
     JSONObject dialect;
     StringBuilder mml;
+    HashSet<String> lineFormats;
     
     /**
      * Class to represent the postponed end-tag 
@@ -104,6 +107,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     return (String)defn.get("tag");
                 else
                     return (String)defn.get("leftTag");
+            case lineformats:
+                return (String)defn.get("leftTag");
             case paraformats:
                 return (String)defn.get("leftTag");
             case milestones:
@@ -144,6 +149,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     return (String)defn.get("tag");
                 else
                     return (String)defn.get("rightTag");
+            case lineformats:
+                return (String)defn.get("rightTag")+"\n";
             case paraformats:
                 return (String)defn.get("rightTag")+"\n\n";
             case milestones:
@@ -166,6 +173,15 @@ public class MMLGetMMLHandler extends MMLGetHandler
             invertIndex.put( prop, (JSONObject)value );
         else if ( def.length()>0 )
             invertIndex.put(def,(JSONObject)value );
+    }
+    void reduceGlobal( JSONObject jObj )
+    {
+        String seq = (String)jObj.get("seq");
+        String rep = (String)jObj.get("rep");
+        seq = seq.trim();
+        rep = rep.trim();
+        jObj.put( "seq", seq );
+        jObj.put( "rep", rep);
     }
     /**
      * Make a reverse index of the dialect file
@@ -245,6 +261,14 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         enterProp(obj,keyword,"p");
                     }
                     break;
+                case lineformats: 
+                    array = (JSONArray)value;
+                    for ( int i=0;i<array.size();i++ )
+                    {
+                        JSONObject obj = (JSONObject)array.get(i);
+                        enterProp(obj,keyword,"line");
+                    }
+                    break;
                 case milestones:
                     array = (JSONArray)value;
                     for ( int i=0;i<array.size();i++ )
@@ -260,9 +284,21 @@ public class MMLGetMMLHandler extends MMLGetHandler
                         JSONObject jObj = (JSONObject)array.get(i);
                         String rep = (String)jObj.get("rep");
                         if ( rep.length() != 1 )
-                            throw new Exception("Global replacement string must be single char");
+                            reduceGlobal(jObj);
+                        rep = (String)jObj.get("rep");
+                        if ( rep.length() != 1 )
+                            throw new Exception("Global replacement should be 1 char");
                         char repChar = rep.charAt(0);
                         globals.put(repChar,(String)jObj.get("seq"));
+                    }
+                    break;
+                case smartquotes:
+                    if ( ((Boolean)value).booleanValue() )
+                    {
+                        globals.put('‘',"'");
+                        globals.put('’',"'");
+                        globals.put('“',"\"");
+                        globals.put('”',"\"");
                     }
                     break;
             }
@@ -306,19 +342,19 @@ public class MMLGetMMLHandler extends MMLGetHandler
         mml.setLength(mmlEnd+1);
     }
     /**
-     * Are we in a milestone?
+     * Are we in a section governed by a line format?
      * @param stack the tag stack
      * @return true if it is true
      */
-    boolean isInMilestone( Stack<EndTag> stack )
+    boolean isLineFormat( Stack<EndTag> stack )
     {
         if ( !stack.isEmpty() )
         {
             EndTag top = stack.peek();
             if ( top != null )
             {
-                JSONObject obj = top.def;
-                return "milestones".equals(obj.get("kind"));
+                String prop = (String) top.def.get("prop");
+                return lineFormats.contains(prop);
             }
             else
                 return false;
@@ -326,35 +362,17 @@ public class MMLGetMMLHandler extends MMLGetHandler
         else return false;
     }
     /**
-     * Are we in a preformatted section?
-     * @param stack the tag stack
-     * @return true if it is true
-     */
-    boolean isInPre( Stack<EndTag> stack )
-    {
-        if ( !stack.isEmpty() )
-        {
-            EndTag top = stack.peek();
-            if ( top != null )
-            {
-                JSONObject obj = top.def;
-                return "codeblocks".equals(obj.get("kind"));
-            }
-            else
-                return false;
-        }
-        else return false;
-    }
-    /**
-     * Insert the line-start spacing in a preformatted section
+     * Insert the line-start and end for an internal lineformat
      * @param stack the tag stack to tell us the depth
      */
     void startPreLine( Stack<EndTag> stack )
     {
-        JSONObject oldDef = stack.peek().def;
-        Integer level = (Integer)oldDef.get("level");
-        for (int k=0;k<level;k++ )
-            mml.append("    ");
+        JSONObject lf = stack.peek().def;
+        String pre = (String)lf.get("leftTag");
+        String post = (String)lf.get("rightTag");
+        mml.append(post);
+        mml.append("\n");
+        mml.append(pre);
     }
     /**
      * Debug: Check that the corcode stil ranges do not go beyond text end
@@ -457,6 +475,23 @@ public class MMLGetMMLHandler extends MMLGetHandler
         return cc1;
     }
     /**
+     * Count the numebr of newlines at the end of the MML text being built
+     * @param sb the mml text
+     * @return the number of terminal NLs
+     */
+    int countTerminalNLs( StringBuilder sb )
+    {
+        int nNLs = 0;
+        for ( int i=sb.length()-1;i>0;i-- )
+        {
+            if ( sb.charAt(i) == '\n' )
+                nNLs++;
+            else
+                break;
+        }
+        return nNLs;
+    }
+    /**
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
      * @param ccDflt the default STIL markup for that plain text
@@ -491,29 +526,27 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 String startTag = mmlStartTag(def,offset);
                 String endTag = mmlEndTag(def,len.intValue());
                 int start = offset+relOff.intValue();
-                // 1. insert pending end-tags and text
+                // 1. insert pending end-tags and text before current range
                 int pos = offset;
                 while ( !stack.isEmpty() && stack.peek().offset <= start )
                 {
-                    // check for NLs here if obj is of type codeblocks
-                    // and insert however many spaces approporiate for that level
+                    // check for NLs here if obj is of type lineformat
                     int tagEnd = stack.peek().offset;
-                    boolean inPre = isInPre( stack );
-                    if ( inPre && mml.charAt(mml.length()-1) == '\n' )
-                        startPreLine( stack );
-                    boolean inPage = isInMilestone( stack );
+                    boolean isLF = isLineFormat( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
                         char c = text.charAt(j);
-                        if ( c!='\n' || !inPage )
+                        if ( c!='\n' )
                         {
                             if ( globals.containsKey(c) )
                                 mml.append(globals.get(c));
                             else
                                 mml.append(c);
                         }
-                        if ( c=='\n' && inPre && j<tagEnd-1 )
+                        else if ( isLF && j<tagEnd-1 )
                             startPreLine(stack);
+                        else
+                            mml.append(c);
                     }
                     pos = tagEnd;
                     // newlines are not permitted before tag end
@@ -522,21 +555,25 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     mml.append( stack.pop().text );
                 }
                 // 2. insert intervening text
-                boolean inPre =isInPre(stack);
+                boolean inPre = isLineFormat(stack);
+                int nNLs = countTerminalNLs(mml);
                 for ( int j=pos;j<start;j++ )
                 {
                     char c = text.charAt(j);
                     if ( c == '\n' )
                     {
-                        if ( mml.length()==0||mml.charAt(mml.length()-1)!='\n')
+                        if ( mml.length()==0||nNLs==0 )
                             mml.append(c);
+                        if ( nNLs > 0 )
+                            nNLs--;
                         if ( inPre )
-                        {
                             startPreLine(stack);
-                        }
                     }
                     else
+                    {
                         mml.append(c);
+                        nNLs = 0;
+                    }
                 }
                 // 3. insert new start tag
                 normaliseNewlines(startTag);
@@ -552,9 +589,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
         while ( !stack.isEmpty() )
         {
             int tagEnd = stack.peek().offset;
-            boolean inPre = isInPre( stack );
-            if ( inPre && mml.charAt(mml.length()-1) == '\n' )
-                startPreLine( stack );
+            boolean inPre = isLineFormat( stack );
             for ( int j=pos;j<tagEnd;j++ )
             {
                 char c = text.charAt(j);
@@ -595,6 +630,20 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
     }
     /**
+     * Build a quick lookup ltable for lineformats
+     */
+    void buildLineFormats()
+    {
+        JSONArray lfs = (JSONArray)this.dialect.get("lineformats");
+        this.lineFormats = new HashSet<String>();
+        for ( int i=0;i<lfs.size();i++ )
+        {
+            JSONObject lf = (JSONObject)lfs.get(i);
+            String lfProp = (String) lf.get("prop");
+            lineFormats.add(lfProp);
+        }
+    }
+    /**
      * Handle the request
      * @param request the request
      * @param response the response
@@ -611,7 +660,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
             if( version1 == null )
-                version1 = "base";
+                version1 = "/base";
             ScratchVersion cortex, corcodeDefault,corcodePages;
             cortex = Scratch.getVersion( docid, version1, Database.CORTEX );
             corcodeDefault = Scratch.getVersion( docid+"/default", version1, Database.CORCODE );
@@ -620,6 +669,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             String dialectStr = getDialect( shortID, version1 );
             this.dialect = (JSONObject)JSONValue.parse(dialectStr);
             globals = new HashMap<Character,String>();
+            buildLineFormats();
             invertDialect();
             //printInvertIndex();
             int[] layers = cortex.getLayerNumbers();
@@ -638,6 +688,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
             response.getWriter().println(jObj.toJSONString());
+            //System.out.println(jObj.toJSONString());
         }
         catch ( Exception e )
         {
@@ -676,7 +727,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
         {
             Connection conn = Connector.getConnection();
             String path = docid;
-            if ( version1 != null && !version1.equals("base") )
+            if ( version1 != null && !version1.equals("/base") )
                 path += version1;
             String dialect = conn.getFromDb(Database.DIALECTS,path);
             if ( dialect != null )

@@ -70,7 +70,7 @@ public class AeseResource
         if ( !format.startsWith("MVD") )
         {
             String[] array = new String[1];
-            array[0] = this.version1;
+            array[0] = (this.version1==null)?"/base":this.version1;
             return array;
         }
         else
@@ -96,8 +96,15 @@ public class AeseResource
     public String getVersionLongName( int id )
     {
         if ( mvd != null )
-            return mvd.getVersionLongName(id);
-        else
+        {
+            String longName = mvd.getVersionLongName(id);
+            if ( longName.contains("/layer") )
+                longName = longName.substring(0,longName.indexOf("/layer"));
+            return longName;
+        }
+        else if ( this.description != null )
             return this.description;
+        else
+            return "Base version";
     }
 }

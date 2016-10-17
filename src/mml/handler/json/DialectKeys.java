@@ -23,6 +23,7 @@ public enum DialectKeys
     headings,
     dividers,
     charformats,
+    lineformats,
     paraformats,
     milestones,
     globals

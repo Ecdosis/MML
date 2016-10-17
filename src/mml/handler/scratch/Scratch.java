@@ -28,6 +28,7 @@ import calliope.core.handler.EcdosisMVD;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import java.util.HashMap;
+import java.util.Calendar;
 import java.util.Set;
 import java.util.Arrays;
 
@@ -48,21 +49,27 @@ public class Scratch
     {
         try
         {
+            System.out.println("Saving "+sv.docid+","+sv.version);
             Autosave.inProgress = true;
             // 1. check if scratch version already exists
             Connection conn = Connector.getConnection();
             String docid = sv.getDocid();
             String res = conn.getFromDb( Database.SCRATCH, sv.dbase, docid, sv.version );
             if ( res != null )
+            {
                 conn.removeFromDb( Database.SCRATCH, sv.dbase, docid, sv.version );
+                System.out.println("Removed "+sv.docid+","+sv.version+" from scratch");
+            }
             // 2. write the record and record its time
             String json = sv.toJSON();
             conn.putToDb(Database.SCRATCH, sv.dbase, docid, sv.version, json);
+            System.out.println("Saved "+sv.docid+","+sv.version);
             Autosave.inProgress = false;
         }
         catch ( DbException e )
         {
             Autosave.inProgress = false;
+            System.out.println("Error "+e.getMessage());
             throw new MMLException(e);
         }
     }
@@ -104,6 +111,14 @@ public class Scratch
         }
         return null;
     }
+    /**
+     * Get a version that may or may not be in scratch. If not put it there.
+     * @param docid the docid 
+     * @param version the desired single version
+     * @param dbase the database it is in
+     * @return a ScratchVersion object
+     * @throws MMLException 
+     */
     public static ScratchVersion getVersion( String docid, 
         String version, String dbase ) throws MMLException
     {
@@ -122,12 +137,12 @@ public class Scratch
                     for ( int i=1;i<=numVersions;i++ )
                     {
                         String vName = mvd.getVersionName(i);
-                        String regex = ".*-layer-.*";
+                        String regex = ".*/layer-.*";
                         if ( vName.matches(regex) )
                             layers.put( vName, mvd.getVersion(i) );
                     }
                     if ( layers.isEmpty() && numVersions == 1 )
-                        layers.put(mvd.getVersionName(1)+"-layer-final",
+                        layers.put(mvd.getVersionName(1)+"/layer-final",
                             mvd.getVersion(1));
                     if ( !layers.isEmpty() )
                     {
@@ -137,7 +152,7 @@ public class Scratch
                         Arrays.sort( arr );
                         if ( version == null )
                             version = mvd.getVersionName(1);
-                        sv = new ScratchVersion(version,docid,dbase);
+                        sv = new ScratchVersion(version,docid,dbase,null,false);
                         for ( int i=0;i<arr.length;i++ )
                         {
                             sv.addLayer( layers.get(arr[i]), 

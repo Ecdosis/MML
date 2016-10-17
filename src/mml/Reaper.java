@@ -21,11 +21,15 @@ import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.Database;
 import calliope.core.constants.JSONKeys;
+import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.ArrayList;
 import mml.handler.scratch.ScratchVersion;
 import mml.handler.scratch.ScratchVersionSet;
+import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
 /**
  * Reap the SCRATCH collection waiting for stuff to appear for saving
  * @author desmond
@@ -67,11 +71,17 @@ public class Reaper extends Thread
             // do this while the thread runs
             while ( true )
             {
+                if ( Autosave.inProgress )
+                {
+                    Thread.sleep(60000);
+                    continue;
+                }
                 // 1. examine scratch collection to see if it contains any files. 
                 // or if files are being written elsewhere
                 // If there are no files or we are locked, sleep for 1 minute
                 String[] ids = conn.listCollectionByKey(Database.SCRATCH,JSONKeys._ID);
-                if ( ids.length==0 || Autosave.inProgress )
+                ArrayList<String> dirty = new ArrayList<String>();
+                if ( ids.length==0 )
                 {
                     Thread.sleep(60000);
                     //System.out.println("Reper sleeping 1 minute");
@@ -79,13 +89,15 @@ public class Reaper extends Thread
                 else if ( !Autosave.inProgress )
                 {
                     // stop simultaneous saves
+
                     Autosave.inProgress = true;
-                    //System.out.println("COmmenced autosave");
+                    //System.out.println("Commenced autosave");
                     // prepare map of documents to be saved
                     // keyed on docid
                     HashMap<String,ScratchVersion[]> versions = 
                         new HashMap<String,ScratchVersion[]>();
                     //System.out.println("Found "+versions+" versions in scratch");
+                    // build versions hash table
                     for ( int i=0;i<ids.length;i++ )
                     {
                         String jDoc = conn.getFromDbByField(Database.SCRATCH,
@@ -93,9 +105,24 @@ public class Reaper extends Thread
                         if ( jDoc != null )
                         {
                             ScratchVersion sv = ScratchVersion.fromJSON(jDoc);
+                            if ( !sv.dirty )
+                            {
+                                // prune old resources
+                                if ( sv.isOld() )
+                                {
+                                    conn.removeFromDbByField(Database.SCRATCH,
+                                        JSONKeys._ID, ids[i]);
+                                    //System.out.println("removing old resources");
+                                }
+                                // ignore already saved resources
+                                continue;
+                            }
+                            else
+                                dirty.add(ids[i]);
                             // records unique for cc-default, cc-pages and cortex
                             // but not for versions
                             String docid = sv.getDocid();
+                            System.out.println("Preparing "+docid+" for save");
                             if ( versions.containsKey(docid) )
                             {
                                 ScratchVersion[] list = versions.get(docid);
@@ -112,7 +139,7 @@ public class Reaper extends Thread
                             }
                         }
                     }
-                    // for each docid, retrieve the original resources 
+                    // for each dirty docid, retrieve the original resources 
                     // from their respective databases
                     Set<String> keys = versions.keySet();
                     Iterator<String> iter = keys.iterator();
@@ -128,23 +155,20 @@ public class Reaper extends Thread
                             ScratchVersionSet dbaseSet = new ScratchVersionSet(jDoc,dbase);
                             dbaseSet.upsert( svs );
                             conn.putToDb(dbase, docid, dbaseSet.toResource());
-                            //System.out.println("Put resource to database overwriting one already there");
+                            System.out.println("Put resource to database overwriting one already there");
                         }
                         else // not already present
                         {
                             String jStr = svs.toResource();
                             conn.putToDb(dbase, docid, jStr);
-                            //System.out.println("Put resource to database not already there");
+                            System.out.println("Put resource to database not already there");
                         }
                     }
-                    // we got here without exception: so it's safe to 
-                    // remove cortexs and corcodes from the scratch database
-                    for ( int m=0;m<ids.length;m++ )
+                    // reset dirty flag on saved scratch resources
+                    for ( int i=0;i<dirty.size();i++ )
                     {
-                        String id = ids[m];
-                        String res = conn.removeFromDbByField( Database.SCRATCH, 
-                            JSONKeys._ID, ids[m] );
-                        //System.out.println("removed sratch resource. res="+res);
+                        conn.updateByField( Database.SCRATCH, JSONKeys._ID, 
+                            dirty.get(i), "dirty", false );
                     }
                     // finished! reset flag
                     Autosave.inProgress = false;
@@ -155,6 +179,9 @@ public class Reaper extends Thread
         {
             Autosave.inProgress = false;
             System.out.println(e.getMessage());
+            System.out.println("relaunching reaper");
+            Reaper reaper = new Reaper();
+            reaper.start();
         }
     }
 }

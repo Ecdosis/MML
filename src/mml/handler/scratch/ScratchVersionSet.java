@@ -53,6 +53,8 @@ public class ScratchVersionSet {
         this.list = list;
         this.otherFields = new HashMap<String,Object>();
         this.format = "TEXT";
+        this.docid = list[0].docid;
+        this.version1 = list[0].version;
     }
     public int size()
     {
@@ -108,7 +110,7 @@ public class ScratchVersionSet {
     /**
      * Is this version a layer?
      * @param vid the full version id
-     * @return true if it ends in "-layer-something
+     * @return true if it ends in "/layer-something
      */
     private boolean isLayerName( String vid )
     {
@@ -137,20 +139,20 @@ public class ScratchVersionSet {
     /**
      * Strip off the full version name of the layer name
      * @param vid the full verison name
-     * @return the lesser version name, no "-layer-*" crap
+     * @return the lesser version name, no "/layer-*" crap
      */
     private String splitName( String vid )
     {
-        String[] parts = vid.split("-");
+        String[] parts = vid.split("/");
         StringBuilder sb = new StringBuilder();
         for ( int i=0;i<parts.length;i++ )
         {
-            if ( parts[i].equals("layer") )
+            if ( parts[i].startsWith("layer-") )
                 break;
             else 
             {
                 if ( sb.length()>0 )
-                    sb.append("-");
+                    sb.append("/");
                 sb.append(parts[i]);
             }
         }
@@ -178,7 +180,7 @@ public class ScratchVersionSet {
                     ScratchVersion sv = map.get(shortName);
                     if ( sv == null )
                     {
-                        sv = new ScratchVersion(shortName,docid,dbase);
+                        sv = new ScratchVersion(shortName,docid,dbase,null,false);
                         sv.addLayer(data, num);
                         map.put(shortName,sv);
                     }
@@ -187,8 +189,8 @@ public class ScratchVersionSet {
                 }
                 else
                 {
-                    ScratchVersion sv = new ScratchVersion(vid+"-layer-final", 
-                        docid, dbase);
+                    ScratchVersion sv = new ScratchVersion(vid+"/layer-final", 
+                        docid, dbase,null,false);
                     sv.addLayer( data, 1 );
                     map.put( vid, sv );
                 }
@@ -204,7 +206,7 @@ public class ScratchVersionSet {
                 version1 = "/base";
             if ( docid != null && body != null )
             {
-                ScratchVersion sv = new ScratchVersion(version1, docid, dbase);
+                ScratchVersion sv = new ScratchVersion(version1, docid, dbase,null,false);
                 sv.addLayer( body.toCharArray(), Integer.MAX_VALUE );
                 appendToList( sv );
             }
@@ -320,14 +322,17 @@ public class ScratchVersionSet {
                     for ( int j=0;j<layers.length;j++ )
                     {
                         String str = list[i].getLayerString(layers[j]);
-                        String vPath = list[i].version+"-"+ScratchVersion.layerName(layers[j]);
+                        String vPath = list[i].version+"/"+ScratchVersion.layerName(layers[j]);
                         String shortName = Utils.getShortName(vPath);
                         String groupName = Utils.getGroupName(vPath);
+                        if ( groupName.startsWith("/"))
+                            groupName = groupName.substring(1);
                         String longName = "Version "+shortName;
                         if ( vid <= mvd.numVersions() )
                             longName = mvd.getLongNameForVersion(vid);
                         mvd.newVersion( shortName, longName, groupName, 
                             (short)0, false );
+                        System.out.println("vid="+vid);
                         mvd.update( vid, str.toCharArray(), true );
                         vid++;
                     }
