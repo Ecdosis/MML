@@ -32,6 +32,7 @@ import calliope.core.constants.JSONKeys;
 import calliope.core.database.Connector;
 import calliope.core.database.Connection;
 import calliope.core.exception.DbException;
+import calliope.core.DocType;
 
 /**
  * Get a list of all unedited letters
@@ -41,38 +42,8 @@ public class MMLGetUneditedLetters
 {
     String docid;
     File root;
-    static HashSet<String> months;
     static HashSet<String> map;
-    static {
-        months = new HashSet<String>();
-        months.add("JAN");
-        months.add("FEB");
-        months.add("MAR");
-        months.add("APR");
-        months.add("MAY");
-        months.add("JUN");
-        months.add("JUL");
-        months.add("AUG");
-        months.add("SEP");
-        months.add("OCT");
-        months.add("NOV");
-        months.add("DEC");
-    }
-    /**
-     * Is this filename component a name?
-     * @param name the component to test
-     * @return true if it is
-     */
-    boolean isName( String name )
-    {
-        for ( int i=0;i<name.length();i++ )
-        {
-            char token = name.charAt(i);
-            if ( !Character.isUpperCase(token) && token != '\'' )
-                return false;
-        }
-        return true;
-    }
+    
     /**
      * Chop the file's extension
      * @param name the filename to truncate
@@ -87,78 +58,6 @@ public class MMLGetUneditedLetters
             return name;
     }
     /**
-     * Is this filename component a page reference?
-     * @param pNum the putative page-number
-     * @return true if it is a page number
-     */
-    boolean isPageRef( String pNum )
-    {
-        if ( pNum.startsWith("P") )
-        {
-            if ( pNum.length()>1 && Character.isDigit(pNum.charAt(1)) )
-            {
-                for ( int i=2;i<pNum.length();i++ )
-                    if ( !Character.isLetterOrDigit(pNum.charAt(i)) )
-                        return false;
-                return true;
-            }
-            else if ( pNum.length()>1 )
-            {
-                String roman = pNum.substring(1).toLowerCase();
-                return Utils.isLcRomanNumber(roman);
-            }
-            else
-                return false;
-        }
-        else
-            return false;
-    }
-    /**
-     * Is this name-component a year?
-     * @param year the year
-     * @return true if it is
-     */
-    boolean isYear( String year )
-    {
-        try
-        {
-            int value = Integer.parseInt(year);
-            if ( value < 1800 || value > 2016 )
-                return false;
-            return true;
-        }
-        catch ( Exception e )
-        {
-            return false;
-        }
-    }
-    /**
-     * Is this a month-name?
-     * @param month the 3-char month name
-     * @return 
-     */
-    boolean isMonth( String month )
-    {
-        return months.contains(month);
-    }
-    /**
-     * Is this component a day of the month number?
-     * @param day the day-number
-     * @return true if it is
-     */
-    boolean isDay( String day )
-    {
-        try
-        {
-            int value = Integer.parseInt(day);
-            return value >= 0 && value <= 31;
-        }
-        catch ( Exception e )
-        {
-            return false;
-        }
-    }
-    /**
      * Does this file have a HLI type filename?
      * @param f the file to test
      * @return true if it is
@@ -166,39 +65,8 @@ public class MMLGetUneditedLetters
     boolean isLetter( File f )
     {
         String name = f.getName();
-        String[] parts = name.split("-");
-        if ( parts.length >= 2 )
-        {
-            String last = removeExtension(parts[parts.length-1]);
-            if ( !isName(last)||!isName(parts[parts.length-2]) )
-                return false;
-        }
-        else
-            return false;
-        if ( parts.length >= 3 )
-        {
-            String pageRef = parts[parts.length-3];
-            if ( !isPageRef(pageRef) )
-                return false;
-        }
-        if ( parts.length >= 4 )
-        {
-            if ( !isYear(parts[parts.length-4]) )
-                return false;
-        }
-        if ( parts.length >= 5 )
-        {
-            if ( !isMonth(parts[parts.length-5]) )
-                return false;
-        }
-        if ( parts.length == 6 )
-        {
-            if ( !isDay(parts[parts.length-6]) )
-                return false;
-        }
-        if ( parts.length > 6 )
-            return false;
-        return true;
+        name = removeExtension(name);
+        return DocType.isLetter(name);
     }
     /**
      * Get the letter identifier minus the .jpg and page number
@@ -213,7 +81,7 @@ public class MMLGetUneditedLetters
         //    System.out.println("Aha");
         for ( int i=0;i<parts.length;i++ )
         {
-            if ( i !=parts.length-3 || !isPageRef(parts[i]) )
+            if ( i !=parts.length-3 || !DocType.isPage(parts[i]) )
             {
                 if ( i==parts.length-1 && parts[i].endsWith(".jpg") )
                 {

@@ -24,11 +24,13 @@ import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.Database;
 import calliope.core.constants.JSONKeys;
+import calliope.core.handler.EcdosisMVD;
 import mml.constants.Params;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import edu.luc.nmerge.mvd.MVD;
 import edu.luc.nmerge.mvd.MVDFile;
+import java.util.ArrayList;
 
 /**
  * Get the version1 attribute of a CORTEX
@@ -41,29 +43,53 @@ public class MMLGetVersion1Handler extends MMLGetHandler
     {
         try {
             Connection conn = Connector.getConnection();
-            String docid = request.getParameter(Params.DOCID);
+            docid = request.getParameter(Params.DOCID);
             String res = conn.getFromDb(Database.CORTEX,docid);
             if ( res != null )
             {
                 JSONObject jObj = (JSONObject)JSONValue.parse(res);
                 if ( jObj.containsKey(JSONKeys.VERSION1) )
-                    version1 = (String) jObj.get(JSONKeys.VERSION1);
-                else
+                {
+                    version1 = (String)jObj.get(JSONKeys.VERSION1);
+                    if ( !Layers.isNewStyleLayer(version1) )
+                    {
+                        if ( ((String)jObj.get(JSONKeys.FORMAT)).startsWith("MVD"))
+                        {
+                            String body = (String)jObj.get(JSONKeys.BODY);
+                            if ( body != null )
+                            {
+                                MVD mvd = MVDFile.internalise(body);
+                                String[] all = getAllVersions(mvd);
+                                version1 = Layers.upgradeLayerName( all, version1);
+                            }
+                        }
+                        else
+                        {
+                            String[] all = new String[1];
+                            all[0] = version1;
+                            version1 = Layers.upgradeLayerName(all,version1);
+                        }
+                    }
+                }
+                else if ( ((String)jObj.get(JSONKeys.FORMAT)).startsWith("MVD"))
                 {
                     String body = (String)jObj.get(JSONKeys.BODY);
                     if ( body != null )
                     {
                         MVD mvd = MVDFile.internalise(body);
+                        String[] all = getAllVersions(mvd);
                         String groupPath = mvd.getGroupPath((short)1);
                         String shortName = mvd.getVersionShortName((short)1);
-                        version1 = groupPath+"/"+shortName;
+                        version1 = Layers.upgradeLayerName( all, groupPath+"/"+shortName);
                         jObj.put(JSONKeys.VERSION1, version1);
                         jObj.remove(JSONKeys._ID);
                         conn.putToDb(Database.CORTEX,docid,jObj.toJSONString());
                     }
                     else
-                        version1 = "";
+                        version1 = "";  // nothing there
                 }
+                else
+                    version1 = "/base";
             }
             else
                 version1 = "";

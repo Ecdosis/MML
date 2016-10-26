@@ -93,15 +93,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
             case paragraph:
             case headings:
                 return "";
-            case codeblocks:
-                sb = new StringBuilder();
-                for ( int i=0;i<(Integer)defn.get("level");i++ )
-                    sb.append("    ");
-                return sb.toString();
-            case quotations:
-                return "> ";
-            case dividers:
-                return "";
             case charformats:
                 if ( defn.containsKey("tag") )
                     return (String)defn.get("tag");
@@ -111,8 +102,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 return (String)defn.get("leftTag");
             case paraformats:
                 return (String)defn.get("leftTag");
-            case milestones:
-                return ((offset>0)?"\n":"")+(String)defn.get("leftTag");
             default:
                 return "";
         }
@@ -133,17 +122,11 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 return "\n\n\n";
             case paragraph:
                 return "\n\n";
-            case codeblocks:
-                return "\n";
-            case quotations:
-                return "\n";
             case headings:
                 StringBuilder sb = new StringBuilder();
                 for ( int i=0;i<len-1;i++ )
                     sb.append(defn.get("tag"));
                 return "\n"+sb.toString()+"\n\n";
-            case dividers:
-                return "\n\n"+(String)defn.get("tag")+"\n\n";
             case charformats:
                 if ( defn.containsKey("tag") )
                     return (String)defn.get("tag");
@@ -153,8 +136,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 return (String)defn.get("rightTag")+"\n";
             case paraformats:
                 return (String)defn.get("rightTag")+"\n\n";
-            case milestones:
-                return (String)defn.get("rightTag")+"\n";
             default:
                 return "";
         }
@@ -225,27 +206,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 case paragraph:
                     enterProp(value,keyword,"paragraph");
                     break;
-                case codeblocks:
-                    array = (JSONArray)value;
-                    for ( int i=0;i<array.size();i++ )
-                    {
-                        JSONObject obj = (JSONObject)array.get(i);
-                        enterProp(obj,keyword,(String)obj.get("tag")+i);
-                        // remember level
-                        obj.put("level",i+1);
-                    }
-                    break;
-                case quotations:
-                    array = (JSONArray)value;
-                    for ( int i=0;i<array.size();i++ )
-                    {
-                        JSONObject obj = (JSONObject)array.get(i);
-                        enterProp(obj,keyword,(String)obj.get("prop"));
-                        // remember level
-                        obj.put("level",i+1);
-                    }
-                    break;
-                case headings: case dividers: case charformats:
+                case headings: case charformats:
                     array = (JSONArray)value;
                     for ( int i=0;i<array.size();i++ )
                     {
@@ -267,14 +228,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     {
                         JSONObject obj = (JSONObject)array.get(i);
                         enterProp(obj,keyword,"line");
-                    }
-                    break;
-                case milestones:
-                    array = (JSONArray)value;
-                    for ( int i=0;i<array.size();i++ )
-                    {
-                        JSONObject obj = (JSONObject)array.get(i);
-                        enterProp(obj,keyword,"span");
                     }
                     break;
                 case globals:
@@ -495,7 +448,7 @@ public class MMLGetMMLHandler extends MMLGetHandler
      * Create the MMLtext using the invert index and the cortex and corcode
      * @param cortex the plain text version
      * @param ccDflt the default STIL markup for that plain text
-     * @param ccPages the page-breaks
+     * @param ccPages the page-breaks or null
      * @param layer the number of the layer to build
      */
     void createMML( ScratchVersion cortex, ScratchVersion ccDflt, 
@@ -659,8 +612,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
             version1 = request.getParameter(Params.VERSION1);
-            if( version1 == null )
-                version1 = "/base";
             ScratchVersion cortex, corcodeDefault,corcodePages;
             cortex = Scratch.getVersion( docid, version1, Database.CORTEX );
             corcodeDefault = Scratch.getVersion( docid+"/default", version1, Database.CORCODE );

@@ -33,12 +33,31 @@ import mml.constants.*;
 import calliope.core.handler.EcdosisVersion;
 import mml.handler.AeseResource;
 import mml.handler.MMLHandler;
+import java.util.ArrayList;
 
 /**
  * Handle GET request for the MML service
  * @author desmond
  */
 public class MMLGetHandler extends MMLHandler {
+    /**
+     * Get an array of ALL the full version names in an MVD
+     * @param mvd
+     * @return a list of full version names
+     */
+    public static String[] getAllVersions( MVD mvd )
+    {
+        ArrayList<String> list = new ArrayList<String>();
+        int numVersions = mvd.numVersions();
+        for ( short i=1;i<=numVersions;i++ )
+        {
+            String v = mvd.getVersionId(i);
+            list.add(v);
+        }
+        String[] arr = new String[list.size()];
+        list.toArray(arr);
+        return arr;
+    }
     public void handle(HttpServletRequest request,
         HttpServletResponse response, String urn) throws MMLException {
         try {

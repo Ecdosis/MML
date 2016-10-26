@@ -327,7 +327,7 @@ public class ScratchVersionSet {
                         String groupName = Utils.getGroupName(vPath);
                         if ( groupName.startsWith("/"))
                             groupName = groupName.substring(1);
-                        String longName = "Version "+shortName;
+                        String longName = "Version "+groupName.replace("/","");
                         if ( vid <= mvd.numVersions() )
                             longName = mvd.getLongNameForVersion(vid);
                         mvd.newVersion( shortName, longName, groupName, 

@@ -20,7 +20,11 @@ package mml.handler.get;
 
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
+import calliope.core.Acronym;
 import calliope.core.Utils;
+import calliope.core.constants.Database;
+import calliope.core.constants.JSONKeys;
+import calliope.core.DocType;
 import mml.constants.Params;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,6 +39,13 @@ import java.util.Iterator;
  */
 public class MMLMetadataHandler extends MMLGetHandler 
 {
+    String trimZeros(String num)
+    {
+        int i = 0;
+        while ( num.charAt(i)=='0' )
+            i++;
+        return num.substring(i);
+    }
     public void handle(HttpServletRequest request,
         HttpServletResponse response, String urn) throws MMLException {
         try
@@ -63,7 +74,70 @@ public class MMLMetadataHandler extends MMLGetHandler
                 }
                 else
                 {
-                    System.out.println("No metadata found for "+docId);
+                    String ctStr = conn.getFromDb(Database.CORTEX,docId);
+                    if ( ctStr != null )
+                    {
+                        JSONObject jObj = (JSONObject)JSONValue.parse(ctStr);
+                        if ( jObj.containsKey(JSONKeys.DESCRIPTION) )
+                        {
+                            String desc = ((String)jObj.get(JSONKeys.DESCRIPTION)).replaceAll("%20"," ");
+                            if ( desc.startsWith("\"") )
+                                desc = desc.substring(1);
+                            if ( desc.endsWith("\"") )
+                                desc = desc.substring(0,desc.length()-2);
+                            desc = desc.replaceAll("\"\"","\"");
+                            md.put(JSONKeys.TITLE,desc);
+                        }
+                        else if ( !md.containsKey(JSONKeys.TITLE) && DocType.isLetter(docId))
+                        {
+                            int index = docId.lastIndexOf("/");
+                            String shortId;
+                            if ( index != -1 )
+                                shortId = docId.substring(index+1);
+                            else
+                                shortId = docId;
+                            String[] parts = shortId.split("-");
+                            StringBuilder sb = new StringBuilder();
+                            String projid = Utils.getProjectId(docId);
+                            if ( parts.length>=2 )
+                            {
+                                String from = Acronym.expand(projid,parts[parts.length-2]);
+                                String to = Acronym.expand(projid,parts[parts.length-1]);
+                                sb.append("Letter from "+from);
+                                sb.append(" to ");
+                                sb.append(to);
+                                sb.append(",");
+                            }
+                            if ( parts.length>=3 )
+                            {
+                                for ( int i=0;i<3;i++ )
+                                {
+                                    if ( DocType.isDay(parts[i]) )
+                                    {
+                                        sb.append(" ");
+                                        sb.append(trimZeros(parts[i]));
+                                    }
+                                    else if ( DocType.isMonth(parts[i]))
+                                    {
+                                        sb.append(" ");
+                                        sb.append(Acronym.expand(projid,parts[i]));
+                                    }
+                                    else if ( DocType.isYear(parts[i]) )
+                                    {
+                                        sb.append(" ");
+                                        sb.append(parts[i]);
+                                        // maybe only a year
+                                        break;
+                                    }
+                                }
+                                md.put(JSONKeys.TITLE,sb.toString());
+                            }
+                        }
+                        else
+                            System.out.println("No metadata found for "+docId);
+                    }
+                    else
+                        System.out.println("No metadata found for "+docId);
                     changed = false;
                 }
                 docId = Utils.chomp(docId);

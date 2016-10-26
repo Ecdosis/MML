@@ -25,10 +25,10 @@ import calliope.core.exception.DbException;
 import mml.exception.MMLException;
 import mml.Autosave;
 import calliope.core.handler.EcdosisMVD;
+import mml.handler.get.Layers;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import java.util.HashMap;
-import java.util.Calendar;
 import java.util.Set;
 import java.util.Arrays;
 
@@ -114,9 +114,9 @@ public class Scratch
     /**
      * Get a version that may or may not be in scratch. If not put it there.
      * @param docid the docid 
-     * @param version the desired single version
+     * @param version the desired single version or null if default
      * @param dbase the database it is in
-     * @return a ScratchVersion object
+     * @return a ScratchVersion object or null
      * @throws MMLException 
      */
     public static ScratchVersion getVersion( String docid, 
@@ -130,38 +130,42 @@ public class Scratch
             if ( sv == null )
             {
                 EcdosisMVD mvd = doGetMVD( dbase, docid );
-                HashMap<String,char[]> layers = new HashMap<String,char[]>();
                 if ( mvd != null )
                 {
-                    int numVersions = mvd.numVersions();
-                    for ( int i=1;i<=numVersions;i++ )
+                    if ( version == null )
+                        version = mvd.getVersion1();
+                    String base = Layers.stripLayer(version);
+                    HashMap<String,char[]> layers = new HashMap<String,char[]>();
+                    if ( mvd != null )
                     {
-                        String vName = mvd.getVersionName(i);
-                        String regex = ".*/layer-.*";
-                        if ( vName.matches(regex) )
-                            layers.put( vName, mvd.getVersion(i) );
-                    }
-                    if ( layers.isEmpty() && numVersions == 1 )
-                        layers.put(mvd.getVersionName(1)+"/layer-final",
-                            mvd.getVersion(1));
-                    if ( !layers.isEmpty() )
-                    {
-                        Set<String> keys = layers.keySet();
-                        String[] arr = new String[keys.size()];
-                        keys.toArray( arr );
-                        Arrays.sort( arr );
+                        int numVersions = mvd.numVersions();
                         if ( version == null )
-                            version = mvd.getVersionName(1);
-                        sv = new ScratchVersion(version,docid,dbase,null,false);
-                        for ( int i=0;i<arr.length;i++ )
+                            version = mvd.getVersion1();
+                        for ( int i=1;i<=numVersions;i++ )
                         {
-                            sv.addLayer( layers.get(arr[i]), 
-                                ScratchVersion.layerNumber(arr[i]) );
+                            String vName = mvd.getVersionId((short)i);
+                            if ( vName.lastIndexOf(base) == 0 )
+                                layers.put( vName, mvd.getVersion(i) );
                         }
-                        // save it for next time
-                        Connection conn = Connector.getConnection();
-                        conn.putToDb(Database.SCRATCH, docid,sv.toJSON());
-                        return sv;
+                        if ( !layers.isEmpty() )
+                        {
+                            Set<String> keys = layers.keySet();
+                            String[] arr = new String[keys.size()];
+                            keys.toArray( arr );
+                            Arrays.sort( arr );
+                            String[] all = mvd.getAllVersions();
+                            sv = new ScratchVersion(version,docid,dbase,null,false);
+                            for ( int i=0;i<arr.length;i++ )
+                            {
+                                String updatedName = Layers.upgradeLayerName(all,arr[i]);
+                                sv.addLayer( layers.get(arr[i]), 
+                                    ScratchVersion.layerNumber(updatedName) );
+                            }
+                            // save it for next time
+                            Connection conn = Connector.getConnection();
+                            conn.putToDb(Database.SCRATCH, docid,sv.toJSON());
+                            return sv;
+                        }
                     }
                 }
                 return null;

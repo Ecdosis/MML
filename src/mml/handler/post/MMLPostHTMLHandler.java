@@ -65,6 +65,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         milestones.add("page");
         // add more milestone keywords here
     }
+    boolean prevWasMilestone;
     void parseRequest( HttpServletRequest request ) throws FileUploadException, 
         Exception
     {
@@ -139,8 +140,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         }       
     }
     /**
-     * Parse a paragraph. These are always "p" elements, often with classes
-     * @param p the paragraph element from the document fragment
+     * Parse a paragraph. These may be "p" or "hN" elements, often with classes
+     * @param p the paragraph/heading element from the document fragment
      * @param defaultName the default name for the property
      */
     private void parsePara( Element p, String defaultName ) throws JSONException
@@ -149,7 +150,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         String name = p.attr("class");
         if ( name == null || name.length()==0 )
             name = defaultName;
-        if ( isLineFormat(name) )
+        if ( isLineFormat(name) || prevWasMilestone )
             ensure(1,false);
         else
             ensure(2,true);
@@ -177,6 +178,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         else
             ensure(2,true);
         this.stil.updateLen(r,sb.length()-offset);
+        prevWasMilestone = false;
     }
     /**
      * May happen but should not
@@ -199,6 +201,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 sb.append( ((TextNode)child).getWholeText() );
         }
         this.stil.updateLen(r,sb.length()-offset);
+        prevWasMilestone = false;
     }
     /**
      * Ensure that there are at least a given number of NLs
@@ -262,6 +265,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         }
         ensure(3,true);
         this.stil.updateLen(r,sb.length()-offset);
+        prevWasMilestone = false;
     }
     /**
      * Remove leading and trailing punctuation
@@ -429,6 +433,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 sb.append( elem.text() );
             this.stil.updateLen(r,sb.length()-offset);
         }
+        prevWasMilestone = false;
+        ensure(1,false);
     }
     /**
      * Parse a span with a class or not
@@ -452,6 +458,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                     pages.add(r);
                     this.sb.append("\n");
                     pages.updateLen(r,sb.length()-offset);
+                    prevWasMilestone = true;
                 }
                 else if ( name.equals("soft-hyphen") )
                 {
@@ -469,6 +476,8 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 }
                 else
                 {
+                    if ( isLineFormat(name) )
+                        ensure(1,false);
                     stil.add( r );
                     stil.updateLen(r,sb.length()-offset);
                 }

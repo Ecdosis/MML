@@ -36,29 +36,6 @@ import org.json.simple.JSONArray;
  */
 public class MMLGetVersionsHandler extends MMLGetHandler {
     /**
-     * Striper a version identifier of its layer specification
-     * @param vid the version identifier
-     * @return the base version name
-     */
-    String getBaseVersion( String vid )
-    {
-        String[] parts = vid.split("/");
-        StringBuilder sb = new StringBuilder();
-        for ( int i=0;i<parts.length;i++ )
-        {
-            if ( parts[i].length()>0 )
-            {
-                if ( parts[i].contains("layer-") )
-                    break;
-                sb.append("/");
-                sb.append(parts[i]);
-            }
-        }
-        if ( sb.length()==0 )
-            sb.append("/base");
-        return sb.toString();
-    }
-    /**
      * Get the version listing from the MVD
      * @param request the request
      * @param response the response
@@ -74,29 +51,42 @@ public class MMLGetVersionsHandler extends MMLGetHandler {
             if ( docid == null )
                 throw new Exception("You must specify a docid parameter");
             AeseResource res = doGetResource( Database.CORTEX, docid );
-            StringBuilder json = new StringBuilder();
             JSONArray jVersions = new JSONArray();
-            json.append("[ ");
             if ( res != null )
             {
                 String[] versions = res.listVersions();
                 HashMap<String,JSONObject> vSet = new HashMap<String,JSONObject>();
                 for ( int i=0;i<versions.length;i++ )
                 {
-                    String base = getBaseVersion(versions[i]);
+                    String base = Layers.stripLayer(versions[i]);
                     JSONObject jObj = vSet.get(base);
                     if ( jObj == null )
                         jObj = new JSONObject();
-                    if ( versions[i].endsWith("layer-final")
-                        ||!versions[i].contains("layer-"))
+                    String upgraded = Layers.upgradeLayerName(versions,versions[i]);
+                    if ( !upgraded.equals(versions[i]) )
+                    {
+                        JSONArray repl = (JSONArray)jObj.get("replacements");
+                        if ( repl == null )
+                        {
+                            repl = new JSONArray();
+                            jObj.put("replacements",repl);
+                        }
+                        JSONObject entry = new JSONObject();
+                        entry.put("old",versions[i]);
+                        entry.put("new",upgraded);
+                        repl.add( entry);
+                    }
+                    if ( upgraded.endsWith("layer-final") )
                         jObj.put("desc",res.getVersionLongName(i+1));
-                    if ( versions[i].contains("layer-") )
+                    // add the layer names
+                    if ( upgraded.endsWith("layer-final")
+                        || upgraded.matches(".*layer-[0-9]+$") )
                     {
                         JSONArray jArr = (JSONArray)jObj.get("layers");
                         if ( jArr == null )
                             jArr = new JSONArray();
-                        int index = versions[i].lastIndexOf("layer");
-                        String layerName = versions[i].substring(index);
+                        int index = upgraded.lastIndexOf("layer");
+                        String layerName = upgraded.substring(index);
                         if ( !jArr.contains(layerName) )
                             jArr.add(layerName);
                         if ( !jObj.containsKey("layers") )
@@ -105,6 +95,7 @@ public class MMLGetVersionsHandler extends MMLGetHandler {
                     if ( !vSet.containsKey( base ) )
                         vSet.put(base,jObj);
                 }
+                // convert hashmap to array
                 Set<String> keys = vSet.keySet();
                 Iterator<String> iter = keys.iterator();
                 while ( iter.hasNext() )
@@ -115,7 +106,6 @@ public class MMLGetVersionsHandler extends MMLGetHandler {
                     jVersions.add( jObj );
                 }
             }
-            json.append(" ]");
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
             String jStr = jVersions.toJSONString().replaceAll("\\\\/", "/");
