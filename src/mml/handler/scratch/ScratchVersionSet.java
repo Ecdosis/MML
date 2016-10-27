@@ -260,7 +260,16 @@ public class ScratchVersionSet {
                 if ( jStr != null )
                     break;
                 else
-                    styleName = Utils.chomp((styleName));
+                {
+                    jStr = conn.getFromDb(Database.CORFORM,styleName+"/default");
+                    if ( jStr != null )
+                    {
+                        styleName += "/default";
+                        break;
+                    }
+                    else
+                        styleName = Utils.chomp((styleName));
+                }
             }
         }
         catch ( DbException e )

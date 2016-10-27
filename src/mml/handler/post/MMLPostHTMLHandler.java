@@ -371,19 +371,19 @@ public class MMLPostHTMLHandler extends MMLPostHandler
     }
     /**
      * Get the next word AFTER the given element
-     * @param span the element span) after which we seek the next word
+     * @param node the node after which we seek the next word
      * @return the word
      */
-    String nextWord( Element span )
+    String nextWord( Element node )
     {
         StringBuilder word = new StringBuilder();
-        Node next = span.nextSibling();
+        Node next = node.nextSibling();
         String text = "";
         if ( next != null )
         {
             if ( next instanceof TextNode )
             {
-                text = ((TextNode)next).getWholeText();
+                text = ((TextNode)next).text();
             }
             else if ( next instanceof Element )
             {
@@ -446,46 +446,56 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         {
             int offset = sb.length();
             String name = span.attr("class");
+            Range r = new Range( name, offset, 0 );
             if ( name == null||name.length()==0 )
                 name = "span";
-            Range r = new Range( name, offset, 0 );
-            if ( span.hasAttr("class") )
+            if ( isMilestone(name) )
             {
-                name = span.attr("class");
-                this.sb.append( span.text() );
-                if ( isMilestone(name) )
-                {
-                    pages.add(r);
-                    this.sb.append("\n");
-                    pages.updateLen(r,sb.length()-offset);
-                    prevWasMilestone = true;
-                }
-                else if ( name.equals("soft-hyphen") )
-                {
-                    stil.add(r);
-                    int i = sb.length()-1;
-                    while ( i > 0 && !Character.isWhitespace(sb.charAt(i)) )
-                        i--;
-                    if ( i > 0 )
-                        i++;
-                    String prev = clean(sb.substring(i),true);
-                    String next = clean(nextWord(span),false);  
-                    if ( this.speller.isHardHyphen(prev,next) )
-                        name = "hard-hyphen";
-                    stil.updateLen(r,sb.length()-offset);
-                }
-                else
-                {
-                    if ( isLineFormat(name) )
-                        ensure(1,false);
-                    stil.add( r );
-                    stil.updateLen(r,sb.length()-offset);
-                }
+                pages.add(r);
+                sb.append(span.text());
+                sb.append("\n");
+                pages.updateLen(r,sb.length()-offset);
+                prevWasMilestone = true;
             }
-            else
+            else if ( name.equals("soft-hyphen") )
             {
                 stil.add(r);
-                sb.append( span.text() );
+                // get previous word
+                int i = sb.length()-1;
+                while ( i > 0 && !Character.isWhitespace(sb.charAt(i)) )
+                    i--;
+                if ( i > 0 )
+                    i++;
+                String prev = clean(sb.substring(i),true);
+                // get next word
+                String next = clean(nextWord(span),false);  
+                if ( this.speller.isHardHyphen(prev,next) )
+                    r.name = "hard-hyphen";
+                sb.append(span.text());
+                stil.updateLen(r,sb.length()-offset);
+            }
+            else    // span may contain other spans
+            {
+                stil.add(r);
+                List<Node> children = span.childNodes();
+                for ( Node child: children )
+                {
+                    if ( child instanceof Element )
+                    {
+                        String nName = child.nodeName().toLowerCase();
+                        if ( nName.equals("span") )
+                            parseSpan( (Element)child );
+                        else 
+                            parseOtherElement((Element)child);
+                    }
+                    else if ( child instanceof TextNode )
+                    {
+                        TextNode tn = (TextNode)child;
+                        sb.append(tn.text());
+                    }
+                }
+                if ( isLineFormat(name) )
+                    ensure(1,false);
                 stil.updateLen(r,sb.length()-offset);
             }
         }

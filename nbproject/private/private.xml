@@ -8,7 +8,6 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/STILDocument.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLCorpixHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostImageHandler.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/DocType.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/MMLHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/DocidComparator.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersion1Handler.java</file>
@@ -31,6 +30,7 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/scratch/Scratch.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostHTMLHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/mvd/Archive.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/JSONValue.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/scratch/ScratchVersionSet.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostVersionHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLMetadataHandler.java</file>

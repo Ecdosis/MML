@@ -102,9 +102,9 @@ public class AeseResource
                 longName = longName.substring(0,longName.indexOf("/layer"));
             return longName;
         }
-        else if ( this.description != null )
-            return this.description;
+        else if ( version1.contains("/layer") )
+            return "Version "+version1.substring(0,version1.lastIndexOf("/layer"));
         else
-            return "Base version";
+            return "Version "+version1;
     }
 }
