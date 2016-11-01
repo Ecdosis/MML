@@ -31,6 +31,7 @@ import calliope.core.constants.JSONKeys;
 import calliope.core.database.Connector;
 import edu.luc.nmerge.mvd.MVD;
 import edu.luc.nmerge.mvd.MVDFile;
+import mml.handler.get.Layers;
 
 /**
  * A set of ScratchVersions with all the same docid and dbase
@@ -136,31 +137,23 @@ public class ScratchVersionSet {
         else
             return false;
     }
-    /**
-     * Strip off the full version name of the layer name
-     * @param vid the full verison name
-     * @return the lesser version name, no "/layer-*" crap
-     */
-    private String splitName( String vid )
+    String[] listVersions( MVD mvd )
     {
-        String[] parts = vid.split("/");
-        StringBuilder sb = new StringBuilder();
-        for ( int i=0;i<parts.length;i++ )
+        int nversions = mvd.numVersions();
+        String[] array = new String[nversions];
+        for ( int i=0;i<nversions;i++ )
         {
-            if ( parts[i].startsWith("layer-") )
-                break;
-            else 
-            {
-                if ( sb.length()>0 )
-                    sb.append("/");
-                sb.append(parts[i]);
-            }
+            short id = (short)(i+1);
+            String groupPath = mvd.getGroupPath(id);
+            String shortName = mvd.getVersionShortName(id);
+            array[i] = groupPath+"/"+shortName;
         }
-        return sb.toString();
+        return array;
     }
     /**
      * Create a scratchversionset from a database record
      * @param resource the dbase resource fetched from the database
+     * @param dbase the dbase collection name it was from
      */
     public ScratchVersionSet( String resource, String dbase )
     {
@@ -169,31 +162,26 @@ public class ScratchVersionSet {
         {
             MVD mvd = MVDFile.internalise(body);
             HashMap<String,ScratchVersion> map = new HashMap<String,ScratchVersion>();
+            String[] all = listVersions(mvd);
             for ( short i=1;i<=mvd.numVersions();i++ )
             {
-                char[] data = mvd.getVersion(i);
                 String vid = mvd.getVersionId(i);
-                if ( isLayerName(vid) )
+                String longName = mvd.getLongNameForVersion(i);
+                // the ONLY names in memory are upgraded ones
+                String layerName = Layers.upgradeLayerName( all, vid );
+                int num = ScratchVersion.layerNumber(layerName);
+                String shortName = Layers.stripLayer(layerName);
+                ScratchVersion sv = map.get(shortName);
+                char[] data = mvd.getVersion(i);
+                if ( sv == null )
                 {
-                    int num = ScratchVersion.layerNumber(vid);
-                    String shortName = splitName(vid);
-                    ScratchVersion sv = map.get(shortName);
-                    if ( sv == null )
-                    {
-                        sv = new ScratchVersion(shortName,docid,dbase,null,false);
-                        sv.addLayer(data, num);
-                        map.put(shortName,sv);
-                    }
-                    else
-                        sv.addLayer(data,num);
+                    sv = new ScratchVersion(shortName,longName,docid,dbase,
+                        null,false);
+                    sv.addLayer(data, num);
+                    map.put(shortName,sv);
                 }
-                else
-                {
-                    ScratchVersion sv = new ScratchVersion(vid+"/layer-final", 
-                        docid, dbase,null,false);
-                    sv.addLayer( data, 1 );
-                    map.put( vid, sv );
-                }
+                else if ( !sv.containsLayer(num) )
+                    sv.addLayer(data,num);
             }
             // convert to list
             list = new ScratchVersion[map.size()];
@@ -206,7 +194,15 @@ public class ScratchVersionSet {
                 version1 = "/base";
             if ( docid != null && body != null )
             {
-                ScratchVersion sv = new ScratchVersion(version1, docid, dbase,null,false);
+                String longName=null;
+                if ( otherFields.containsKey(JSONKeys.LONGNAME) )
+                    longName = (String)otherFields.get(JSONKeys.LONGNAME);
+                if ( otherFields.containsKey(JSONKeys.DESCRIPTION) )
+                    longName = (String)otherFields.get(JSONKeys.DESCRIPTION);
+                if ( longName == null )
+                    longName = "Version "+version1;
+                ScratchVersion sv = new ScratchVersion(version1,longName,
+                    docid, dbase,null,false);
                 sv.addLayer( body.toCharArray(), Integer.MAX_VALUE );
                 appendToList( sv );
             }

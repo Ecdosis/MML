@@ -348,6 +348,17 @@ public class MMLGetMMLHandler extends MMLGetHandler
         }
         return true;
     }
+    private void addAbsoluteOffsets( JSONArray arr )
+    {
+        int offset = 0;
+        for ( int i=0;i<arr.size();i++ )
+        {
+            JSONObject jObj = (JSONObject)arr.get(i);
+            Number reloff = (Number)jObj.get(JSONKeys.RELOFF);
+            offset += reloff.intValue();
+            jObj.put( JSONKeys.OFFSET, offset );
+        }
+    }
     /**
      * Merge two corcode sets
      * @param cc1 the first corcode as a STIL JSON object
@@ -356,76 +367,72 @@ public class MMLGetMMLHandler extends MMLGetHandler
      */
     JSONObject mergeCorcodes( JSONObject cc1, JSONObject cc2 )
     {
-        JSONArray arr1 = (JSONArray)cc1.get("ranges");
-        JSONArray arr2 = (JSONArray)cc2.get("ranges");
-        Range[] ranges = new Range[arr1.size()+arr2.size()];
-        int offset = 0;
-        for ( int i=0;i<arr1.size();i++ )
+        JSONArray iArr = (JSONArray)cc1.get("ranges");
+        JSONArray jArr = (JSONArray)cc2.get("ranges");
+        String style = (String)cc1.get(JSONKeys.STYLE);
+        addAbsoluteOffsets( iArr );
+        addAbsoluteOffsets( jArr );
+        int i = 0;
+        int j = 0;
+        JSONArray all = new JSONArray();
+        while ( i < iArr.size() || j < jArr.size() )
         {
-            JSONObject obj = (JSONObject)arr1.get(i);
-            offset += (Long)obj.get(JSONKeys.RELOFF);
-            Range r = new Range( (String)obj.get(JSONKeys.NAME), 
-                offset, ((Long)obj.get(JSONKeys.LEN)).intValue() );
-            if ( obj.containsKey(JSONKeys.ANNOTATIONS) )
+            if ( i == iArr.size() )
+                all.add(jArr.get(j++));
+            else if ( j == jArr.size() )
+                all.add(iArr.get(i++));
+            else
             {
-                JSONArray anns = (JSONArray)obj.get(JSONKeys.ANNOTATIONS);
-                for ( int j=0;j<anns.size();j++ )
+                JSONObject iObj = (JSONObject)iArr.get(i);
+                JSONObject jObj = (JSONObject)jArr.get(j);
+                int iOffset = ((Number)iObj.get(JSONKeys.OFFSET)).intValue();
+                int jOffset = ((Number)jObj.get(JSONKeys.OFFSET)).intValue();
+                if ( iOffset < jOffset )
                 {
-                    JSONObject ann = (JSONObject)anns.get(j);
-                    Set<String> keys = ann.keySet();
-                    if ( keys.size()==1 )
+                    all.add( iObj );
+                    i++;
+                }
+                else if ( jOffset < iOffset )
+                {
+                    all.add( jObj );
+                    j++;
+                }
+                else    // equal
+                {
+                    int iLen = ((Number)iObj.get(JSONKeys.LEN)).intValue();
+                    int jLen = ((Number)jObj.get(JSONKeys.LEN)).intValue();
+                    if ( (iLen == 0 && jLen != 0) || (iLen > jLen) ) 
                     {
-                        String[] key = new String[1];
-                        keys.toArray(key);
-                        r.addAnnotation(key[0],ann.get(key[0]));
+                        all.add( iObj);
+                        i++;
+                    }
+                    else if ( (jLen == 0 && iLen != 0) || (jLen > iLen) )
+                    {
+                        all.add( jObj);
+                        j++;
+                    }
+                    else 
+                    {
+                        all.add( iObj);
+                        i++;
                     }
                 }
             }
-            ranges[i] = r;
         }
-        offset = 0;
-        for ( int i=0,j=arr1.size();i<arr2.size();i++,j++ )
+        JSONObject combined = new JSONObject();
+        combined.put(JSONKeys.STYLE,style);
+        int prev = 0;
+        for ( i=0;i<all.size();i++ )
         {
-            JSONObject obj = (JSONObject)arr2.get(i);
-            offset += (Long)obj.get(JSONKeys.RELOFF);
-            Range r = new Range( (String)obj.get(JSONKeys.NAME), 
-                offset, ((Long)obj.get(JSONKeys.LEN)).intValue() );
-            ranges[j] = r;
+            JSONObject jObj = (JSONObject)all.get(i);
+            int offset = ((Number)jObj.get(JSONKeys.OFFSET)).intValue();
+            int reloff = offset - prev;
+            prev = offset;
+            jObj.remove(JSONKeys.OFFSET);
+            jObj.put(JSONKeys.RELOFF,reloff);
         }
-        // now sort
-        Arrays.sort( ranges );
-        JSONArray newArr = new JSONArray();
-        int lastOffset = 0;
-        for ( int i=0;i<ranges.length;i++ )
-        {
-            JSONObject obj = new JSONObject();
-            obj.put(JSONKeys.RELOFF, ranges[i].offset-lastOffset);
-            lastOffset = ranges[i].offset;
-            obj.put(JSONKeys.LEN,ranges[i].len);
-            obj.put(JSONKeys.NAME, ranges[i].name);
-            if ( ranges[i].annotations != null 
-                && ranges[i].annotations.size()>0 )
-            {
-                for ( int j=0;j<ranges[i].annotations.size();j++ )
-                {
-                    Annotation a = ranges[i].annotations.get(j);
-                    JSONObject annObj = new JSONObject();
-                    annObj.put(a.getName(), a.getValue());
-                    JSONArray arr;
-                    if ( !obj.containsKey(JSONKeys.ANNOTATIONS) )
-                    {
-                        arr = new JSONArray();
-                        obj.put(JSONKeys.ANNOTATIONS,arr);
-                    }
-                    else
-                        arr = (JSONArray)obj.get(JSONKeys.ANNOTATIONS);
-                    arr.add(annObj);
-                }
-            }
-            newArr.add(obj);
-        }
-        cc1.put(JSONKeys.RANGES, newArr);
-        return cc1;
+        combined.put(JSONKeys.RANGES,all);
+        return combined;
     }
     /**
      * Count the numebr of newlines at the end of the MML text being built

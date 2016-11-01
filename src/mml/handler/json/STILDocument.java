@@ -16,8 +16,10 @@
 package mml.handler.json;
 
 import calliope.core.constants.JSONKeys;
+import calliope.core.json.corcode.Range;
+import calliope.core.json.corcode.Annotation;
 import mml.constants.Formats;
-import mml.exception.JSONException;
+import calliope.core.exception.JSONException;
 import java.util.HashMap;
 import java.util.ArrayList;
 import org.json.simple.*;

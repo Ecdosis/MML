@@ -74,11 +74,12 @@ public class Layers {
         return sb.toString();
     }
     /**
-     * Upgrade an old-style layer name to the new style
-     * @param all all the MVD version names in full
-     * @param layer the old or new-style layer name
+     * COnvert an old-style name to a new layer-based one
+     * @param all all the versions in the set originally
+     * @param layer the vid possibly including the old-style layer name
+     * @return the full vid including the new layer-name
      */
-    public static String upgradeLayerName( String[] all, String layer )
+    private static String convertLayer( String[] all, String layer )
     {
         String stripped = stripLayer(layer);
         ArrayList<String> layers = new ArrayList<String>();
@@ -107,6 +108,18 @@ public class Layers {
             else
                 return stripped+"/layer-"+value;
         }
+    }
+    /**
+     * Upgrade an old-style layer name to the new style
+     * @param all all the MVD version names in full
+     * @param layer the old or new-style layer name
+     */
+    public static String upgradeLayerName( String[] all, String layer )
+    {
+        if ( layer.matches(".*/layer-[0-9]+$")|| layer.endsWith("/layer-final") )
+            return layer;
+        else
+            return convertLayer(all,layer);
     }
     class LayerComparator implements Comparator<String>
     {
@@ -156,6 +169,25 @@ public class Layers {
         public boolean equals(Object obj)
         {
             return this.equals(obj);
+        }
+    }
+    public static void main(String[] args )
+    {
+        String[] all = {"/h080a","/h080d","/h080f","/h080g/base","/h080g/add0",
+            "/h080h","/h080i/base","/h080i/add0","/h080i/rdg1","/h080i/rdg2",
+            "/h080k","/h080l","/h080m"};
+
+        String[] tests = new String[6];
+        tests[0] = "/h080a";
+        tests[1] = "/h080g/add0";
+        tests[2] = "/h080i/layer-final";
+        tests[3] = "/h080i/base";
+        tests[4] = "/h080i/rdg2";
+        tests[5] = "/h080/layer-3";
+        for ( int i=0;i<tests.length;i++ )
+        {
+            String res = upgradeLayerName(all,tests[i]);
+            System.out.println(tests[i]+" upgraded to "+res);
         }
     }
 }

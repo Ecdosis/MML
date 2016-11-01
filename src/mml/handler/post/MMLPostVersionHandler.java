@@ -42,6 +42,7 @@ import mml.handler.json.STILDocument;
  */
 public class MMLPostVersionHandler extends MMLPostHTMLHandler
 {
+    String longName;
     /**
      * Find the closest matching doialect for the current docid
      * @return a JSON =Object
@@ -95,16 +96,19 @@ public class MMLPostVersionHandler extends MMLPostHTMLHandler
                     version1 = "/base";
                 else
                     version1 = URLDecoder.decode(version1,"UTF-8");
+                this.longName = (String)jObj.get(JSONKeys.LONGNAME);                
                 this.docid = (String)jObj.get(JSONKeys.DOCID);
                 this.dialect = getDialectFromDocid();
                 JSONArray layers = (JSONArray)jObj.get("layers");
                 ScratchVersion corcodeDefault = new ScratchVersion(
-                    version1, docid+"/default", Database.CORCODE,null, true);
+                    version1, longName, docid+"/default", 
+                    Database.CORCODE,null, true);
                 ScratchVersion corcodePages = new ScratchVersion(
-                    version1, docid+"/pages", Database.CORCODE,null,true);
+                    version1, longName, docid+"/pages", 
+                    Database.CORCODE,null,true);
                 ScratchVersion text = new ScratchVersion(version1, 
-                    docid, Database.CORTEX,null,true);
-                String style = ScratchVersionSet.getDefaultStyleName(docid);
+                    longName, docid, Database.CORTEX,null,true);
+                this.style = ScratchVersionSet.getDefaultStyleName(docid);
                 for ( int i=0;i<layers.size();i++ )
                 {
                     JSONObject layer = (JSONObject)layers.get(i);

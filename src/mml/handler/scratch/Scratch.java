@@ -136,36 +136,34 @@ public class Scratch
                         version = mvd.getVersion1();
                     String base = Layers.stripLayer(version);
                     HashMap<String,char[]> layers = new HashMap<String,char[]>();
-                    if ( mvd != null )
+                    int numVersions = mvd.numVersions();
+                    for ( int i=1;i<=numVersions;i++ )
                     {
-                        int numVersions = mvd.numVersions();
-                        if ( version == null )
-                            version = mvd.getVersion1();
-                        for ( int i=1;i<=numVersions;i++ )
+                        String vName = mvd.getVersionId((short)i);
+                        if ( vName.lastIndexOf(base) == 0 )
+                            layers.put( vName, mvd.getVersion(i) );
+                    }
+                    if ( !layers.isEmpty() )
+                    {
+                        Set<String> keys = layers.keySet();
+                        String[] arr = new String[keys.size()];
+                        keys.toArray( arr );
+                        Arrays.sort( arr );
+                        String[] all = mvd.getAllVersions();
+                        short id = mvd.getVersionId(version);
+                        String longName = mvd.getVersionLongName(id);
+                        sv = new ScratchVersion(base,longName,
+                            docid,dbase,null,false);
+                        for ( int i=0;i<arr.length;i++ )
                         {
-                            String vName = mvd.getVersionId((short)i);
-                            if ( vName.lastIndexOf(base) == 0 )
-                                layers.put( vName, mvd.getVersion(i) );
+                            String updatedName = Layers.upgradeLayerName(all,arr[i]);
+                            sv.addLayer( layers.get(arr[i]), 
+                                ScratchVersion.layerNumber(updatedName) );
                         }
-                        if ( !layers.isEmpty() )
-                        {
-                            Set<String> keys = layers.keySet();
-                            String[] arr = new String[keys.size()];
-                            keys.toArray( arr );
-                            Arrays.sort( arr );
-                            String[] all = mvd.getAllVersions();
-                            sv = new ScratchVersion(version,docid,dbase,null,false);
-                            for ( int i=0;i<arr.length;i++ )
-                            {
-                                String updatedName = Layers.upgradeLayerName(all,arr[i]);
-                                sv.addLayer( layers.get(arr[i]), 
-                                    ScratchVersion.layerNumber(updatedName) );
-                            }
-                            // save it for next time
-                            Connection conn = Connector.getConnection();
-                            conn.putToDb(Database.SCRATCH, docid,sv.toJSON());
-                            return sv;
-                        }
+                        // save it for next time
+                        Connection conn = Connector.getConnection();
+                        conn.putToDb(Database.SCRATCH, docid,sv.toJSON());
+                        return sv;
                     }
                 }
                 return null;

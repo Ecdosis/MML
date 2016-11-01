@@ -31,11 +31,14 @@ import java.text.ParsePosition;
 
 /**
  * A scratch version will be stored in the scratch database
+ * It is a version of 1 or more layers for a given db collection
  * @author desmond
  */
 public class ScratchVersion {
-    /** name of version minus the "-layer-* stuff */
+    /** name of original version minus the "-layer-* stuff */
     String version;
+    /** long version name */
+    String longName;
     /** The database it came from originally */
     String dbase;
     /** docid if built from BSON */
@@ -50,21 +53,24 @@ public class ScratchVersion {
     /**
      * Create a Scratch version from SCRATCH
      * @param name the name or vid of this version
+     * @param longName the new longName
      * @param docid the docid of the resource
      * @param dbase the dbase it belongs to (e.g. CORTEX)
      * @param time the time it was created or null for NOW
      * @param dirty true if the version needs saving
      */
-    public ScratchVersion( String name, String docid, String dbase, Date time, boolean dirty )
+    public ScratchVersion( String name, String longName, 
+        String docid, String dbase, Date time, boolean dirty )
     {
         this.version = cleanVersionName(name);
+        this.longName = longName;
         this.dbase = dbase;
         this.docid = docid;
         this.dirty = dirty;
         this.time = (time!=null)?time:Calendar.getInstance().getTime();
     }
     /**
-     * Remove -layer-x suffix
+     * Remove the /layer-x suffix
      * @param name the full version name
      * @return the shortened version name
      */
@@ -137,6 +143,11 @@ public class ScratchVersion {
         if ( layers == null )
             layers = new HashMap<String,String>();
         layers.put( layerName(num), new String(vdata) );
+    }
+    public boolean containsLayer( int num )
+    {
+        String name = layerName(num);
+        return this.layers.containsKey(name);
     }
     /**
      * Get the true name of the default version
@@ -220,6 +231,8 @@ public class ScratchVersion {
             keys.toArray(arr);
             Arrays.sort(arr);
             jObj.put( JSONKeys.VERSION1, version );
+            if ( this.longName != null )
+                jObj.put(JSONKeys.LONGNAME, longName);
             Calendar cal = Calendar.getInstance();
             // timestap conversion to JSON
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -270,8 +283,10 @@ public class ScratchVersion {
         boolean dirty = ((Boolean)jObj.get("dirty")!=null)
             ?((Boolean)jObj.get("dirty")):false;
         Date saveTime = toDate((String)jObj.get(JSONKeys.TIME));
+        String longName = (String)jObj.get(JSONKeys.LONGNAME);
         ScratchVersion sv = new ScratchVersion(
             (String)jObj.get(JSONKeys.VERSION1),
+            longName,
             (String)jObj.get(JSONKeys.DOCID),
             (String)jObj.get(JSONKeys.DBASE),
             saveTime,

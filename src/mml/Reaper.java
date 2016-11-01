@@ -21,15 +21,12 @@ import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.Database;
 import calliope.core.constants.JSONKeys;
-import calliope.core.exception.DbException;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.ArrayList;
 import mml.handler.scratch.ScratchVersion;
 import mml.handler.scratch.ScratchVersionSet;
-import org.json.simple.JSONValue;
-import org.json.simple.JSONObject;
 /**
  * Reap the SCRATCH collection waiting for stuff to appear for saving
  * @author desmond
