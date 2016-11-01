@@ -105,6 +105,7 @@ public class Scratch
         Connection conn = Connector.getConnection();
         // base + docid + version should be unique
         String bson = conn.getFromDb(Database.SCRATCH, dbase, docid, version);
+        System.out.println("Fetching version "+version+" for "+docid);
         if ( bson != null )
         {
             return ScratchVersion.fromJSON(bson);
@@ -162,7 +163,8 @@ public class Scratch
                         }
                         // save it for next time
                         Connection conn = Connector.getConnection();
-                        conn.putToDb(Database.SCRATCH, docid,sv.toJSON());
+                        conn.putToDb( Database.SCRATCH, dbase, 
+                            docid, version, sv.toJSON() );
                         return sv;
                     }
                 }
