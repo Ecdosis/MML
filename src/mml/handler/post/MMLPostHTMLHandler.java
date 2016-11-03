@@ -701,6 +701,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         }
         catch ( Exception e )
         {
+            System.out.println(e.getMessage());
             Autosave.lock = false;
             throw new MMLException(e);
         }

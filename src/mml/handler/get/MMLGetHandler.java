@@ -96,6 +96,7 @@ public class MMLGetHandler extends MMLHandler {
             {
                 if ( encoding != null )
                     response.setCharacterEncoding(encoding);
+                System.out.println(e.getMessage());
                 response.getWriter().println(e.getMessage());
             }
             catch ( Exception ex )

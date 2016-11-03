@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.HashSet;
-import java.util.HashMap;
 import mml.MMLWebApp;
 import mml.constants.Params;
 import mml.exception.MMLException;

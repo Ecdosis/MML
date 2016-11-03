@@ -49,6 +49,7 @@ public class MMLFileHandler extends MMLHandler
         }
         catch ( Exception e )
         {
+            System.out.println(e.getMessage());
             throw new MMLException(e);
         }
     }

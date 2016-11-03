@@ -128,11 +128,13 @@ public class MMLPostVersionHandler extends MMLPostHTMLHandler
                 Scratch.save(text);
                 Scratch.save(corcodeDefault);
                 Scratch.save(corcodePages);
+                response.setContentType("text/plain");
                 response.getWriter().write("OK");
             }
         }
         catch ( Exception e )
         {
+            System.out.println(e.getMessage());
             throw new MMLException(e);
         }
     }

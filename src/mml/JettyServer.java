@@ -68,6 +68,7 @@ public class JettyServer extends AbstractHandler
         try
         {
             String service = Utils.first(target);
+            System.out.println(method+":"+target);
             if ( service.equals(Service.MML) )
             {
                 String urn = Utils.pop(target);

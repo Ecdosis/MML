@@ -68,6 +68,7 @@ public class MMLPostResourceHandler  extends MMLPostHandler
         }
         catch ( Exception e )
         {
+            System.out.println(e.getMessage());
             throw new MMLException( e );
         }
     }

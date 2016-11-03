@@ -33,7 +33,7 @@ import org.json.simple.JSONObject;
  */
 public class MMLCorformHandler extends MMLResourceHandler
 {
-    MMLCorformHandler()
+    public MMLCorformHandler()
     {
         super(Database.CORFORM);
     }

@@ -144,7 +144,8 @@ public class MMLMetadataHandler extends MMLGetHandler
             } while ( changed );
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
-            response.getWriter().println(md.toJSONString());
+            String mdStr = md.toJSONString();
+            response.getWriter().println(mdStr);
         }
         catch ( Exception e )
         {

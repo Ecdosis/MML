@@ -150,6 +150,7 @@ public class MMLWebApp extends HttpServlet
             {
                 resp.getWriter().println(
                     new CalliopeExceptionMessage(he).toString() );
+                System.out.println(he.getMessage());
             }
             catch ( Exception e2 )
             {

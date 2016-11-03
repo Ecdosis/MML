@@ -108,35 +108,6 @@ public class ScratchVersionSet {
                 otherFields.put( key, jObj.get(key) );
         }
     }
-    /**
-     * Is this version a layer?
-     * @param vid the full version id
-     * @return true if it ends in "/layer-something
-     */
-    private boolean isLayerName( String vid )
-    {
-        String[] parts = vid.split("-");
-        if ( parts.length>1 && parts[parts.length-2].equals("layer") )
-        {
-            String name = parts[parts.length-1];
-            if ( name.equals("final") )
-                return true;
-            else
-            {
-                try
-                {
-                    Integer.parseInt(name);
-                    return true;
-                }
-                catch ( Exception e )
-                {
-                    return false;
-                }
-            }
-        }
-        else
-            return false;
-    }
     String[] listVersions( MVD mvd )
     {
         int nversions = mvd.numVersions();
@@ -166,7 +137,7 @@ public class ScratchVersionSet {
             for ( short i=1;i<=mvd.numVersions();i++ )
             {
                 String vid = mvd.getVersionId(i);
-                String longName = mvd.getLongNameForVersion(i);
+                String localLongName = mvd.getLongNameForVersion(i);
                 // the ONLY names in memory are upgraded ones
                 String layerName = Layers.upgradeLayerName( all, vid );
                 int num = ScratchVersion.layerNumber(layerName);
@@ -175,7 +146,7 @@ public class ScratchVersionSet {
                 char[] data = mvd.getVersion(i);
                 if ( sv == null )
                 {
-                    sv = new ScratchVersion(shortName,longName,docid,dbase,
+                    sv = new ScratchVersion(shortName,localLongName,docid,dbase,
                         null,false);
                     sv.addLayer(data, num);
                     map.put(shortName,sv);
@@ -332,12 +303,8 @@ public class ScratchVersionSet {
                         String groupName = Utils.getGroupName(vPath);
                         if ( groupName.startsWith("/"))
                             groupName = groupName.substring(1);
-                        String longName = "Version "+groupName.replace("/","");
-                        if ( vid <= mvd.numVersions() )
-                            longName = mvd.getLongNameForVersion(vid);
-                        mvd.newVersion( shortName, longName, groupName, 
+                        mvd.newVersion( shortName, list[i].longName, groupName, 
                             (short)0, false );
-                        System.out.println("vid="+vid);
                         mvd.update( vid, str.toCharArray(), true );
                         vid++;
                     }

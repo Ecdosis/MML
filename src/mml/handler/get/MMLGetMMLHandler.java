@@ -645,7 +645,8 @@ public class MMLGetMMLHandler extends MMLGetHandler
             }
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
-            response.getWriter().println(jObj.toJSONString());
+            String jStr = jObj.toJSONString();
+            response.getWriter().println(jStr);
             //System.out.println(jObj.toJSONString());
         }
         catch ( Exception e )
