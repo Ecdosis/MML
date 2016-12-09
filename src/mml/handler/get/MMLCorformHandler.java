@@ -20,6 +20,7 @@ package mml.handler.get;
 import calliope.core.constants.Database;
 import calliope.core.database.Connection;
 import calliope.core.constants.JSONKeys;
+import calliope.core.Utils;
 import calliope.core.database.Connector;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,7 +38,38 @@ public class MMLCorformHandler extends MMLResourceHandler
     {
         super(Database.CORFORM);
     }
-        /**
+    /**
+     * Infer the stylesheet from the docid
+     * @return the stylesheet body
+     */
+    private String inferStylesheet()
+    {
+        try
+        {
+            Connection conn = Connector.getConnection();
+            String jStr = null;
+            String tempDocid = new String(docid);
+            while ( jStr == null && tempDocid.length()>0 )
+            {
+                jStr = conn.getFromDb( Database.CORFORM, tempDocid );
+                if ( jStr ==null )
+                    tempDocid = Utils.chomp( tempDocid );
+            } 
+            if ( jStr != null )
+            {
+                JSONObject jObj = (JSONObject)JSONValue.parse(jStr);
+                return (String)jObj.get(JSONKeys.BODY);
+            }
+            else
+            return null;
+        }
+        catch ( Exception e )
+        {
+            e.printStackTrace(System.out);
+        }
+        return null;
+    }
+    /**
      * Handle the request
      * @param request the request
      * @param response the response
@@ -55,18 +87,23 @@ public class MMLCorformHandler extends MMLResourceHandler
             {
                 Connection conn = Connector.getConnection();
                 String jStr = conn.getFromDb( Database.CORTEX, docid );
-                JSONObject jObj = (JSONObject)JSONValue.parse(jStr);
-                String style = (String) jObj.get(JSONKeys.STYLE);
-                jStr = conn.getFromDb(Database.CORFORM,style);
                 if ( jStr == null )
-                    jBody = getDefaultResource(docid);
+                    jBody = inferStylesheet();
                 else
                 {
-                    jObj = (JSONObject)JSONValue.parse(jStr);
-                    jBody = (String)jObj.get(JSONKeys.BODY);
+                    JSONObject jObj = (JSONObject)JSONValue.parse(jStr);
+                    String style = (String) jObj.get(JSONKeys.STYLE);
+                    jStr = conn.getFromDb(Database.CORFORM,style);
+                    if ( jStr == null )
+                        jBody = getDefaultResource(docid);
+                    else
+                    {
+                        jObj = (JSONObject)JSONValue.parse(jStr);
+                        jBody = (String)jObj.get(JSONKeys.BODY);
+                    }
                 }
             }
-            else
+            if ( jBody == null )
                 jBody = getDefaultResource("default");
             setEncoding(request);
             response.setContentType("text/plain");

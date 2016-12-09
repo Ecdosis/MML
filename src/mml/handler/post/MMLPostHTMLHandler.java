@@ -221,15 +221,15 @@ public class MMLPostHTMLHandler extends MMLPostHandler
                 index++;
                 c = sb.charAt(sb.length()-index);
             }
-        }
-        if ( nNLs>nExisting )
-        {
-            for ( int i=0;i<nNLs-nExisting;i++ )
-                sb.append("\n");
-        }
-        else if ( erase && nNLs < nExisting )
-        {
-            sb.setLength(sb.length()-(nExisting-nNLs));
+            if ( nNLs>nExisting )
+            {
+                for ( int i=0;i<nNLs-nExisting;i++ )
+                    sb.append("\n");
+            }
+            else if ( erase && nNLs < nExisting )
+            {
+                sb.setLength(sb.length()-(nExisting-nNLs));
+            }
         }
     }
     /**
@@ -678,6 +678,7 @@ public class MMLPostHTMLHandler extends MMLPostHandler
         {
             parseRequest( request );
             StringBuilder log = new StringBuilder();
+            System.out.println(html);
             Document doc = Jsoup.parseBodyFragment(html);
             Element body = doc.body();  
             parseBody( body );

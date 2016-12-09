@@ -30,8 +30,6 @@ import mml.constants.Params;
 import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.JSONKeys;
-import calliope.core.json.corcode.Range;
-import calliope.core.json.corcode.Annotation;
 import mml.exception.*;
 import mml.handler.scratch.Scratch;
 import mml.handler.scratch.ScratchVersion;
@@ -315,19 +313,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
         else return false;
     }
     /**
-     * Insert the line-start and end for an internal lineformat
-     * @param stack the tag stack to tell us the depth
-     */
-    void startPreLine( Stack<EndTag> stack )
-    {
-        JSONObject lf = stack.peek().def;
-        String pre = (String)lf.get("leftTag");
-        String post = (String)lf.get("rightTag");
-        mml.append(post);
-        mml.append("\n");
-        mml.append(pre);
-    }
-    /**
      * Debug: Check that the corcode stil ranges do not go beyond text end
      * @param stil the stil markup as text
      * @param text the text it refers to
@@ -464,7 +449,9 @@ public class MMLGetMMLHandler extends MMLGetHandler
         String text = cortex.getLayerString(layer);
         mml = new StringBuilder();
         String stilDflt = ccDflt.getLayerString(layer);
+        System.out.println(stilDflt);
         String stilPages = (ccPages==null)?null:ccPages.getLayerString(layer);
+        System.out.println(stilPages);
         JSONObject mDflt = (JSONObject)JSONValue.parse(stilDflt);
         if ( stilPages != null )
         {
@@ -492,19 +479,12 @@ public class MMLGetMMLHandler extends MMLGetHandler
                 {
                     // check for NLs here if obj is of type lineformat
                     int tagEnd = stack.peek().offset;
-                    boolean isLF = isLineFormat( stack );
+                    //boolean isLF = isLineFormat( stack );
                     for ( int j=pos;j<tagEnd;j++ )
                     {
                         char c = text.charAt(j);
-                        if ( c!='\n' )
-                        {
-                            if ( globals.containsKey(c) )
-                                mml.append(globals.get(c));
-                            else
-                                mml.append(c);
-                        }
-                        else if ( isLF && j<tagEnd-1 )
-                            startPreLine(stack);
+                        if ( globals.containsKey(c) )
+                            mml.append(globals.get(c));
                         else
                             mml.append(c);
                     }
@@ -515,25 +495,10 @@ public class MMLGetMMLHandler extends MMLGetHandler
                     mml.append( stack.pop().text );
                 }
                 // 2. insert intervening text
-                boolean inPre = isLineFormat(stack);
-                int nNLs = countTerminalNLs(mml);
                 for ( int j=pos;j<start;j++ )
                 {
                     char c = text.charAt(j);
-                    if ( c == '\n' )
-                    {
-                        if ( mml.length()==0||nNLs==0 )
-                            mml.append(c);
-                        if ( nNLs > 0 )
-                            nNLs--;
-                        if ( inPre )
-                            startPreLine(stack);
-                    }
-                    else
-                    {
-                        mml.append(c);
-                        nNLs = 0;
-                    }
+                    mml.append(c);
                 }
                 // 3. insert new start tag
                 normaliseNewlines(startTag);
@@ -554,8 +519,6 @@ public class MMLGetMMLHandler extends MMLGetHandler
             {
                 char c = text.charAt(j);
                 mml.append(c);
-                if ( c=='\n' && inPre && j<tagEnd-1 )
-                    startPreLine(stack );
             }
             pos = tagEnd;
             // newlines are not permitted before tag end

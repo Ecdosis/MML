@@ -24,13 +24,14 @@ import calliope.core.database.Connection;
 import calliope.core.database.Connector;
 import calliope.core.constants.Database;
 import calliope.core.constants.JSONKeys;
-import calliope.core.handler.EcdosisMVD;
 import mml.constants.Params;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import edu.luc.nmerge.mvd.MVD;
 import edu.luc.nmerge.mvd.MVDFile;
-import java.util.ArrayList;
+import java.io.File;
+import java.util.Arrays;
+import mml.MMLWebApp;
 
 /**
  * Get the version1 attribute of a CORTEX
@@ -89,10 +90,32 @@ public class MMLGetVersion1Handler extends MMLGetHandler
                         version1 = "";  // nothing there
                 }
                 else
-                    version1 = "/base";
+                    version1 = "/base/layer-final";
             }
             else
+            {
+                // try to get it from corpix
+                String path = MMLWebApp.webRoot+"/corpix/"+docid;
+                File dir = new File(path);
                 version1 = "";
+                if ( dir.exists() )
+                {
+                    String[] files = dir.list();
+                    Arrays.sort(files);
+                    for ( int i=0;i<files.length;i++ )
+                    {
+                        if ( files[i].startsWith(dir.getName()) )
+                        {
+                            version1 = "/"+files[i]+"/layer-final";
+                            break;
+                        }
+                    }        
+                }
+                else if ( dir.getParentFile().exists() )
+                    version1 = "/base/layer-final";
+                else
+                    version1 = "";
+            }
             response.setContentType("text/plain");
             response.getWriter().write(version1.replaceAll("\\\\/", "/"));
         }

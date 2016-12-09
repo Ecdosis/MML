@@ -39,6 +39,7 @@ public class Service
     public static final String METADATA = "metadata";
     public static final String UPDATE = "update";
     public static final String VERSIONS = "versions";
+    public static final String NEWVERSIONS = "newversions";
     public static final String STATIC = "static";
     public static final String ANNOTATIONS = "annotations";
     public static final String DIALECT = "dialect";

@@ -46,6 +46,58 @@ public class MMLMetadataHandler extends MMLGetHandler
             i++;
         return num.substring(i);
     }
+    /**
+     * Construct metadata
+     * @param docId the docid to build metadata for
+     * @return a json object
+     */
+    JSONObject buildLetterMetadata( String docId )
+    {
+        JSONObject md = new JSONObject();
+        int index = docId.lastIndexOf("/");
+        String shortId;
+        if ( index != -1 )
+            shortId = docId.substring(index+1);
+        else
+            shortId = docId;
+        String[] parts = shortId.split("-");
+        StringBuilder sb = new StringBuilder();
+        String projid = Utils.getProjectId(docId);
+        if ( parts.length>=2 )
+        {
+            String from = Acronym.expand(projid,parts[parts.length-2]);
+            String to = Acronym.expand(projid,parts[parts.length-1]);
+            sb.append("Letter from "+from);
+            sb.append(" to ");
+            sb.append(to);
+            sb.append(",");
+        }
+        if ( parts.length>=3 )
+        {
+            for ( int i=0;i<3;i++ )
+            {
+                if ( DocType.isDay(parts[i]) )
+                {
+                    sb.append(" ");
+                    sb.append(trimZeros(parts[i]));
+                }
+                else if ( DocType.isMonth(parts[i]))
+                {
+                    sb.append(" ");
+                    sb.append(Acronym.expand(projid,parts[i]));
+                }
+                else if ( DocType.isYear(parts[i]) )
+                {
+                    sb.append(" ");
+                    sb.append(parts[i]);
+                    // maybe only a year
+                    break;
+                }
+            }
+            md.put(JSONKeys.TITLE,sb.toString());
+        }
+        return md;
+    }
     public void handle(HttpServletRequest request,
         HttpServletResponse response, String urn) throws MMLException {
         try
@@ -54,9 +106,9 @@ public class MMLMetadataHandler extends MMLGetHandler
             docid = request.getParameter(Params.DOCID);
             if ( docid == null || docid.length()== 0 )
                 docid = urn;
-            JSONObject md = new JSONObject();
-            boolean changed = false;
             String docId = docid;
+            JSONObject md = new JSONObject();
+            int nSegments = docId.split("/").length;
             do
             {
                 String jStr = conn.getMetadata( docId );
@@ -70,7 +122,6 @@ public class MMLMetadataHandler extends MMLGetHandler
                         String key = iter.next();
                         md.put( key, jObj.get(key) );
                     }
-                    changed = true;
                 }
                 else
                 {
@@ -80,7 +131,8 @@ public class MMLMetadataHandler extends MMLGetHandler
                         JSONObject jObj = (JSONObject)JSONValue.parse(ctStr);
                         if ( jObj.containsKey(JSONKeys.DESCRIPTION) )
                         {
-                            String desc = ((String)jObj.get(JSONKeys.DESCRIPTION)).replaceAll("%20"," ");
+                            String desc = ((String)jObj.get(
+                                JSONKeys.DESCRIPTION)).replaceAll("%20"," ");
                             if ( desc.startsWith("\"") )
                                 desc = desc.substring(1);
                             if ( desc.endsWith("\"") )
@@ -88,63 +140,24 @@ public class MMLMetadataHandler extends MMLGetHandler
                             desc = desc.replaceAll("\"\"","\"");
                             md.put(JSONKeys.TITLE,desc);
                         }
-                        else if ( !md.containsKey(JSONKeys.TITLE) && DocType.isLetter(docId))
+                        else if ( !md.containsKey(JSONKeys.TITLE) && DocType.isLetter(docId) )
                         {
-                            int index = docId.lastIndexOf("/");
-                            String shortId;
-                            if ( index != -1 )
-                                shortId = docId.substring(index+1);
-                            else
-                                shortId = docId;
-                            String[] parts = shortId.split("-");
-                            StringBuilder sb = new StringBuilder();
-                            String projid = Utils.getProjectId(docId);
-                            if ( parts.length>=2 )
-                            {
-                                String from = Acronym.expand(projid,parts[parts.length-2]);
-                                String to = Acronym.expand(projid,parts[parts.length-1]);
-                                sb.append("Letter from "+from);
-                                sb.append(" to ");
-                                sb.append(to);
-                                sb.append(",");
-                            }
-                            if ( parts.length>=3 )
-                            {
-                                for ( int i=0;i<3;i++ )
-                                {
-                                    if ( DocType.isDay(parts[i]) )
-                                    {
-                                        sb.append(" ");
-                                        sb.append(trimZeros(parts[i]));
-                                    }
-                                    else if ( DocType.isMonth(parts[i]))
-                                    {
-                                        sb.append(" ");
-                                        sb.append(Acronym.expand(projid,parts[i]));
-                                    }
-                                    else if ( DocType.isYear(parts[i]) )
-                                    {
-                                        sb.append(" ");
-                                        sb.append(parts[i]);
-                                        // maybe only a year
-                                        break;
-                                    }
-                                }
-                                md.put(JSONKeys.TITLE,sb.toString());
-                            }
+                            md = buildLetterMetadata(docId);
                         }
-                        else
-                            System.out.println("No metadata found for "+docId);
                     }
-                    else
-                        System.out.println("No metadata found for "+docId);
-                    changed = false;
+                    else if ( DocType.isLetter(docId) )
+                    {
+                        md = buildLetterMetadata(docId);
+                    }
                 }
                 docId = Utils.chomp(docId);
-            } while ( changed );
+                nSegments = docId.split("/").length;
+            } while ( nSegments > 2 );
+            if ( md.size()==0 )
+                System.out.println("No metadata found for "+docId);
             response.setContentType("application/json");
             response.setCharacterEncoding(encoding);
-            String mdStr = md.toJSONString();
+            String mdStr = md.toJSONString().replaceAll("\\\\/","/");
             response.getWriter().println(mdStr);
         }
         catch ( Exception e )

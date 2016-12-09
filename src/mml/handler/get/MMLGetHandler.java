@@ -69,6 +69,8 @@ public class MMLGetHandler extends MMLHandler {
                 new MMLGetMMLHandler().handle( request, response, urn );
             else if (service.equals(Service.VERSIONS))
                 new MMLGetVersionsHandler().handle(request,response,urn);
+            else if (service.equals(Service.NEWVERSIONS))
+                new MMLGetNewVersions().handle(request,response,urn);
             else if ( service.equals(Database.CORFORM) )
                 new MMLCorformHandler().handle( request, response, urn );
             else if ( service.equals(Database.DIALECTS) )
@@ -134,6 +136,8 @@ public class MMLGetHandler extends MMLHandler {
             if ( format == null )
                 throw new MMLException("doc missing format");
             String version1 = (String)doc.get(JSONKeys.VERSION1);
+            if ( version1 == null ) // ouch!
+                version1 = "/base";
             resource = new AeseResource();
             if ( version1 != null )
                 resource.setVersion1( version1 );

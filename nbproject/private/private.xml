@@ -12,7 +12,6 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/DocidComparator.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersion1Handler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetVersionsHandler.java</file>
-            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/Annotation.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/JettyServerThread.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetMMLHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/JettyServer.java</file>
@@ -22,8 +21,10 @@
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetDialectHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/post/MMLPostImportHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/json/DialectKeys.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/calliope/AeseSpeller.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/scratch/ScratchVersion.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/Autosave.java</file>
+            <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetNewVersions.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLCorformHandler.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/constants/Service.java</file>
             <file>file:/home/desmond/NetBeansProjects/MML/src/mml/handler/get/MMLGetUneditedLetters.java</file>
